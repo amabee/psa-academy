@@ -34,10 +34,10 @@ const AppSidebar = () => {
 
   const navLinks = {
     student: [
-      { icon: BookOpen, label: "Courses", href: "/user/courses" },
+      { icon: BookOpen, label: "Courses", href: "/student/courses" },
       // { icon: Briefcase, label: "Billing", href: "/user/billing" },
-      { icon: User, label: "Profile", href: "/user/profile" },
-      { icon: Settings, label: "Settings", href: "/user/settings" },
+      { icon: User, label: "Profile", href: "/student/profile" },
+      { icon: Settings, label: "Settings", href: "/student/settings" },
     ],
     teacher: [
       { icon: BookOpen, label: "Courses", href: "/teacher/courses" },
