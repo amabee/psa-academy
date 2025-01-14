@@ -1089,7 +1089,7 @@ input[type="color"] {
 }
 
 .loading__text {
-  @apply text-sm font-medium text-primary-700;
+  @apply text-md font-medium text-primary-700;
 }
 
 /* Navbar */
