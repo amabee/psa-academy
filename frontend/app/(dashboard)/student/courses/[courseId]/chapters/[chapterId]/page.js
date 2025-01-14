@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { useRouter } from "next/router";
+import { useParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -14,8 +14,10 @@ const ReactPlayer = dynamic(() => import("react-player"), {
 });
 
 const Course = () => {
-  const router = useRouter();
-  const { courseId, chapterId } = router.query;
+  
+  const params = useParams();
+  const courseId = params.courseId;
+  const chapterId = params.chapterId;
 
   const {
     user,
