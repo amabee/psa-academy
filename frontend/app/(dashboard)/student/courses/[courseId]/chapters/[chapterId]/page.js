@@ -68,7 +68,7 @@ const Course = () => {
               {currentChapter?.title}
             </span>
           </div>
-          <h2 className="course__title">{currentChapter?.title}</h2>
+          <h2 className="course__title">{currentChapter?.title} - {currentChapter?.type}</h2>
           <div className="course__header">
             <div className="course__instructor">
               <Avatar className="course__avatar">
@@ -152,7 +152,7 @@ const Course = () => {
                   <CardTitle>Quiz Content</CardTitle>
                 </CardHeader>
                 <CardContent className="course__tab-body">
-                  {/* Add quiz content here */}
+                {currentChapter?.quiz}
                 </CardContent>
               </Card>
             </TabsContent>

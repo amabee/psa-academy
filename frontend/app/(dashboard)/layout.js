@@ -21,7 +21,7 @@ export default function DashboardLayout(props) {
       const match = pathname.match(/\/user\/courses\/([^\/]+)/);
       setCourseId(match ? match[1] : null);
     } else {
-      setCourseId(null);
+      setCourseId("3a9f3d6c-c391-4b1c-9c3d-6c3f3d6c3f3d");
     }
   }, [isCoursePage, pathname]);
 
