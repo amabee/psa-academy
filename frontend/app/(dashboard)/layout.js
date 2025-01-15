@@ -12,16 +12,16 @@ export default function DashboardLayout(props) {
   const { children } = props;
   const pathname = usePathname();
   const [courseId, setCourseId] = useState(null);
-  const isCoursePage = /^\/user\/courses\/[^\/]+(?:\/chapters\/[^\/]+)?$/.test(
+  const isCoursePage = /^\/student\/courses\/[^\/]+(?:\/chapters\/[^\/]+)?$/.test(
     pathname
   );
 
   useEffect(() => {
     if (isCoursePage) {
-      const match = pathname.match(/\/user\/courses\/([^\/]+)/);
+      const match = pathname.match(/\/student\/courses\/([^\/]+)/);
       setCourseId(match ? match[1] : null);
     } else {
-      setCourseId("3a9f3d6c-c391-4b1c-9c3d-6c3f3d6c3f3d");
+      setCourseId(null);
     }
   }, [isCoursePage, pathname]);
 

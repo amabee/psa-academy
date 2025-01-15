@@ -27,7 +27,7 @@ const AppSidebar = () => {
   //   const { user, isLoaded } = useUser();
   //   const { signOut } = useClerk();
 
-  const user = "student";
+  const user = "teacher";
   const isLoaded = true;
   const pathname = usePathname();
   const { toggleSidebar } = useSidebar();
@@ -37,13 +37,13 @@ const AppSidebar = () => {
       { icon: BookOpen, label: "Courses", href: "/student/courses" },
       // { icon: Briefcase, label: "Billing", href: "/user/billing" },
       { icon: User, label: "Profile", href: "/student/profile" },
-      { icon: Settings, label: "Settings", href: "/student/settings" },
+      // { icon: Settings, label: "Settings", href: "/student/settings" },
     ],
     teacher: [
-      { icon: BookOpen, label: "Courses", href: "/teacher/courses" },
+      { icon: BookOpen, label: "Courses", href: "/speaker/courses" },
       // { icon: DollarSign, label: "Billing", href: "/teacher/billing" },
-      { icon: User, label: "Profile", href: "/teacher/profile" },
-      { icon: Settings, label: "Settings", href: "/teacher/settings" },
+      { icon: User, label: "Profile", href: "/speaker/profile" },
+      { icon: Settings, label: "Settings", href: "/speaker/settings" },
     ],
   };
 
@@ -51,7 +51,7 @@ const AppSidebar = () => {
   //   if (!user) return <div>User not found</div>;
 
   //   const userType = user.publicMetadata.userType || "student";
-  const currentNavLinks = navLinks["student"];
+  const currentNavLinks = navLinks["teacher"];
 
   return (
     <Sidebar

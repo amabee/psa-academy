@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Button } from "../ui/button";
 
 const Navbar = ({ isCoursePage }) => {
-  let userRole = "student";
+  let userRole = "teacher";
 
   return (
     <nav className="dashboard-navbar">
