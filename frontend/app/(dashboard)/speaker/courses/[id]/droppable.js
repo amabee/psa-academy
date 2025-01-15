@@ -3,38 +3,19 @@
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { Button } from "@/components/ui/button";
 import { Trash2, Edit, Plus, GripVertical } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import useStore from "@/state";
 
 export default function DroppableComponent() {
   const dispatch = () => {};
 
-  // const sections = [
-  //   {
-  //     sectionId: "5k7l9m1n-3o5p-7q9r-1s3t-5u7v9w1x3y5z",
-  //     sectionTitle: "Getting Started with React Native",
-  //     sectionDescription: "Learn the basics of React Native development.",
-  //     chapters: [
-  //       {
-  //         chapterId: "i9j0k1l2-m3n4-o5p6-q7r8-s9t0u1v2w3x4",
-  //         type: "Video",
-  //         title: "Setting Up Your Development Environment",
-  //         content: "https://example.com/videos/react-native-setup.mp4",
-  //         video: "https://example.com/videos/react-native-setup.mp4",
-  //         comments: [],
-  //       },
-  //       {
-  //         chapterId: "j0k1l2m3-n4o5-p6q7-r8s9-t0u1v2w3x4y5",
-  //         type: "Text",
-  //         title: "React Native Basics",
-  //         content:
-  //           "Learn about functions, objects, and other core concepts in JavaScript...",
-  //         comments: [],
-  //       },
-  //     ],
-  //   },
-  // ];
+  const sections = useStore((state) => state.courseEditor.sections);
+  const setSections = useStore((state) => state.setSections);
 
-  const [sections, setSections] = useState(null);
+  
+  useEffect(() => {
+    console.log("Droppable sections:", sections);
+  }, []);
 
   const handleSectionDragEnd = (result) => {
     if (!result.destination) return;
@@ -45,7 +26,7 @@ export default function DroppableComponent() {
     const updatedSections = [...sections];
     const [reorderedSection] = updatedSections.splice(startIndex, 1);
     updatedSections.splice(endIndex, 0, reorderedSection);
-    //   dispatch(setSections(updatedSections));
+    setSections(updatedSections); // Update state directly instead of dispatching
   };
 
   const handleChapterDragEnd = (result, sectionIndex) => {
@@ -59,8 +40,11 @@ export default function DroppableComponent() {
     const [reorderedChapter] = updatedChapters.splice(startIndex, 1);
     updatedChapters.splice(endIndex, 0, reorderedChapter);
     updatedSections[sectionIndex].chapters = updatedChapters;
-    //  dispatch(setSections(updatedSections));
+    setSections(updatedSections); // Update state directly instead of dispatching
   };
+
+  // Add null check before mapping
+  if (!sections) return null;
 
   return (
     <DragDropContext onDragEnd={handleSectionDragEnd}>
@@ -126,15 +110,7 @@ export default function DroppableComponent() {
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() =>
-                        // dispatch(
-                        //   openChapterModal({
-                        //     sectionIndex,
-                        //     chapterIndex: null,
-                        //   })
-                        // )
-                        {}
-                      }
+                      onClick={() => {}}
                       className="add-chapter-button group"
                     >
                       <Plus className="add-chapter-button__icon" />
@@ -155,8 +131,6 @@ export default function DroppableComponent() {
 }
 
 const SectionHeader = ({ section, sectionIndex, dragHandleProps }) => {
-  const dispatch = () => {};
-
   return (
     <div className="droppable-section__header" {...dragHandleProps}>
       <div className="droppable-section__title-wrapper">
@@ -171,7 +145,7 @@ const SectionHeader = ({ section, sectionIndex, dragHandleProps }) => {
               variant="ghost"
               size="sm"
               className="p-0"
-              // onClick={() => dispatch(openSectionModal({ sectionIndex }))}
+              onClick={() => openSectionModal({ sectionIndex })}
             >
               <Edit className="h-5 w-5" />
             </Button>
@@ -180,7 +154,7 @@ const SectionHeader = ({ section, sectionIndex, dragHandleProps }) => {
               variant="ghost"
               size="sm"
               className="p-0"
-              onClick={() => dispatch(deleteSection(sectionIndex))}
+              onClick={() => deleteSection(sectionIndex)}
             >
               <Trash2 className="h-5 w-5" />
             </Button>
@@ -202,8 +176,6 @@ const ChapterItem = ({
   sectionIndex,
   draggableProvider,
 }) => {
-  const dispatch = () => {};
-
   return (
     <div
       ref={draggableProvider.innerRef}
@@ -226,13 +198,10 @@ const ChapterItem = ({
           size="sm"
           className="droppable-chapter__button"
           onClick={() =>
-            // dispatch(
-            //   openChapterModal({
-            //     sectionIndex,
-            //     chapterIndex,
-            //   })
-            // )
-            {}
+            openChapterModal({
+              sectionIndex,
+              chapterIndex,
+            })
           }
         >
           <Edit className="h-4 w-4" />
@@ -243,12 +212,10 @@ const ChapterItem = ({
           size="sm"
           className="droppable-chapter__button"
           onClick={() =>
-            dispatch(
-              deleteChapter({
-                sectionIndex,
-                chapterIndex,
-              })
-            )
+            deleteChapter({
+              sectionIndex,
+              chapterIndex,
+            })
           }
         >
           <Trash2 className="h-4 w-4" />
