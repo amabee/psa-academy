@@ -1,31 +1,18 @@
-import { useState, useEffect, useRef } from "react";
-import {
-  ChevronDown,
-  ChevronUp,
-  FileText,
-  CheckCircle,
-  Trophy,
-} from "lucide-react";
+"use client";
+
+import Header from "@/components/shared/header";
+import Loading from "@/components/shared/loading";
+import TeacherCourseCard from "@/components/shared/teachercoursecard";
+import Toolbar from "@/components//shared/toolbar";
+import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import { cn } from "@/lib/utils";
-import { useSidebar } from "@/components/ui/sidebar";
+import React, { useMemo, useState } from "react";
 
-// import { useCourseProgressData } from "@/hooks/useCourseProgressData";
-
-const ChaptersSidebar = () => {
+const Courses = () => {
   const router = useRouter();
-  const { setOpen } = useSidebar();
-  const [expandedSections, setExpandedSections] = useState([]);
+  const user = "user_7kFh92JkCpQw3N8M5L4xRzVtYs";
 
-  // const {
-  //   course,
-  //   userProgress,
-  //   chapterId,
-  //   courseId,
-  //   isLoading,
-  //   updateChapterProgress,
-  // } = useCourseProgressData();
-  const course = [
+  const courses = [
     {
       courseId: "3a9f3d6c-c391-4b1c-9c3d-6c3f3d6c3f3d",
       teacherId: "user_7kFh92JkCpQw3N8M5L4xRzVtYs",
@@ -440,367 +427,100 @@ const ChaptersSidebar = () => {
       ],
     },
   ];
-
-  const userProgress = [
-    {
-      userId: "user_2ntu96pUCljUV2T9W0AThzjacQB",
-      courseId: "3a9f3d6c-c391-4b1c-9c3d-6c3f3d6c3f3d",
-      enrollmentDate: "2023-03-01T09:00:00Z",
-      overallProgress: 0.75,
-      sections: [
-        {
-          sectionId: "2f9d1e8b-5a3c-4b7f-9e6d-8c2a1f0b3d5e",
-          chapters: [
-            {
-              chapterId: "a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6",
-              completed: true,
-            },
-            {
-              chapterId: "b2c3d4e5-f6g7-h8i9-j0k1-l2m3n4o5p6q7",
-              completed: false,
-            },
-          ],
-        },
-      ],
-      lastAccessedTimestamp: "2023-03-10T14:30:00Z",
-    },
-    {
-      userId: "user_2ntu96pUCljUV2T9W0AThzjacQB",
-      courseId: "8b4f7d9c-4b1c-4b1c-8b4f-7d9c8b4f7d9c",
-      enrollmentDate: "2023-03-15T10:00:00Z",
-      overallProgress: 0.25,
-      sections: [
-        {
-          sectionId: "1a7b3c5d-9e2f-4g6h-8i0j-2k4l6m8n0p1q",
-          chapters: [
-            {
-              chapterId: "c3d4e5f6-g7h8-i9j0-k1l2-m3n4o5p6q7r8",
-              completed: true,
-            },
-            {
-              chapterId: "d4e5f6g7-h8i9-j0k1-l2m3-n4o5p6q7r8s9",
-              completed: false,
-            },
-          ],
-        },
-      ],
-      lastAccessedTimestamp: "2023-03-20T16:45:00Z",
-    },
-    {
-      userId: "user_3rTg67LmZnXc4Vb8Wd0JyUhEq",
-      courseId: "c5d6e7f8-g9h0-i1j2-k3l4-m5n6o7p8q9r0",
-      enrollmentDate: "2023-04-01T11:30:00Z",
-      overallProgress: 0.5,
-      sections: [
-        {
-          sectionId: "3e5f7g9h-1i3j-5k7l-9m1n-3o5p7q9r1s3t",
-          chapters: [
-            {
-              chapterId: "e5f6g7h8-i9j0-k1l2-m3n4-o5p6q7r8s9t0",
-              completed: true,
-            },
-            {
-              chapterId: "f6g7h8i9-j0k1-l2m3-n4o5-p6q7r8s9t0u1",
-              completed: true,
-            },
-            {
-              chapterId: "g7h8i9j0-k1l2-m3n4-o5p6-q7r8s9t0u1v2",
-              completed: false,
-            },
-          ],
-        },
-      ],
-      lastAccessedTimestamp: "2023-04-10T09:15:00Z",
-    },
-    {
-      userId: "user_5vBn23WsLkMp7Jh4Gt8FxYcRz",
-      courseId: "d4e5f6g7-h8i9-j0k1-l2m3-n4o5p6q7r8s9",
-      enrollmentDate: "2023-04-05T14:00:00Z",
-      overallProgress: 0.1,
-      sections: [
-        {
-          sectionId: "4u6v8w0x-2y4z-6a8b-0c2d-4e6f8g0h2i4j",
-          chapters: [
-            {
-              chapterId: "h8i9j0k1-l2m3-n4o5-p6q7-r8s9t0u1v2w3",
-              completed: true,
-            },
-            {
-              chapterId: "i9j0k1l2-m3n4-o5p6-q7r8-s9t0u1v2w3x4",
-              completed: false,
-            },
-          ],
-        },
-      ],
-      lastAccessedTimestamp: "2023-04-15T11:30:00Z",
-    },
-    {
-      userId: "user_8qPk34ZxCvBn1Mh6Jt9WsYdAe",
-      courseId: "e5f6g7h8-i9j0-k1l2-m3n4-o5p6q7r8s9t0",
-      enrollmentDate: "2023-04-10T09:30:00Z",
-      overallProgress: 0.8,
-      sections: [
-        {
-          sectionId: "5k7l9m1n-3o5p-7q9r-1s3t-5u7v9w1x3y5z",
-          chapters: [
-            {
-              chapterId: "j0k1l2m3-n4o5-p6q7-r8s9-t0u1v2w3x4y5",
-              completed: true,
-            },
-            {
-              chapterId: "k1l2m3n4-o5p6-q7r8-s9t0-u1v2w3x4y5z6",
-              completed: true,
-            },
-          ],
-        },
-      ],
-      lastAccessedTimestamp: "2023-04-20T15:45:00Z",
-    },
-  ];
-
-  const courseId = "3a9f3d6c-c391-4b1c-9c3d-6c3f3d6c3f3d";
-  const chapterId = "a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6";
-  const currentCourse = course.find((c) => c.courseId === courseId);
-  const currentUserProgress = userProgress.find((p) => p.courseId === courseId);
   const isLoading = false;
+  const isError = false;
 
-  const updateChapterProgress = () => {
-    
-    alert(1);
-  }
+  // const [createCourse] = useCreateCourseMutation();
+  // const [deleteCourse] = useDeleteCourseMutation();
 
-
-  const sidebarRef = useRef(null);
-
-  useEffect(() => {
-    setOpen(false);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  if (isLoading) return <div>Loading</div>;
-  if (!course || !userProgress) return <div>Error loading course content</div>;
-
-  const toggleSection = (sectionTitle) => {
-    setExpandedSections((prevSections) =>
-      prevSections.includes(sectionTitle)
-        ? prevSections.filter((title) => title !== sectionTitle)
-        : [...prevSections, sectionTitle]
-    );
+  const createCourse = () => {
+    return {
+      unwrap: () => Promise.resolve({
+        courseId: "course_123",
+        teacherId: "user_7kFh92JkCpQw3N8M5L4xRzVtYs",
+        teacherName: "John Dee"
+      })
+    };
   };
 
-  const handleChapterClick = (sectionId, chapterId) => {
-    router.push(`/user/courses/${courseId}/chapters/${chapterId}`, {
+  const deleteCourse = () => {
+    throw new Error("Not Implemented");
+  };
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+
+  const filteredCourses = useMemo(() => {
+    if (!courses) return [];
+
+    return courses.filter((course) => {
+      const matchesSearch = course.title
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+      const matchesCategory =
+        selectedCategory === "all" || course.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [courses, searchTerm, selectedCategory]);
+
+  const handleEdit = (course) => {
+    router.push(`/teacher/courses/${course.courseId}`, {
       scroll: false,
     });
   };
 
-  return (
-    <div ref={sidebarRef} className="chapters-sidebar">
-      <div className="chapters-sidebar__header">
-        <h2 className="chapters-sidebar__title">{currentCourse.title}</h2>
-        <hr className="chapters-sidebar__divider" />
-      </div>
-      {currentCourse.sections.map((section, index) => (
-        <Section
-          key={section.sectionId}
-          section={section}
-          index={index}
-          sectionProgress={currentUserProgress.sections.find(
-            (s) => s.sectionId === section.sectionId
-          )}
-          chapterId={chapterId}
-          courseId={courseId}
-          expandedSections={expandedSections}
-          toggleSection={toggleSection}
-          handleChapterClick={handleChapterClick}
-          updateChapterProgress={updateChapterProgress}
-        />
-      ))}
-    </div>
-  );
-};
-
-const Section = ({
-  section,
-  index,
-  sectionProgress,
-  chapterId,
-  courseId,
-  expandedSections,
-  toggleSection,
-  handleChapterClick,
-  updateChapterProgress,
-}) => {
-  const completedChapters =
-    sectionProgress?.chapters.filter((c) => c.completed).length || 0;
-  const totalChapters = section.chapters.length;
-  const isExpanded = expandedSections.includes(section.sectionTitle);
-
-  return (
-    <div className="chapters-sidebar__section">
-      <div
-        onClick={() => toggleSection(section.sectionTitle)}
-        className="chapters-sidebar__section-header"
-      >
-        <div className="chapters-sidebar__section-title-wrapper">
-          <p className="chapters-sidebar__section-number">
-            Section 0{index + 1}
-          </p>
-          {isExpanded ? (
-            <ChevronUp className="chapters-sidebar__chevron" />
-          ) : (
-            <ChevronDown className="chapters-sidebar__chevron" />
-          )}
-        </div>
-        <h3 className="chapters-sidebar__section-title">
-          {section.sectionTitle}
-        </h3>
-      </div>
-      <hr className="chapters-sidebar__divider" />
-
-      {isExpanded && (
-        <div className="chapters-sidebar__section-content">
-          <ProgressVisuals
-            section={section}
-            sectionProgress={sectionProgress}
-            completedChapters={completedChapters}
-            totalChapters={totalChapters}
-          />
-          <ChaptersList
-            section={section}
-            sectionProgress={sectionProgress}
-            chapterId={chapterId}
-            courseId={courseId}
-            handleChapterClick={handleChapterClick}
-            updateChapterProgress={updateChapterProgress}
-          />
-        </div>
-      )}
-      <hr className="chapters-sidebar__divider" />
-    </div>
-  );
-};
-
-const ProgressVisuals = ({
-  section,
-  sectionProgress,
-  completedChapters,
-  totalChapters,
-}) => {
-  return (
-    <>
-      <div className="chapters-sidebar__progress">
-        <div className="chapters-sidebar__progress-bars">
-          {section.chapters.map((chapter) => {
-            const isCompleted = sectionProgress?.chapters.find(
-              (c) => c.chapterId === chapter.chapterId
-            )?.completed;
-            return (
-              <div
-                key={chapter.chapterId}
-                className={cn(
-                  "chapters-sidebar__progress-bar",
-                  isCompleted && "chapters-sidebar__progress-bar--completed"
-                )}
-              ></div>
-            );
-          })}
-        </div>
-        <div className="chapters-sidebar__trophy">
-          <Trophy className="chapters-sidebar__trophy-icon" />
-        </div>
-      </div>
-      <p className="chapters-sidebar__progress-text">
-        {completedChapters}/{totalChapters} COMPLETED
-      </p>
-    </>
-  );
-};
-
-const ChaptersList = ({
-  section,
-  sectionProgress,
-  chapterId,
-  courseId,
-  handleChapterClick,
-  updateChapterProgress,
-}) => {
-  return (
-    <ul className="chapters-sidebar__chapters">
-      {section.chapters.map((chapter, index) => (
-        <Chapter
-          key={chapter.chapterId}
-          chapter={chapter}
-          index={index}
-          sectionId={section.sectionId}
-          sectionProgress={sectionProgress}
-          chapterId={chapterId}
-          courseId={courseId}
-          handleChapterClick={handleChapterClick}
-          updateChapterProgress={updateChapterProgress}
-        />
-      ))}
-    </ul>
-  );
-};
-
-const Chapter = ({
-  chapter,
-  index,
-  sectionId,
-  sectionProgress,
-  chapterId,
-  courseId,
-  handleChapterClick,
-  updateChapterProgress,
-}) => {
-  const chapterProgress = sectionProgress?.chapters.find(
-    (c) => c.chapterId === chapter.chapterId
-  );
-  const isCompleted = chapterProgress?.completed;
-  const isCurrentChapter = chapterId === chapter.chapterId;
-
-  const handleToggleComplete = (e) => {
-    e.stopPropagation();
-    updateChapterProgress(sectionId, chapter.chapterId, !isCompleted);
+  const handleDelete = async (course) => {
+    if (window.confirm("Are you sure you want to delete this course?")) {
+      await deleteCourse(course.courseId).unwrap();
+    }
   };
 
+  const handleCreateCourse = async () => {
+    if (!user) return;
+
+    const result = await createCourse({
+      teacherId: user.id,
+      teacherName: user.fullName || "Unknown Teacher",
+    }).unwrap();
+    router.push(`/speaker/courses/${result.courseId}`, {
+      scroll: false,
+    });
+  };
+
+  if (isLoading) return <Loading />;
+  if (isError || !courses) return <div>Error loading courses.</div>;
+
   return (
-    <li
-      className={cn("chapters-sidebar__chapter", {
-        "chapters-sidebar__chapter--current": isCurrentChapter,
-      })}
-      onClick={() => handleChapterClick(sectionId, chapter.chapterId)}
-    >
-      {isCompleted ? (
-        <div
-          className="chapters-sidebar__chapter-check"
-          onClick={handleToggleComplete}
-          title="Toggle completion status"
-        >
-          <CheckCircle className="chapters-sidebar__check-icon" />
-        </div>
-      ) : (
-        <div
-          className={cn("chapters-sidebar__chapter-number", {
-            "chapters-sidebar__chapter-number--current": isCurrentChapter,
-          })}
-        >
-          {index + 1}
-        </div>
-      )}
-      <span
-        className={cn("chapters-sidebar__chapter-title", {
-          "chapters-sidebar__chapter-title--completed": isCompleted,
-          "chapters-sidebar__chapter-title--current": isCurrentChapter,
-        })}
-      >
-        {chapter.title}
-      </span>
-      {chapter.type === "Text" && (
-        <FileText className="chapters-sidebar__text-icon" />
-      )}
-    </li>
+    <div className="teacher-courses">
+      <Header
+        title="Courses"
+        subtitle="Browse your courses"
+        rightElement={
+          <Button
+            onClick={handleCreateCourse}
+            className="teacher-courses__header"
+          >
+            Create Course
+          </Button>
+        }
+      />
+      <Toolbar
+        onSearch={setSearchTerm}
+        onCategoryChange={setSelectedCategory}
+      />
+      <div className="teacher-courses__grid">
+        {filteredCourses.map((course) => (
+          <TeacherCourseCard
+            key={course.courseId}
+            course={course}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            isOwner={course.teacherId === user}
+          />
+        ))}
+      </div>
+    </div>
   );
 };
 
-export default ChaptersSidebar;
+export default Courses;

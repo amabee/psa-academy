@@ -430,13 +430,13 @@ const Courses = () => {
     ) {
       const firstChapter = course.sections[0].chapters[0];
       router.push(
-        `/user/courses/${course.courseId}/chapters/${firstChapter.chapterId}`,
+        `/student/courses/${course.courseId}/chapters/${firstChapter.chapterId}`,
         {
           scroll: false,
         }
       );
     } else {
-      router.push(`/user/courses/${course.courseId}`, {
+      router.push(`/student/courses/${course.courseId}`, {
         scroll: false,
       });
     }
