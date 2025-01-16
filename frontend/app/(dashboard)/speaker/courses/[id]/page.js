@@ -129,7 +129,7 @@ const CourseEditor = () => {
                     type="switch"
                     className="flex items-center space-x-2"
                     inputClassName=" data-[state=checked]:bg-green-500"
-                    onChange={() => alert(1)}
+                    onChange={() => alert("Saving as Draft")}
                   />
                   <Button
                     type="submit"
@@ -177,12 +177,12 @@ const CourseEditor = () => {
                     ]}
                   />
 
-                  <CustomFormField
+                  {/* <CustomFormField
                     name="coursePrice"
                     label="Course Price"
                     type="number"
                     placeholder="0"
-                  />
+                  /> */}
                 </div>
               </div>
 
