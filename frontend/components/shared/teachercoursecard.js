@@ -10,8 +10,9 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
 import { Pencil, Trash2 } from "lucide-react";
+import { GoPeople } from "react-icons/go";
 
-const TeacherCourseCard = ({ course, onEdit, onDelete, isOwner }) => {
+const TeacherCourseCard = ({ course, onEdit, onDelete, isOwner, isViewStudents, onStudentLinkClick }) => {
   return (
     <Card className="course-card-teacher group">
       <CardHeader className="course-card-teacher__header">
@@ -48,16 +49,10 @@ const TeacherCourseCard = ({ course, onEdit, onDelete, isOwner }) => {
               {course.status}
             </span>
           </p>
-          {course.enrollments && (
-            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-secondary/10 text-secondary rounded-full font-medium text-sm transition-all hover:bg-secondary/20">
-              <span className="font-bold text-white">{course.enrollments.length}</span>
-              Student{course.enrollments.length > 1 ? "s" : ""} Enrolled
-            </div>
-          )}
         </div>
 
         <div className="w-full xl:flex space-y-2 xl:space-y-0 gap-2 mt-3">
-          {isOwner ? (
+          {isOwner && !isViewStudents ? (
             <>
               <div>
                 <Button
@@ -78,6 +73,16 @@ const TeacherCourseCard = ({ course, onEdit, onDelete, isOwner }) => {
                 </Button>
               </div>
             </>
+          ) : isViewStudents ? (
+            <div className="mt-2">
+              <Button
+                className="rounded w-full bg-primary-700 border-none hover:bg-primary-600 hover:text-customgreys-primarybg text-white-100 cursor-pointer"
+                onClick={() => onStudentLinkClick(course)}
+              >
+                <GoPeople className="w-4 h-4 mr-2" />
+                View {course.enrollments.length} Enrolled Students
+              </Button>
+            </div>
           ) : (
             <p className="text-sm text-gray-500 italic">View Only</p>
           )}

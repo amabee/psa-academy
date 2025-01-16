@@ -42,7 +42,7 @@ import {
           <CardFooter className="course-card__footer">
             <div className="course-card__category">{course.category}</div>
             <span className="course-card__price">
-             0.00
+            Not Enrolled
             </span>
           </CardFooter>
         </CardContent>

@@ -54,8 +54,8 @@ const ChaptersSidebar = () => {
               chapterId: "a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6",
               type: "Video",
               title: "Welcome to Programming",
-              content: "https://example.com/videos/welcome.mp4",
-              video: "https://example.com/videos/welcome.mp4",
+              content: "Introduction to big buck bunny",
+              video: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
               comments: [
                 {
                   commentId: "1a2b3c4d-5e6f-7g8h-9i0j-1k2l3m4n5o6p",
@@ -588,7 +588,7 @@ const ChaptersSidebar = () => {
   };
 
   const handleChapterClick = (sectionId, chapterId) => {
-    router.push(`/user/courses/${courseId}/chapters/${chapterId}`, {
+    router.push(`/student/courses/${courseId}/chapters/${chapterId}`, {
       scroll: false,
     });
   };

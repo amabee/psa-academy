@@ -147,7 +147,7 @@ const Courses = () => {
         "https://images.pexels.com/photos/6303596/pexels-photo-6303596.jpeg",
       price: 9999,
       level: "Advanced",
-      status: "Published",
+      status: "Draft",
       enrollments: [
         { userId: "user_2ntu96pUCljUV2T9W0AThzjacQB" },
         { userId: "user_5vBn23WsLkMp7Jh4Gt8FxYcRz" },
@@ -430,8 +430,6 @@ const Courses = () => {
   const isLoading = false;
   const isError = false;
 
-  // const [createCourse] = useCreateCourseMutation();
-  // const [deleteCourse] = useDeleteCourseMutation();
 
   const createCourse = () => {
     return {

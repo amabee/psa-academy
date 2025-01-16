@@ -8,13 +8,13 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import Loading from "@/components/shared/loading";
 import { useCourseProgressData } from "@/hooks/useCourProgressData";
 import dynamic from "next/dynamic";
+import { current } from "@reduxjs/toolkit";
 
 const ReactPlayer = dynamic(() => import("react-player"), {
   ssr: false,
 });
 
 const Course = () => {
-  
   const params = useParams();
   const courseId = params.courseId;
   const chapterId = params.chapterId;
@@ -68,7 +68,9 @@ const Course = () => {
               {currentChapter?.title}
             </span>
           </div>
-          <h2 className="course__title">{currentChapter?.title} - {currentChapter?.type}</h2>
+          <h2 className="course__title">
+            {currentChapter?.title} - {currentChapter?.type}
+          </h2>
           <div className="course__header">
             <div className="course__instructor">
               <Avatar className="course__avatar">
@@ -85,11 +87,13 @@ const Course = () => {
         </div>
 
         <Card className="course__video">
+          <h1>{currentChapter.type}</h1>
           <CardContent className="course__video-container">
-            {currentChapter?.video ? (
+            {currentChapter.type.toLowerCase() === "video" &&
+            currentChapter?.video ? (
               <ReactPlayer
                 ref={playerRef}
-                url={currentChapter.video}
+                url="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
                 controls
                 width="100%"
                 height="100%"
@@ -102,9 +106,17 @@ const Course = () => {
                   },
                 }}
               />
+            ) : currentChapter.type.toLowerCase() === "text" ? (
+              <iframe
+                src="https://www.aeee.in/wp-content/uploads/2020/08/Sample-pdf.pdf"
+                width="100%"
+                height="100%"
+                style={{ border: "none" }}
+                title={`PDF for ${currentChapter.title}`}
+              />
             ) : (
               <div className="course__no-video">
-                No video available for this chapter.
+                No content available for this chapter.
               </div>
             )}
           </CardContent>
@@ -152,7 +164,7 @@ const Course = () => {
                   <CardTitle>Quiz Content</CardTitle>
                 </CardHeader>
                 <CardContent className="course__tab-body">
-                {currentChapter?.quiz}
+                  {currentChapter?.quiz}
                 </CardContent>
               </Card>
             </TabsContent>
