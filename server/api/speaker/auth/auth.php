@@ -153,7 +153,7 @@ $auth = new AUTH();
 
 $validApiKey = $_ENV['API_KEY'] ?? null;
 
-if ($_SERVER["REQUEST_METHOD"] === "GET" || $_SERVER["REQUEST_METHOD"] === "POST") {
+if ($_SERVER["REQUEST_METHOD"] === "GET") {
 
     $headers = getallheaders();
 
@@ -174,14 +174,6 @@ if ($_SERVER["REQUEST_METHOD"] === "GET" || $_SERVER["REQUEST_METHOD"] === "POST
                         echo $auth->speakerLogin($json);
                     } else {
                         echo json_encode(array("success" => false, "data" => [], "message" => "Invalid request method for login. Use GET."));
-                    }
-                    break;
-
-                case "createAccount":
-                    if ($_SERVER["REQUEST_METHOD"] === "POST") {
-                        echo $auth->createAccount($json);
-                    } else {
-                        echo json_encode(array("success" => false, "data" => [], "message" => "Invalid request method for createAccount. Use POST."));
                     }
                     break;
 
