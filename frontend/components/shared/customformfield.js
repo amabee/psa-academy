@@ -1,15 +1,5 @@
 import React from "react";
-import {
-  useFormContext,
-  useFieldArray,
-} from "react-hook-form";
-import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,14 +10,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { Edit, X, Plus } from "lucide-react";
 import { registerPlugin } from "filepond";
 import { FilePond } from "react-filepond";
 import "filepond/dist/filepond.min.css";
-import FilePondPluginImageExifOrientation from 'filepond-plugin-image-exif-orientation';
-import FilePondPluginImagePreview from 'filepond-plugin-image-preview';
-import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css';
+import FilePondPluginImageExifOrientation from "filepond-plugin-image-exif-orientation";
+import FilePondPluginImagePreview from "filepond-plugin-image-preview";
+import "filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css";
+import { Switch } from "../ui/switch";
 
 registerPlugin(FilePondPluginImageExifOrientation, FilePondPluginImagePreview);
 
@@ -44,17 +34,19 @@ const CustomFormField = ({
   disabled = false,
   multiple = false,
   isIcon = false,
+  value,
+  onChange,
   initialValue,
 }) => {
-  const { control } = useFormContext();
-
-  const renderFormControl = (field) => {
+  const renderFormControl = () => {
     switch (type) {
       case "textarea":
         return (
           <Textarea
             placeholder={placeholder}
-            {...field}
+            value={value}
+            onChange={onChange}
+            name={name}
             rows={3}
             className={`border-none bg-customgreys-darkGrey p-4 ${inputClassName}`}
           />
@@ -62,9 +54,10 @@ const CustomFormField = ({
       case "select":
         return (
           <Select
-            value={field.value || initialValue}
-            defaultValue={field.value || initialValue}
-            onValueChange={field.onChange}
+            value={value || initialValue}
+            onValueChange={(newValue) =>
+              onChange({ target: { name, value: newValue } })
+            }
           >
             <SelectTrigger
               className={`w-full border-none bg-customgreys-primarybg p-4 ${inputClassName}`}
@@ -88,14 +81,16 @@ const CustomFormField = ({
         return (
           <div className="flex items-center space-x-2">
             <Switch
-              checked={field.value}
-              onCheckedChange={field.onChange}
+              checked={value}
+              onCheckedChange={(checked) =>
+                onChange({ target: { name, value: checked } })
+              }
               id={name}
-              className={`text-customgreys-dirtyGrey ${inputClassName}`}
+              className={`${inputClassName}`}
             />
-            <FormLabel htmlFor={name} className={labelClassName}>
+            <Label htmlFor={name} className={labelClassName}>
               {label}
-            </FormLabel>
+            </Label>
           </div>
         );
       case "file":
@@ -105,14 +100,17 @@ const CustomFormField = ({
         return (
           <FilePond
             className={`${inputClassName}`}
-            files={field.value ? [field.value] : []}
+            files={value ? [value] : []}
             allowMultiple={multiple}
             onupdatefiles={(fileItems) => {
-              field.onChange(
-                multiple
-                  ? fileItems.map((fileItem) => fileItem.file)
-                  : fileItems[0]?.file
-              );
+              onChange({
+                target: {
+                  name,
+                  value: multiple
+                    ? fileItems.map((fileItem) => fileItem.file)
+                    : fileItems[0]?.file,
+                },
+              });
             }}
             acceptedFileTypes={acceptedFileTypes}
             labelIdle={`Drag & Drop your files or <span class="filepond--label-action">Browse</span>`}
@@ -124,7 +122,9 @@ const CustomFormField = ({
           <Input
             type="number"
             placeholder={placeholder}
-            {...field}
+            value={value}
+            onChange={onChange}
+            name={name}
             className={`border-none bg-customgreys-darkGrey p-4 ${inputClassName}`}
             disabled={disabled}
           />
@@ -133,7 +133,8 @@ const CustomFormField = ({
         return (
           <MultiInputField
             name={name}
-            control={control}
+            value={value}
+            onChange={onChange}
             placeholder={placeholder}
             inputClassName={inputClassName}
           />
@@ -143,7 +144,9 @@ const CustomFormField = ({
           <Input
             type={type}
             placeholder={placeholder}
-            {...field}
+            value={value}
+            onChange={onChange}
+            name={name}
             className={`border-none bg-customgreys-primarybg p-4 ${inputClassName}`}
             disabled={disabled}
           />
@@ -152,74 +155,78 @@ const CustomFormField = ({
   };
 
   return (
-    <FormField
-      control={control}
-      name={name}
-      defaultValue={initialValue}
-      render={({ field }) => (
-        <FormItem
-          className={`${type !== "switch" && "rounded-md"} relative ${className}`}
-        >
-          {type !== "switch" && (
-            <div className="flex justify-between items-center">
-              <FormLabel
-                className={`text-customgreys-dirtyGrey text-sm ${labelClassName}`}
-              >
-                {label}
-              </FormLabel>
+    <div
+      className={`${type !== "switch" && "rounded-md"} relative ${className}`}
+    >
+      {type !== "switch" && (
+        <div className="flex justify-between items-center">
+          <Label
+            htmlFor={name}
+            className={`text-customgreys-dirtyGrey text-sm ${labelClassName}`}
+          >
+            {label}
+          </Label>
 
-              {!disabled &&
-                isIcon &&
-                type !== "file" &&
-                type !== "multi-input" && (
-                  <Edit className="size-4 text-customgreys-dirtyGrey" />
-                )}
-            </div>
+          {!disabled && isIcon && type !== "file" && type !== "multi-input" && (
+            <Edit className="size-4 text-customgreys-dirtyGrey" />
           )}
-          <FormControl>
-            {renderFormControl({
-              ...field,
-              value: field.value !== undefined ? field.value : initialValue,
-            })}
-          </FormControl>
-          <FormMessage className="text-red-400" />
-        </FormItem>
+        </div>
       )}
-    />
+      {renderFormControl()}
+    </div>
   );
 };
 
 const MultiInputField = ({
   name,
-  control,
+  value = [],
+  onChange,
   placeholder,
   inputClassName,
 }) => {
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name,
-  });
+  const handleAdd = () => {
+    onChange({
+      target: {
+        name,
+        value: [...value, ""],
+      },
+    });
+  };
+
+  const handleRemove = (index) => {
+    const newValue = value.filter((_, i) => i !== index);
+    onChange({
+      target: {
+        name,
+        value: newValue,
+      },
+    });
+  };
+
+  const handleInputChange = (index, inputValue) => {
+    const newValue = [...value];
+    newValue[index] = inputValue;
+    onChange({
+      target: {
+        name,
+        value: newValue,
+      },
+    });
+  };
 
   return (
     <div className="space-y-2">
-      {fields.map((field, index) => (
-        <div key={field.id} className="flex items-center space-x-2">
-          <FormField
-            control={control}
-            name={`${name}.${index}`}
-            render={({ field }) => (
-              <FormControl>
-                <Input
-                  {...field}
-                  placeholder={placeholder}
-                  className={`flex-1 border-none bg-customgreys-darkGrey p-4 ${inputClassName}`}
-                />
-              </FormControl>
-            )}
+      {value.map((item, index) => (
+        <div key={index} className="flex items-center space-x-2">
+          <Input
+            value={item}
+            onChange={(e) => handleInputChange(index, e.target.value)}
+            placeholder={placeholder}
+            className={`flex-1 border-none bg-customgreys-darkGrey p-4 ${inputClassName}`}
           />
           <Button
             type="button"
-            onClick={() => remove(index)}
+            onClick={() => handleRemove(index)}
             variant="ghost"
             size="icon"
             className="text-customgreys-dirtyGrey"
@@ -230,7 +237,7 @@ const MultiInputField = ({
       ))}
       <Button
         type="button"
-        onClick={() => append("")}
+        onClick={handleAdd}
         variant="outline"
         size="sm"
         className="mt-2 text-customgreys-dirtyGrey"

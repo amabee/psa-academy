@@ -9,7 +9,6 @@ import {
   createCourseFormData,
   uploadAllVideos,
 } from "@/lib/utils";
-import { openSectionModal, setSections } from "@/state";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, Plus } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
@@ -19,6 +18,7 @@ import DroppableComponent from "./droppable";
 import ChapterModal from "./chaptermodal";
 import SectionModal from "./sectionmodal";
 import * as z from "zod";
+import useStore from "@/state";
 
 // Define form validation schema
 const formSchema = z.object({
@@ -34,10 +34,23 @@ const CourseEditor = () => {
   const params = useParams();
   const id = params.id;
 
+  const {
+    addSection,
+    isChapterModalOpen,
+    openChapterModal,
+    openSectionModal,
+    closeSectionModal,
+    setSections
+  } = useStore();
+
   const isLoading = false;
   const course = [];
-  const [sections, setSections] = useState([]);
 
+  const sections = useStore((state) => state.courseEditor.sections);
+
+  console.log('CourseEditor rendering with sections:', sections);
+
+  
   // Initialize form with React Hook Form
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -67,7 +80,7 @@ const CourseEditor = () => {
   //       coursePrice: centsToDollars(course.price) || "0",
   //       courseStatus: course.status === "Published",
   //     });
-  //     dispatch(setSections(course.sections || []));
+  //     setSections(course.sections || []);
   //   }
   // }, [course, form.reset]);
 
@@ -115,7 +128,8 @@ const CourseEditor = () => {
                     label="Course Status"
                     type="switch"
                     className="flex items-center space-x-2"
-                    inputClassName="data-[state=checked]:bg-green-500"
+                    inputClassName=" data-[state=checked]:bg-green-500"
+                    onChange={() => alert("Saving as Draft")}
                   />
                   <Button
                     type="submit"
@@ -123,7 +137,7 @@ const CourseEditor = () => {
                   >
                     {form.watch("courseStatus")
                       ? "Update Published Course"
-                      : "Save Draft"}
+                      : "Save Material"}
                   </Button>
                 </div>
               }
@@ -163,12 +177,12 @@ const CourseEditor = () => {
                     ]}
                   />
 
-                  <CustomFormField
+                  {/* <CustomFormField
                     name="coursePrice"
                     label="Course Price"
                     type="number"
                     placeholder="0"
-                  />
+                  /> */}
                 </div>
               </div>
 
@@ -182,9 +196,7 @@ const CourseEditor = () => {
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() =>
-                      dispatch(openSectionModal({ sectionIndex: null }))
-                    }
+                    onClick={() => openSectionModal({ sectionIndex: 0 })}
                     className="border-none text-primary-700 group"
                   >
                     <Plus className="mr-1 h-4 w-4 text-primary-700 group-hover:white-100" />
@@ -207,7 +219,7 @@ const CourseEditor = () => {
         </Form>
       </FormProvider>
 
-      <ChapterModal />
+      {/* <ChapterModal /> */}
       <SectionModal />
     </div>
   );

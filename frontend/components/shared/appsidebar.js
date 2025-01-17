@@ -22,6 +22,9 @@ import {
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { GoPeople } from "react-icons/go";
+import { Button } from "../ui/button";
+
 
 const AppSidebar = () => {
   //   const { user, isLoaded } = useUser();
@@ -35,15 +38,12 @@ const AppSidebar = () => {
   const navLinks = {
     student: [
       { icon: BookOpen, label: "Courses", href: "/student/courses" },
-      // { icon: Briefcase, label: "Billing", href: "/user/billing" },
       { icon: User, label: "Profile", href: "/student/profile" },
-      // { icon: Settings, label: "Settings", href: "/student/settings" },
     ],
     teacher: [
       { icon: BookOpen, label: "Courses", href: "/speaker/courses" },
-      // { icon: DollarSign, label: "Billing", href: "/teacher/billing" },
       { icon: User, label: "Profile", href: "/speaker/profile" },
-      { icon: Settings, label: "Settings", href: "/speaker/settings" },
+      { icon: GoPeople, label: "Enrolled Students", href: "/speaker/course-list/" },
     ],
   };
 
@@ -132,13 +132,14 @@ const AppSidebar = () => {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
-              <button
+              <Button
+                variant="outline"
                 onClick={() => signOut()}
-                className="app-sidebar__signout"
+                className="group border-2 hover:border-red-500 hover:bg-red-500/10 hover:text-red-500 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-red-500/20"
               >
-                <LogOut className="mr-2 h-6 w-6" />
+                <LogOut className="mr-2 h-6 w-6 transition-transform group-hover:rotate-12" />
                 <span>Sign out</span>
-              </button>
+              </Button>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

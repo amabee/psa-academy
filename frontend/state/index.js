@@ -1,4 +1,4 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { create } from "zustand";
 
 const initialState = {
   courseEditor: {
@@ -10,74 +10,136 @@ const initialState = {
   },
 };
 
-export const globalSlice = createSlice({
-  name: "global",
-  initialState,
-  reducers: {
-    setSections: (state, action) => {
-      state.courseEditor.sections = action.payload;
-    },
-    openChapterModal: (state, action) => {
-      state.courseEditor.isChapterModalOpen = true;
-      state.courseEditor.selectedSectionIndex = action.payload.sectionIndex;
-      state.courseEditor.selectedChapterIndex = action.payload.chapterIndex;
-    },
-    closeChapterModal: (state) => {
-      state.courseEditor.isChapterModalOpen = false;
-      state.courseEditor.selectedSectionIndex = null;
-      state.courseEditor.selectedChapterIndex = null;
-    },
+const useStore = create((set) => ({
+  ...initialState,
 
-    openSectionModal: (state, action) => {
-      state.courseEditor.isSectionModalOpen = true;
-      state.courseEditor.selectedSectionIndex = action.payload.sectionIndex;
-    },
-    closeSectionModal: (state) => {
-      state.courseEditor.isSectionModalOpen = false;
-      state.courseEditor.selectedSectionIndex = null;
-    },
+  setSections: (sections) =>
+    set((state) => ({
+      courseEditor: {
+        ...state.courseEditor,
+        sections,
+      },
+    })),
 
-    addSection: (state, action) => {
-      state.courseEditor.sections.push(action.payload);
-    },
-    editSection: (state, action) => {
-      state.courseEditor.sections[action.payload.index] = action.payload.section;
-    },
-    deleteSection: (state, action) => {
-      state.courseEditor.sections.splice(action.payload, 1);
-    },
+  openChapterModal: ({ sectionIndex, chapterIndex }) =>
+    set((state) => ({
+      courseEditor: {
+        ...state.courseEditor,
+        isChapterModalOpen: true,
+        selectedSectionIndex: sectionIndex,
+        selectedChapterIndex: chapterIndex,
+      },
+    })),
 
-    addChapter: (state, action) => {
-      state.courseEditor.sections[action.payload.sectionIndex].chapters.push(
-        action.payload.chapter
-      );
-    },
-    editChapter: (state, action) => {
-      state.courseEditor.sections[action.payload.sectionIndex].chapters[
-        action.payload.chapterIndex
-      ] = action.payload.chapter;
-    },
-    deleteChapter: (state, action) => {
-      state.courseEditor.sections[action.payload.sectionIndex].chapters.splice(
-        action.payload.chapterIndex,
-        1
-      );
-    },
+  closeChapterModal: () =>
+    set((state) => ({
+      courseEditor: {
+        ...state.courseEditor,
+        isChapterModalOpen: false,
+        selectedSectionIndex: null,
+        selectedChapterIndex: null,
+      },
+    })),
+
+  openSectionModal: ({ sectionIndex }) =>
+    set((state) => ({
+      courseEditor: {
+        ...state.courseEditor,
+        isSectionModalOpen: true,
+        selectedSectionIndex: sectionIndex,
+      },
+    })),
+
+  closeSectionModal: () =>
+    set((state) => ({
+      courseEditor: {
+        ...state.courseEditor,
+        isSectionModalOpen: false,
+        selectedSectionIndex: null,
+      },
+    })),
+
+  addSection: (section) => {
+    set((state) => {
+      const newState = {
+        courseEditor: {
+          ...state.courseEditor,
+          sections: [...state.courseEditor.sections, section],
+        },
+      };
+      return newState;
+    });
   },
-});
 
-export const {
-  setSections,
-  openChapterModal,
-  closeChapterModal,
-  openSectionModal,
-  closeSectionModal,
-  addSection,
-  editSection,
-  deleteSection,
-  addChapter,
-  editChapter,
-  deleteChapter,
-} = globalSlice.actions;
+  editSection: ({ index, section }) =>
+    set((state) => ({
+      courseEditor: {
+        ...state.courseEditor,
+        sections: state.courseEditor.sections.map((s, i) =>
+          i === index ? section : s
+        ),
+      },
+    })),
 
-export default globalSlice.reducer;
+  deleteSection: (index) =>
+    set((state) => ({
+      courseEditor: {
+        ...state.courseEditor,
+        sections: state.courseEditor.sections.filter((_, i) => i !== index),
+      },
+    })),
+
+  addChapter: ({ sectionIndex, chapter }) =>
+    set((state) => ({
+      courseEditor: {
+        ...state.courseEditor,
+        sections: state.courseEditor.sections.map((section, index) => {
+          if (index === sectionIndex) {
+            return {
+              ...section,
+              chapters: [...section.chapters, chapter],
+            };
+          }
+          return section;
+        }),
+      },
+    })),
+
+  editChapter: ({ sectionIndex, chapterIndex, chapter }) =>
+    set((state) => ({
+      courseEditor: {
+        ...state.courseEditor,
+        sections: state.courseEditor.sections.map((section, index) => {
+          if (index === sectionIndex) {
+            return {
+              ...section,
+              chapters: section.chapters.map((ch, idx) =>
+                idx === chapterIndex ? chapter : ch
+              ),
+            };
+          }
+          return section;
+        }),
+      },
+    })),
+
+  deleteChapter: ({ sectionIndex, chapterIndex }) =>
+    set((state) => ({
+      courseEditor: {
+        ...state.courseEditor,
+        sections: state.courseEditor.sections.map((section, index) => {
+          if (index === sectionIndex) {
+            return {
+              ...section,
+              chapters: section.chapters.filter(
+                (_, idx) => idx !== chapterIndex
+              ),
+            };
+          }
+          return section;
+        }),
+      },
+    })),
+}));
+
+export default useStore;
