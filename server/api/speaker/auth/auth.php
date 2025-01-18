@@ -9,7 +9,6 @@ include_once('../../../middleware/helpers.php');
 
 
 use Firebase\JWT\JWT;
-use Firebase\JWT\Key;
 
 class AUTH
 {
