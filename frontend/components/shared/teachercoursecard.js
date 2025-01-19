@@ -12,12 +12,19 @@ import { Button } from "../ui/button";
 import { Pencil, Trash2 } from "lucide-react";
 import { GoPeople } from "react-icons/go";
 
-const TeacherCourseCard = ({ course, onEdit, onDelete, isOwner, isViewStudents, onStudentLinkClick }) => {
+const TeacherCourseCard = ({
+  course,
+  onEdit,
+  onDelete,
+  isOwner,
+  isViewStudents,
+  onStudentLinkClick,
+}) => {
   return (
     <Card className="course-card-teacher group">
       <CardHeader className="course-card-teacher__header">
         <Image
-          src={course.image || "/placeholder.png"}
+          src={course.course_image || "/placeholder.png"}
           alt={course.title}
           width={370}
           height={150}
@@ -33,7 +40,7 @@ const TeacherCourseCard = ({ course, onEdit, onDelete, isOwner, isViewStudents, 
           </CardTitle>
 
           <CardDescription className="course-card-teacher__category">
-            {course.category}
+            {course.category_name}
           </CardDescription>
 
           <p className="text-sm mb-2">
@@ -41,12 +48,13 @@ const TeacherCourseCard = ({ course, onEdit, onDelete, isOwner, isViewStudents, 
             <span
               className={cn(
                 "font-semibold px-2 py-1 rounded",
-                course.status === "Published"
+                course.course_status === "published"
                   ? "bg-green-500/20 text-green-400"
                   : "bg-red-500/20 text-red-400"
               )}
             >
-              {course.status}
+              {course.course_status.charAt(0).toUpperCase() +
+                course.course_status.slice(1)}
             </span>
           </p>
         </div>
@@ -80,7 +88,7 @@ const TeacherCourseCard = ({ course, onEdit, onDelete, isOwner, isViewStudents, 
                 onClick={() => onStudentLinkClick(course)}
               >
                 <GoPeople className="w-4 h-4 mr-2" />
-                View {course.enrollments.length} Enrolled Students
+                View {course.enrollment_count} Enrolled Students
               </Button>
             </div>
           ) : (

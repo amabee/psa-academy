@@ -12,20 +12,19 @@ import { getCourses } from "@/lib/actions/speaker/action";
 import { useErrorStore, useLoadingStore } from "@/store/stateStore";
 import Swal from "sweetalert2";
 
+
+
 const Courses = () => {
   const router = useRouter();
   const user = useUser();
 
   const [courses, setCourses] = useState([]);
 
-  // const isLoading = useLoadingStore((state) => state.isLoading);
-  // const setIsLoading = useLoadingStore((state) => state.setIsLoading);
-
-  // const isError = useErrorStore((state) => state.isError);
-  // const setError = useErrorStore((state) => state.setIsError);
+  // const { isLoading, setIsLoading } = useLoadingStore(loadingSelector);
+  // const { isError, setIsError } = useErrorStore(errorSelector);
 
   const [isLoading, setIsLoading] = useState(false);
-  const [isError, setError] = useState(false);
+  const [isError, setIsError] = useState(false);
 
   const fetchCourse = useCallback(async () => {
     try {
@@ -38,14 +37,13 @@ const Courses = () => {
           text: message,
           icon: "error",
         });
-        setError(true);
+        setIsError(true);
         return;
       }
 
       setCourses(data);
-      alert(message);
     } catch (error) {
-      setError(true);
+      setIsError(true);
       setCourses([]);
       Swal.fire({
         title: "Error Fetching Courses",
@@ -55,13 +53,13 @@ const Courses = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [setIsLoading, setIsError]);
 
   console.log(courses);
 
   useEffect(() => {
     fetchCourse();
-  }, []);
+  }, [fetchCourse]);
 
   const createCourse = () => {
     // return {
@@ -93,6 +91,10 @@ const Courses = () => {
       return matchesSearch && matchesCategory;
     });
   }, [courses, searchTerm, selectedCategory]);
+
+  // const filteredCourses = () => {
+  //   return [];
+  // };
 
   const handleEdit = (course) => {
     // router.push(`/teacher/courses/${course.courseId}`, {
@@ -141,11 +143,11 @@ const Courses = () => {
       <div className="teacher-courses__grid">
         {filteredCourses.map((course) => (
           <TeacherCourseCard
-            key={course.courseId}
+            key={course.course_id}
             course={course}
             onEdit={handleEdit}
             onDelete={handleDelete}
-            isOwner={course.teacherId === user}
+            isOwner={course.user_id === user.user_id}
           />
         ))}
       </div>
