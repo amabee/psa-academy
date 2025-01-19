@@ -9,3 +9,8 @@ export const useRedirectionStore = create((set) => ({
   isRedirecting: false,
   setIsRedirecting: (redirecting) => set({ isRedirecting: redirecting }),
 }));
+
+export const useErrorStore = create((set) => ({
+  isError: false,
+  setIsError: (error) => set({ isError: error }),
+}));

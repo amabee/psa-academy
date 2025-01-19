@@ -1,4 +1,4 @@
-import { useLoadingStore } from "@/store/loadingStore";
+import { useLoadingStore } from "@/store/stateStore";
 import React, { createContext, useContext, useState, useEffect } from "react";
 
 const UserContext = createContext();

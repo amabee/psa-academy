@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { login } from "@/lib/actions/speaker/auth";
-import { useLoadingStore, useRedirectionStore } from "@/store/loadingStore";
+import { useLoadingStore, useRedirectionStore } from "@/store/stateStore";
 import Swal from "sweetalert2";
 import { LoadingOverlay } from "@/components/shared/loadingoverlay";
 

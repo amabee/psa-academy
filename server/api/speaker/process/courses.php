@@ -25,18 +25,31 @@ class Courses
     {
         try {
             $sql = "SELECT 
-                        courses.course_id, 
-                        courses.title, 
-                        courses.description, 
-                        courses.course_status, 
-                        courses.created_at, 
-                        categories.category_name 
-                    FROM 
-                        courses
-                    INNER JOIN 
-                        categories 
-                    ON 
-                        courses.category_id = categories.category_id";
+                    courses.course_id, 
+                    courses.user_id,
+                    courses.title, 
+                    courses.description, 
+                    courses.course_status, 
+                    courses.created_at,
+                    categories.category_name,
+                    COUNT(enrollments.enrollment_id) AS enrollment_count
+                FROM 
+                    courses
+                INNER JOIN 
+                    categories 
+                    ON courses.category_id = categories.category_id
+                LEFT JOIN 
+                    enrollments 
+                    ON courses.course_id = enrollments.course_id
+                GROUP BY 
+                    courses.course_id, 
+                    courses.user_id,
+                    courses.title, 
+                    courses.description, 
+                    courses.course_status, 
+                    courses.created_at,
+                    categories.category_name
+                ";
 
             $stmt = $this->conn->prepare($sql);
             $stmt->execute();
@@ -371,9 +384,9 @@ $validApiKey = $_ENV['API_KEY'] ?? null;
 
 $requestMethod = $_SERVER["REQUEST_METHOD"];
 
-$headers = getallheaders();
+$headers = array_change_key_case(getallheaders(), CASE_LOWER);
 
-if (isset($headers['Authorization']) && $headers['Authorization'] === $validApiKey) {
+if (isset($headers['authorization']) && $headers['authorization'] === $validApiKey) {
 
     $operation = null;
     $json = null;
@@ -524,6 +537,7 @@ if (isset($headers['Authorization']) && $headers['Authorization'] === $validApiK
 
 } else {
     http_response_code(401);
+    error_log("Headers: " . json_encode(getallheaders()));
     echo json_encode([
         "status" => 401,
         "success" => false,
