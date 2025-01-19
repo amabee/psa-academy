@@ -1,3 +1,5 @@
 <FilesMatch "^(composer\.lock|composer\.json|\.env|\.gitignore)$">
     Require all denied
 </FilesMatch>
+
+SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1

@@ -2,19 +2,23 @@
 import AppSidebar from "@/components/shared/appsidebar";
 import Navbar from "@/components/shared/appnavbar";
 import { SidebarProvider } from "@/components/ui/sidebar";
+import { useUser } from "../providers/UserProvider";
 import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import ChaptersSidebar from "./student/courses/[courseId]/ChapterSideBar";
-import "./dashboard_css.css"
+import "./dashboard_css.css";
+import { LoadingOverlay } from "@/components/shared/loadingoverlay";
+
 
 export default function DashboardLayout(props) {
   const { children } = props;
   const pathname = usePathname();
   const [courseId, setCourseId] = useState(null);
-  const isCoursePage = /^\/student\/courses\/[^\/]+(?:\/chapters\/[^\/]+)?$/.test(
-    pathname
-  );
+  const { user, loading } = useUser();
+
+  const isCoursePage =
+    /^\/student\/courses\/[^\/]+(?:\/chapters\/[^\/]+)?$/.test(pathname);
 
   useEffect(() => {
     if (isCoursePage) {
@@ -24,6 +28,14 @@ export default function DashboardLayout(props) {
       setCourseId(null);
     }
   }, [isCoursePage, pathname]);
+
+  if (loading) {
+    return <LoadingOverlay />;
+  }
+
+  if (!user) {
+    return <div>Please log in to access the dashboard</div>;
+  }
 
   return (
     <SidebarProvider>

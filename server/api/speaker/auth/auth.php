@@ -2,7 +2,8 @@
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, SESSION_ID, SESSION_TOKEN');
+
 
 require('../../../configs/conn.php');
 include_once('../../../middleware/helpers.php');
@@ -24,7 +25,7 @@ class AUTH
         $json = json_decode($json, true);
 
         if (empty($json['user']) || empty($json['password'])) {
-            return json_encode(array("success" => false,  "data" => [], "message" => 'Username and Password are required!'));
+            return json_encode(array("success" => false, "data" => [], "message" => 'Username and Password are required!'));
         }
 
         try {
@@ -33,7 +34,6 @@ class AUTH
             $user = $json['user'];
             $password = $json['password'];
 
-            // Check user credentials
             $sql = 'SELECT user.user_id, user.userType_id, user.username, user.password, userinfo.*, offices.office_name
                     FROM user
                     LEFT JOIN userinfo ON userinfo.user_id = user.user_id
@@ -41,7 +41,6 @@ class AUTH
                     WHERE (user.username = :user OR userinfo.email = :user)';
             $stmt = $this->conn->prepare($sql);
             $stmt->bindParam(':user', $user, PDO::PARAM_STR);
-            //$stmt->bindParam(':password', $password, PDO::PARAM_STR);
             $stmt->execute();
 
 
@@ -54,17 +53,33 @@ class AUTH
 
                 unset($user['password']);
 
-                // Generate JWT
                 $jwt = $this->generateJwt($user);
 
-                // Session data
                 $sessionData = $this->createSessionData($user, $jwt);
 
-                // Insert session into the sessions table
                 $this->insertSession($sessionData);
 
-                // Commit the transaction
+                setcookie('session_token', $jwt, [
+                    'expires' => time() + 7200,
+                    'path' => '/',
+                    'domain' => '',
+                    'secure' => true,
+                    'httponly' => true,
+                    'samesite' => 'Strict'
+                ]);
+
+                setcookie('session_id', $sessionData['session_id'], [
+                    'expires' => time() + 7200,
+                    'path' => '/',
+                    'domain' => '',
+                    'secure' => true,
+                    'httponly' => true,
+                    'samesite' => 'Strict'
+                ]);
+
                 $this->conn->commit();
+
+                http_response_code(200);
 
                 return json_encode(array(
                     "success" => true,
@@ -76,10 +91,13 @@ class AUTH
                     "message" => "success"
                 ));
             } else {
+
+                http_response_code(401);
                 $this->conn->rollBack();
                 return json_encode(array("success" => false, "data" => [], "message" => 'Invalid Credentials'));
             }
         } catch (PDOException $e) {
+            http_response_code(500);
             $this->conn->rollBack();
             error_log("Database error in login: " . $e->getMessage());
             return json_encode(array("success" => false, "data" => [], "message" => 'An unexpected error occurred. Please try again later.'));
@@ -146,46 +164,98 @@ class AUTH
         $stmt->bindParam(':is_active', $sessionData['is_active'], PDO::PARAM_INT);
         $stmt->execute();
     }
+
+    public function getSession()
+    {
+
+        $headers = getallheaders();
+
+        $validateData = InputHelper::requiredFields($headers, ['session_id', 'session_token']);
+
+        if ($validateData !== true) {
+            return $validateData;
+        }
+
+        $sql = "select session_token, session_id, user.userType_id from sessions
+        inner join user on sessions.user_id = user.user_id where session_id = :session_id AND session_token = :session_token AND sessions.is_active = 1";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(":session_id", $headers['session_id'], PDO::PARAM_STR);
+        $stmt->bindParam(":session_token", $headers['session_token'], PDO::PARAM_STR);
+
+        $stmt->execute();
+
+        if ($stmt->rowCount() <= 0) {
+            http_response_code(404);
+            return json_encode(array(
+                "status" => 404,
+                "success" => false,
+                "data" => [],
+                "message" => "Session not found"
+            ));
+        }
+
+        http_response_code(200);
+        return json_encode(array(
+            "status" => 200,
+            "success" => true,
+            "data" => $stmt->fetch(PDO::FETCH_ASSOC),
+            "message" => "success"
+        ));
+    }
 }
 
 $auth = new AUTH();
 
 $validApiKey = $_ENV['API_KEY'] ?? null;
 
-if ($_SERVER["REQUEST_METHOD"] === "GET") {
+$requestMethod = $_SERVER["REQUEST_METHOD"];
 
-    $headers = getallheaders();
+$headers = array_change_key_case(getallheaders(), CASE_LOWER);
 
-    if (isset($headers['Authorization']) && $headers['Authorization'] === $validApiKey) {
+if (isset($headers['authorization']) && $headers['authorization'] === $validApiKey) {
 
-        if ($_SERVER["REQUEST_METHOD"] === "GET") {
-            $operation = isset($_GET["operation"]) ? $_GET["operation"] : null;
-            $json = isset($_GET["json"]) ? $_GET["json"] : null;
-        } elseif ($_SERVER["REQUEST_METHOD"] === "POST") {
-            $operation = isset($_POST["operation"]) ? $_POST["operation"] : null;
-            $json = isset($_POST["json"]) ? $_POST["json"] : null;
-        }
+    if ($_SERVER["REQUEST_METHOD"] === "GET") {
+        $operation = isset($_GET["operation"]) ? $_GET["operation"] : null;
+        $json = isset($_GET["json"]) ? $_GET["json"] : null;
+    }
 
-        if (isset($operation) && isset($json)) {
-            switch ($operation) {
-                case "login":
-                    if ($_SERVER["REQUEST_METHOD"] === "GET") {
-                        echo $auth->speakerLogin($json);
-                    } else {
-                        echo json_encode(array("success" => false, "data" => [], "message" => "Invalid request method for login. Use GET."));
-                    }
-                    break;
+    if ($_SERVER["REQUEST_METHOD"] === "POST") {
+        $operation = isset($_POST["operation"]) ? $_POST["operation"] : null;
+        $json = isset($_POST["json"]) ? $_POST["json"] : null;
+    }
 
-                default:
-                    echo json_encode(array("success" => false, "data" => [], "message" => "Invalid operation."));
-                    break;
-            }
-        } else {
-            echo json_encode(array("success" => false, "data" => [], "message" => "Missing Parameters."));
+    if (isset($operation) && isset($json)) {
+        switch ($operation) {
+            case "login":
+                if ($_SERVER["REQUEST_METHOD"] === "POST") {
+                    echo $auth->speakerLogin($json);
+                } else {
+                    http_response_code(400);
+                    echo json_encode(array("success" => false, "data" => [], "message" => "Invalid request method for login. Use POST."));
+                }
+                break;
+
+            case "getSession":
+                if ($_SERVER["REQUEST_METHOD"] === "GET") {
+                    echo $auth->getSession();
+                } else {
+                    http_response_code(400);
+                    echo json_encode(array("success" => false, "data" => [], "message" => "Invalid request method for login. Use GET."));
+                }
+                break;
+
+            default:
+                http_response_code(400);
+                echo json_encode(array("success" => false, "data" => [], "message" => "Invalid operation."));
+                break;
         }
     } else {
-        echo json_encode(array("success" => false, "data" => [], "message" => "Invalid API Key."));
+        http_response_code(422);
+        echo json_encode(array("success" => false, "data" => [], "message" => "Missing Parameters."));
     }
 } else {
-    echo json_encode(array("success" => false, "data" => [], "message" => "Invalid Request Method."));
+    http_response_code(401);
+
+
+    echo json_encode(array("success" => false, "data" => [], "message" => "Invalid API Key."));
 }

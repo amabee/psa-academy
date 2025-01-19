@@ -65,10 +65,68 @@ class Courses
         }
     }
 
-    public function getCourse()
+    public function getCourseDetails($json)
     {
-        http_response_code(501);
-        return "Not Implemented";
+        $data = json_decode($json, true);
+
+        try {
+            $sql = "SELECT 
+                c.course_id,
+                c.title,
+                c.description,
+                c.course_status,
+                c.created_at,
+                cat.category_name
+            FROM courses c
+            INNER JOIN categories cat ON c.category_id = cat.category_id
+            WHERE c.course_id = :course_id";
+
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bindValue(':course_id', $data['course_id'], PDO::PARAM_STR);
+            $stmt->execute();
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($result) {
+                $sql = "SELECT 
+                    lesson_id,
+                    lesson_title,
+                    content,
+                    resources,
+                    sequence_number
+                FROM lessons 
+                WHERE course_id = :course_id 
+                ORDER BY sequence_number";
+
+                $stmt = $this->conn->prepare($sql);
+                $stmt->bindValue(':course_id', $result['course_id'], PDO::PARAM_STR);
+                $stmt->execute();
+                $result['lessons'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } else {
+                http_response_code(404);
+                return json_encode([
+                    "status" => 404,
+                    "success" => true,
+                    "data" => [],
+                    "message" => "Course not found"
+                ]);
+            }
+
+            http_response_code(200);
+            return json_encode([
+                "status" => 200,
+                "success" => true,
+                "data" => $result,
+                "message" => ""
+            ]);
+        } catch (PDOException $ex) {
+            http_response_code(500);
+            return json_encode([
+                "status" => 500,
+                "success" => false,
+                "data" => [],
+                "message" => $ex->getMessage()
+            ]);
+        }
     }
 
     public function generateCourseID()
@@ -253,7 +311,7 @@ class Courses
 
     public function removeCourse($json)
     {
-        
+
         $data = is_string($json) ? json_decode($json, true) : $json;
 
         $isDataSet = InputHelper::requiredFields($data, ['course_id']);
@@ -304,8 +362,6 @@ class Courses
             ]);
         }
     }
-
-
 
 }
 
@@ -376,9 +432,9 @@ if (isset($headers['Authorization']) && $headers['Authorization'] === $validApiK
                 }
                 break;
 
-            case "getCourse":
+            case "getCourseDetail":
                 if ($requestMethod === "GET") {
-                    echo $course->getCourse();
+                    echo $course->getCourseDetails($json);
                 } else {
                     http_response_code(405);
                     echo json_encode([
