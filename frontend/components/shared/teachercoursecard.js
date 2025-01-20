@@ -29,7 +29,8 @@ const TeacherCourseCard = ({
           width={370}
           height={150}
           className="course-card-teacher__image"
-          priority
+          // priority
+          loading="lazy"
         />
       </CardHeader>
 
@@ -53,8 +54,10 @@ const TeacherCourseCard = ({
                   : "bg-red-500/20 text-red-400"
               )}
             >
-              {course.course_status.charAt(0).toUpperCase() +
-                course.course_status.slice(1)}
+              {course.course_status
+                ? course.course_status.charAt(0).toUpperCase() +
+                  course.course_status.slice(1)
+                : course.course_status}
             </span>
           </p>
         </div>

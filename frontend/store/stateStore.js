@@ -1,16 +1,53 @@
 import { create } from "zustand";
 
-export const useLoadingStore = create((set) => ({
+export const useAppStore = create((set) => ({
   isLoading: true,
-  setIsLoading: (loading) => set({ isLoading: loading }),
-}));
-
-export const useRedirectionStore = create((set) => ({
   isRedirecting: false,
+  isError: false,
+  isGenerating: false,
+  isCreating: false,
+
+  setStates: (states) => set(states),
+
+  setIsLoading: (loading) => set({ isLoading: loading }),
   setIsRedirecting: (redirecting) => set({ isRedirecting: redirecting }),
+  setIsError: (error) => set({ isError: error }),
+  setIsGenerating: (generating) => set({ isGenerating: generating }),
+  setIsCreating: (creating) => set({ isCreating: creating }),
+
+  reset: () =>
+    set({
+      isLoading: false,
+      isRedirecting: false,
+      isError: false,
+      isGenerating: false,
+      isCreating: false,
+    }),
 }));
 
-export const useErrorStore = create((set) => ({
-  isError: false,
-  setIsError: (error) => set({ isError: error }),
+export const useFormStore = create((set) => ({
+  formData: {
+    courseTitle: "",
+    courseDescription: "",
+    courseCategory: "",
+    coursePrice: "0",
+    courseStatus: false,
+  },
+  updateFormField: (field, value) =>
+    set((state) => ({
+      formData: {
+        ...state.formData,
+        [field]: value,
+      },
+    })),
+  resetForm: () =>
+    set({
+      formData: {
+        courseTitle: "",
+        courseDescription: "",
+        courseCategory: "",
+        coursePrice: "0",
+        courseStatus: false,
+      },
+    }),
 }));

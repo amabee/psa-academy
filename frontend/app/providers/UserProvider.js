@@ -1,7 +1,9 @@
-import { useLoadingStore } from "@/store/stateStore";
+import { useAppStore } from "@/store/stateStore";
 import React, { createContext, useContext, useState, useEffect } from "react";
 
 const UserContext = createContext();
+
+useAppStore.getState().setIsLoading(true);
 
 export const useUser = () => {
   const context = useContext(UserContext);
@@ -13,13 +15,13 @@ export const useUser = () => {
 
 export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const loading = useLoadingStore((state) => state.isLoading);
-  const setLoading = useLoadingStore((state) => state.setIsLoading);
+  const loading = useAppStore((state) => state.isLoading);
+  const setLoading = useAppStore((state) => state.setIsLoading);
 
   useEffect(() => {
     const loadUser = () => {
       try {
-        const userData = sessionStorage.getItem("user");
+        const userData = localStorage.getItem("user");
         if (userData) {
           setUser(JSON.parse(userData));
         }
@@ -36,10 +38,10 @@ export const UserProvider = ({ children }) => {
   const updateUser = (newUserData) => {
     try {
       if (newUserData) {
-        sessionStorage.setItem("user", JSON.stringify(newUserData));
+        localStorage.setItem("user", JSON.stringify(newUserData));
         setUser(newUserData);
       } else {
-        sessionStorage.removeItem("user");
+        localStorage.removeItem("user");
         setUser(null);
       }
     } catch (error) {
@@ -48,7 +50,7 @@ export const UserProvider = ({ children }) => {
   };
 
   const logout = () => {
-    sessionStorage.removeItem("user");
+    localStorage.removeItem("user");
     setUser(null);
   };
 

@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { login } from "@/lib/actions/speaker/auth";
-import { useLoadingStore, useRedirectionStore } from "@/store/stateStore";
+import { useAppStore } from "@/store/stateStore";
 import Swal from "sweetalert2";
 import { LoadingOverlay } from "@/components/shared/loadingoverlay";
 
@@ -14,13 +14,10 @@ export default function LoginPage() {
   const [user, setUser] = useState("");
   const [password, setPassword] = useState("");
 
-  const setIsLoading = useLoadingStore((state) => state.setIsLoading);
-  const isLoading = useLoadingStore((state) => state.isLoading);
-
-  const setIsRedirecting = useRedirectionStore(
-    (state) => state.setIsRedirecting
-  );
-  const isRedirecting = useRedirectionStore((state) => state.isRedirecting);
+  const isLoading = useAppStore((state) => state.isLoading);
+  const setIsLoading = useAppStore((state) => state.setIsLoading);
+  const isRedirecting = useAppStore((state) => state.isRedirecting);
+  const setIsRedirecting = useAppStore((state) => state.setIsRedirecting);
 
   const handleViewPassword = () => {
     setIsViewPassword(!isViewPassword);
@@ -68,7 +65,7 @@ export default function LoginPage() {
         });
         return;
       }
-      sessionStorage.setItem("user", JSON.stringify(data.data.user));
+      localStorage.setItem("user", JSON.stringify(data.data.user));
 
       setIsRedirecting(true);
       const userType = data.data.user.userType_id;

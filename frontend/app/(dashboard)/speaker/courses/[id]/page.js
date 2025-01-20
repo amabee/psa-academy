@@ -19,8 +19,10 @@ import ChapterModal from "./chaptermodal";
 import SectionModal from "./sectionmodal";
 import * as z from "zod";
 import useStore from "@/state";
+import { useAppStore } from "@/store/stateStore";
+import { useCategories } from "@/queries/speaker/courses";
+import { Controller } from "react-hook-form";
 
-// Define form validation schema
 const formSchema = z.object({
   courseTitle: z.string().min(1, "Course title is required"),
   courseDescription: z.string().min(1, "Course description is required"),
@@ -34,23 +36,36 @@ const CourseEditor = () => {
   const params = useParams();
   const id = params.id;
 
+  const isCreating = useAppStore((state) => state.isCreating);
+  const setIsCreating = useAppStore((state) => state.setIsCreating);
+  const isRedirecting = useAppStore((state) => state.isRedirecting);
+  const setIsRedirecting = useAppStore((state) => state.setIsRedirecting);
+
+  const [selectedCategoryLabel, setSelectedCategoryLabel] =
+    useState("Select a category");
+
+  const { data: categories, isLoading, isError } = useCategories();
+
+  useEffect(() => {
+    setIsCreating(false);
+    setIsRedirecting(false);
+  }, []);
+
   const {
     addSection,
     isChapterModalOpen,
     openChapterModal,
     openSectionModal,
     closeSectionModal,
-    setSections
+    setSections,
   } = useStore();
 
-  const isLoading = false;
   const course = [];
 
   const sections = useStore((state) => state.courseEditor.sections);
 
-  console.log('CourseEditor rendering with sections:', sections);
+  console.log("CourseEditor rendering with sections:", sections);
 
-  
   // Initialize form with React Hook Form
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -153,7 +168,6 @@ const CourseEditor = () => {
                     placeholder="Write course title here"
                     className="border-none"
                   />
-
                   <CustomFormField
                     name="courseDescription"
                     label="Course Description"
@@ -161,28 +175,42 @@ const CourseEditor = () => {
                     placeholder="Write course description here"
                   />
 
-                  <CustomFormField
+                  <Controller
                     name="courseCategory"
-                    label="Course Category"
-                    type="select"
-                    placeholder="Select category here"
-                    options={[
-                      { value: "technology", label: "Technology" },
-                      { value: "science", label: "Science" },
-                      { value: "mathematics", label: "Mathematics" },
-                      {
-                        value: "Artificial Intelligence",
-                        label: "Artificial Intelligence",
-                      },
-                    ]}
+                    control={form.control}
+                    render={({ field }) => (
+                      <CustomFormField
+                        name={field.name}
+                        placeholder={selectedCategoryLabel}
+                        label="Select Category"
+                        type="select"
+                        options={
+                          categories?.map((category) => ({
+                            value: category.category_id,
+                            label: category.category_name,
+                          })) ?? []
+                        }
+                        value={field.value}
+                        onChange={(e) => {
+                          const selectedOption = categories.find(
+                            (category) =>
+                              category.category_id === e.target.value
+                          );
+                          setSelectedCategoryLabel(
+                            selectedOption?.category_name || "Select a category"
+                          );
+                          field.onChange(e.target.value);
+                        }}
+                      />
+                    )}
                   />
 
-                  {/* <CustomFormField
+                  <CustomFormField
                     name="coursePrice"
                     label="Course Price"
-                    type="number"
+                    type="image"
                     placeholder="0"
-                  /> */}
+                  />
                 </div>
               </div>
 

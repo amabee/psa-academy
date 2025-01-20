@@ -9,7 +9,9 @@ import { useEffect, useState } from "react";
 import ChaptersSidebar from "./student/courses/[courseId]/ChapterSideBar";
 import "./dashboard_css.css";
 import { LoadingOverlay } from "@/components/shared/loadingoverlay";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
+const queryClient = new QueryClient();
 
 export default function DashboardLayout(props) {
   const { children } = props;
@@ -38,23 +40,25 @@ export default function DashboardLayout(props) {
   }
 
   return (
-    <SidebarProvider>
-      <div className="dashboard">
-        <AppSidebar />
-        <div className="dashboard__content">
-          {courseId && <ChaptersSidebar />}
-          <div
-            className={cn(
-              "dashboard__main",
-              isCoursePage && "dashboard__main--not-course"
-            )}
-            style={{ height: "100vh" }}
-          >
-            <Navbar isCoursePage={isCoursePage} />
-            <main className="dashboard__body">{children}</main>
+    <QueryClientProvider client={queryClient}>
+      <SidebarProvider>
+        <div className="dashboard">
+          <AppSidebar />
+          <div className="dashboard__content">
+            {courseId && <ChaptersSidebar />}
+            <div
+              className={cn(
+                "dashboard__main",
+                isCoursePage && "dashboard__main--not-course"
+              )}
+              style={{ height: "100vh" }}
+            >
+              <Navbar isCoursePage={isCoursePage} />
+              <main className="dashboard__body">{children}</main>
+            </div>
           </div>
         </div>
-      </div>
-    </SidebarProvider>
+      </SidebarProvider>
+    </QueryClientProvider>
   );
 }

@@ -8,68 +8,65 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useUser } from "@/app/providers/UserProvider";
-import { getCourses } from "@/lib/actions/speaker/action";
-import { useErrorStore, useLoadingStore } from "@/store/stateStore";
 import Swal from "sweetalert2";
-
-
+import { useCourses } from "@/queries/speaker/courses";
+import { useAppStore } from "@/store/stateStore";
+import { generateCourseID } from "@/lib/actions/speaker/action";
+import LoadingOverlay from "@/components/shared/loadingoverlay";
 
 const Courses = () => {
   const router = useRouter();
   const user = useUser();
 
-  const [courses, setCourses] = useState([]);
+  const { data: courses, isLoading, isError } = useCourses();
 
-  // const { isLoading, setIsLoading } = useLoadingStore(loadingSelector);
-  // const { isError, setIsError } = useErrorStore(errorSelector);
+  const isGenerating = useAppStore((state) => state.isGenerating);
+  const setIsGenerating = useAppStore((state) => state.setIsGenerating);
+  const isCreating = useAppStore((state) => state.isCreating);
+  const setIsCreating = useAppStore((state) => state.setIsCreating);
+  const isRedirecting = useAppStore((state) => state.isRedirecting);
+  const setIsRedirecting = useAppStore((state) => state.setIsRedirecting);
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [isError, setIsError] = useState(false);
+  const handleCreateCourse = async () => {
+    setIsGenerating(true);
 
-  const fetchCourse = useCallback(async () => {
     try {
-      setIsLoading(true);
-      const { success, data, message } = await getCourses();
+      const { success, data, message } = await generateCourseID();
 
-      if (!success) {
+      if (!success || !data) {
         Swal.fire({
-          title: "Error Fetching Courses",
-          text: message,
+          title: "Uh oh!",
+          text: "Something went wrong while generating course id",
           icon: "error",
+          confirmButtonText: "Ok",
         });
-        setIsError(true);
         return;
       }
 
-      setCourses(data);
+      if (!data) {
+        Swal.fire({
+          title: "Error",
+          text: "Course ID was not generated properly",
+          icon: "error",
+          confirmButtonText: "Ok",
+        });
+        return;
+      }
+      setIsCreating(true);
+      setIsRedirecting(true);
+      setIsCreating(false);
+      router.push(`/speaker/courses/${data}`);
     } catch (error) {
-      setIsError(true);
-      setCourses([]);
+      setIsCreating(false);
       Swal.fire({
-        title: "Error Fetching Courses",
-        text: error.message,
+        title: "Error",
+        text: error.message || "Failed to create course",
         icon: "error",
+        confirmButtonText: "Ok",
       });
     } finally {
-      setIsLoading(false);
+      setIsGenerating(false);
     }
-  }, [setIsLoading, setIsError]);
-
-  console.log(courses);
-
-  useEffect(() => {
-    fetchCourse();
-  }, [fetchCourse]);
-
-  const createCourse = () => {
-    // return {
-    //   unwrap: () =>
-    //     Promise.resolve({
-    //       courseId: "course_123",
-    //       teacherId: "user_7kFh92JkCpQw3N8M5L4xRzVtYs",
-    //       teacherName: "John Dee",
-    //     }),
-    // };
   };
 
   const deleteCourse = () => {
@@ -97,9 +94,9 @@ const Courses = () => {
   // };
 
   const handleEdit = (course) => {
-    // router.push(`/teacher/courses/${course.courseId}`, {
-    //   scroll: false,
-    // });
+    router.push(`/speaker/courses/${course.course_id}`, {
+      scroll: false,
+    });
   };
 
   const handleDelete = async (course) => {
@@ -108,19 +105,9 @@ const Courses = () => {
     // }
   };
 
-  const handleCreateCourse = async () => {
-    // if (!user) return;
-    // const result = await createCourse({
-    //   teacherId: user.id,
-    //   teacherName: user.fullName || "Unknown Teacher",
-    // }).unwrap();
-    // router.push(`/speaker/courses/${result.courseId}`, {
-    //   scroll: false,
-    // });
-  };
-
   if (isLoading) return <Loading />;
   if (isError || !courses) return <div>Error loading courses.</div>;
+  if (isRedirecting) return <LoadingOverlay />;
 
   return (
     <div className="teacher-courses">
@@ -130,9 +117,14 @@ const Courses = () => {
         rightElement={
           <Button
             onClick={handleCreateCourse}
-            className="teacher-courses__header"
+            disabled={isGenerating || isCreating}
+            className="teacher-courses__header bg-primary-700 hover:bg-primary-600"
           >
-            Create Course
+            {isGenerating
+              ? "Generating..."
+              : isCreating
+              ? "Creating..."
+              : "Create Course"}
           </Button>
         }
       />
@@ -147,7 +139,7 @@ const Courses = () => {
             course={course}
             onEdit={handleEdit}
             onDelete={handleDelete}
-            isOwner={course.user_id === user.user_id}
+            isOwner={course.user_id === user.user.user_id}
           />
         ))}
       </div>
