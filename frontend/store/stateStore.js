@@ -25,29 +25,3 @@ export const useAppStore = create((set) => ({
     }),
 }));
 
-export const useFormStore = create((set) => ({
-  formData: {
-    courseTitle: "",
-    courseDescription: "",
-    courseCategory: "",
-    coursePrice: "0",
-    courseStatus: false,
-  },
-  updateFormField: (field, value) =>
-    set((state) => ({
-      formData: {
-        ...state.formData,
-        [field]: value,
-      },
-    })),
-  resetForm: () =>
-    set({
-      formData: {
-        courseTitle: "",
-        courseDescription: "",
-        courseCategory: "",
-        coursePrice: "0",
-        courseStatus: false,
-      },
-    }),
-}));
