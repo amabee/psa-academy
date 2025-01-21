@@ -8,10 +8,9 @@ import { ArrowLeft, Edit, Plus } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import DroppableComponent from "./droppable";
-import ChapterModal from "./chaptermodal";
-import SectionModal from "./sectionmodal";
+import TopicModal from "./topicmodal";
+import LessonModal from "./lessonmodal";
 
-import useStore from "@/state";
 import { useAppStore } from "@/store/stateStore";
 import { useCategories } from "@/queries/speaker/courses";
 import { Textarea } from "@/components/ui/textarea";
@@ -34,6 +33,7 @@ import "filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css";
 import FilePondPluginFileValidateType from "filepond-plugin-file-validate-type";
 
 import { ACCEPTED_IMAGE_TYPES } from "@/lib/utils";
+import useLessonStore from "@/store/lessonStore";
 
 registerPlugin(
   FilePondPluginImageExifOrientation,
@@ -57,7 +57,7 @@ const CourseEditor = () => {
   const [selectedCategory, setSelectedCategory] = useState("");
 
   const { data: categories, isLoading, isError } = useCategories();
-  const sections = useStore((state) => state.courseEditor.sections);
+  const lessons = useLessonStore((state) => state.courseEditor.lessons);
 
   useEffect(() => {
     setIsCreating(false);
@@ -82,13 +82,12 @@ const CourseEditor = () => {
   };
 
   const {
-    addSection,
-    isChapterModalOpen,
-    openChapterModal,
-    openSectionModal,
-    closeSectionModal,
-    setSections,
-  } = useStore();
+    openTopicModal,
+    isTopicModalOpen,
+    openLessonModal,
+    closeLessonModal,
+    setLessons,
+  } = useLessonStore();
 
   const course = [];
 
@@ -254,27 +253,35 @@ const CourseEditor = () => {
 
           <div className="bg-customgreys-darkGrey mt-4 md:mt-0 p-4 rounded-lg basis-1/2">
             <div className="flex justify-between items-center mb-2">
-              <h2 className="text-2xl font-semibold text-secondary-foreground">
-                Sections
-              </h2>
+              <h2 className="text-2xl font-semibold text-white">Lesson</h2>
 
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => openSectionModal({ sectionIndex: 0 })}
-                className="border-none text-primary-700 group"
+              <Select
+                onValueChange={(value) => {
+                  if (value === "lesson") {
+                    openLessonModal({ sectionIndex: 0 });
+                  } else if (value === "test") {
+                    alert("Test");
+                  }
+                }}
               >
-                <Plus className="mr-1 h-4 w-4 text-primary-700 group-hover:white-100" />
-                <span className="text-primary-700 group-hover:white-100">
-                  Add Section
-                </span>
-              </Button>
+                <SelectTrigger className="border-none text-primary-700 group w-auto">
+                  <div className="flex items-center">
+                    <Plus className="mr-1 h-4 w-4 text-primary-700 group-hover:white-100" />
+                    <span className="text-primary-700 group-hover:white-100">
+                      Add Section
+                    </span>
+                  </div>
+                </SelectTrigger>
+                <SelectContent className="bg-customgreys-darkGrey border-customgreys-dirtyGrey shadow">
+                  <SelectItem value="lesson">Add Lesson</SelectItem>
+                  <SelectItem value="test">Add Test</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {isLoading ? (
               <p>Loading course content...</p>
-            ) : sections?.length > 0 ? (
+            ) : lessons?.length > 0 ? (
               <DroppableComponent />
             ) : (
               <p>No sections available</p>
@@ -283,7 +290,8 @@ const CourseEditor = () => {
         </div>
       </form>
 
-      <SectionModal />
+      <TopicModal />
+      <LessonModal />
     </div>
   );
 };

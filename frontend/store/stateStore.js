@@ -24,4 +24,3 @@ export const useAppStore = create((set) => ({
       isCreating: false,
     }),
 }));
-

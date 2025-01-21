@@ -21,78 +21,87 @@ class AUTH
         $this->conn = DatabaseConnection::getInstance()->getConnection();
     }
 
-    public function login($json)
+    public function studentLogin($json)
     {
         $json = json_decode($json, true);
 
-        if (empty($json['username']) || empty($json['password'])) {
-            return json_encode(array('error' => 'Username and Password are required!'));
+        if (empty($json['user']) || empty($json['password'])) {
+            return json_encode(array("success" => false, "data" => [], "message" => 'Username and Password are required!'));
         }
 
         try {
-            $username = $json['username'];
-            $password = sha1($json['password']);
+            $this->conn->beginTransaction();
 
-            // Check user credentials
-            $sql = 'SELECT `user_id`, `username`, `full_name`, `email`, `user_type_id`, `is_active` 
-                    FROM `users` 
-                    WHERE (`username` = :username OR `email` = :username) AND `password` = :password AND `is_active` = 1';
+            $user = $json['user'];
+            $password = $json['password'];
+
+            $sql = 'SELECT user.user_id, user.userType_id, user.username, user.password, userinfo.*, offices.office_name
+                    FROM user
+                    LEFT JOIN userinfo ON userinfo.user_id = user.user_id
+                    LEFT JOIN offices ON offices.office_id = userinfo.office_id
+                    WHERE (user.username = :user OR userinfo.email = :user)';
             $stmt = $this->conn->prepare($sql);
-            $stmt->bindParam(':username', $username, PDO::PARAM_STR);
-            $stmt->bindParam(':password', $password, PDO::PARAM_STR);
+            $stmt->bindParam(':user', $user, PDO::PARAM_STR);
             $stmt->execute();
+
 
             if ($stmt->rowCount() > 0) {
                 $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-                // Generate JWT
-                $key = $_ENV['JWT_SECRET'];
-                $issuedAt = time();
-                $expirationTime = $issuedAt + 3600;
-                $payload = [
-                    'iss' => 'crasm-monitoring',
-                    'iat' => $issuedAt,
-                    'exp' => $expirationTime,
-                    'sub' => $user['user_id'],
-                    'user' => [
-                        'id' => $user['user_id'],
-                        'username' => $user['username'],
-                        'full_name' => $user['full_name'],
-                        'email' => $user['email'],
-                        'user_type_id' => $user['user_type_id']
-                    ]
-                ];
-
-                $jwt = JWT::encode($payload, $key, 'HS256');
-
-                // Insert session into the sessions table
-                $sessionId = bin2hex(random_bytes(32));
-                $sql = 'INSERT INTO `sessions` (`session_id`, `user_id`, `session_data`, `created_at`, `expires_at`) 
-                        VALUES (:session_id, :user_id, :session_data, NOW(), FROM_UNIXTIME(:expires_at))';
-                $stmt = $this->conn->prepare($sql);
-                $stmt->bindParam(':session_id', $sessionId, PDO::PARAM_STR);
-                $stmt->bindParam(':user_id', $user['user_id'], PDO::PARAM_INT);
-                $stmt->bindParam(':session_data', $jwt, PDO::PARAM_STR);
-                $stmt->bindParam(':expires_at', $expirationTime, PDO::PARAM_INT);
-
-                if ($stmt->execute()) {
-                    // Session was successfully created
-                    return json_encode(array(
-                        "success" => array(
-                            "user" => $user,
-                            "token" => $jwt,
-                            "session_id" => $sessionId
-                        )
-                    ));
-                } else {
-                    return json_encode(array("error" => "Failed to create session"));
+                if (!password_verify($password, $user['password'])) {
+                    return json_encode(array("success" => false, "data" => [], "message" => 'Invalid Credentials'));
                 }
+
+                unset($user['password']);
+
+                $jwt = $this->generateJwt($user);
+
+                $sessionData = $this->createSessionData($user, $jwt);
+
+                $this->insertSession($sessionData);
+
+                setcookie('session_token', $jwt, [
+                    'expires' => time() + 7200,
+                    'path' => '/',
+                    'domain' => '',
+                    'secure' => true,
+                    'httponly' => true,
+                    'samesite' => 'Strict'
+                ]);
+
+                setcookie('session_id', $sessionData['session_id'], [
+                    'expires' => time() + 7200,
+                    'path' => '/',
+                    'domain' => '',
+                    'secure' => true,
+                    'httponly' => true,
+                    'samesite' => 'Strict'
+                ]);
+
+                $this->conn->commit();
+
+                http_response_code(200);
+
+                return json_encode(array(
+                    "success" => true,
+                    "data" => [
+                        "user" => $user,
+                        "token" => $jwt,
+                        "session_id" => $sessionData['session_id']
+                    ],
+                    "message" => "success"
+                ));
             } else {
-                return json_encode(array("error" => 'Invalid Credentials'));
+
+                http_response_code(401);
+                $this->conn->rollBack();
+                return json_encode(array("success" => false, "data" => [], "message" => 'Invalid Credentials'));
             }
         } catch (PDOException $e) {
+            http_response_code(500);
+            $this->conn->rollBack();
             error_log("Database error in login: " . $e->getMessage());
-            return json_encode(array('error' => 'An unexpected error occurred. Please try again later.'));
+            return json_encode(array("success" => false, "data" => [], "message" => $e->getMessage()));
         }
     }
 
@@ -189,7 +198,7 @@ if ($_SERVER["REQUEST_METHOD"] === "GET" || $_SERVER["REQUEST_METHOD"] === "POST
 
             switch ($operation) {
                 case "login":
-                    echo $auth->login($json);
+                    echo $auth->studentLogin($json);
                     break;
 
                 case "createAccount":
