@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
-import { login } from "@/lib/actions/speaker/auth";
+import { login } from "@/lib/actions/auth";
 import { useAppStore } from "@/store/stateStore";
 import Swal from "sweetalert2";
 import { LoadingOverlay } from "@/components/shared/loadingoverlay";

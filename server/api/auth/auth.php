@@ -20,7 +20,7 @@ class AUTH
         $this->conn = DatabaseConnection::getInstance()->getConnection();
     }
 
-    public function speakerLogin($json)
+    public function login($json)
     {
         $json = json_decode($json, true);
 
@@ -38,7 +38,7 @@ class AUTH
                     FROM user
                     LEFT JOIN userinfo ON userinfo.user_id = user.user_id
                     LEFT JOIN offices ON offices.office_id = userinfo.office_id
-                    WHERE (user.username = :user OR userinfo.email = :user)';
+                    WHERE (user.username = :user OR userinfo.email = :user) AND is_Active = 1';
             $stmt = $this->conn->prepare($sql);
             $stmt->bindParam(':user', $user, PDO::PARAM_STR);
             $stmt->execute();
@@ -228,7 +228,7 @@ if (isset($headers['authorization']) && $headers['authorization'] === $validApiK
         switch ($operation) {
             case "login":
                 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-                    echo $auth->speakerLogin($json);
+                    echo $auth->login($json);
                 } else {
                     http_response_code(400);
                     echo json_encode(array("success" => false, "data" => [], "message" => "Invalid request method for login. Use POST."));

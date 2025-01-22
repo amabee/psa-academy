@@ -19,7 +19,7 @@ export const login = async (user, password) => {
 
   try {
     const response = await axios({
-      url: `${BASE_URL}/speaker/auth/auth.php`,
+      url: `${BASE_URL}auth/auth.php`,
       method: "POST",
       data: formData,
       withCredentials: true,

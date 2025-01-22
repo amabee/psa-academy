@@ -4,9 +4,8 @@ import { getSession } from "./lib/session";
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
 
-  console.log(`Middleware processing route: ${pathname}`);
+  // console.log(`Middleware processing route: ${pathname}`);
 
-  // Add this check to prevent processing auth routes in middleware
   if (
     pathname.startsWith("/auth/") &&
     pathname !== "/auth/signin" &&

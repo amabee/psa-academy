@@ -23,7 +23,7 @@ export const getSession = async () => {
         json: JSON.stringify([]),
       },
       headers: {
-        Authorization: "28235638-ece9-4c21-a8cc-d4175ec23558",
+        Authorization: SECRET_KEY,
         SESSION_ID: session_id,
         SESSION_TOKEN: session_token,
       },
