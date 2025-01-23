@@ -29,8 +29,7 @@ const TeacherCourseCard = ({
           width={370}
           height={150}
           className="course-card-teacher__image"
-          // priority
-          loading="lazy"
+          priority
         />
       </CardHeader>
 
