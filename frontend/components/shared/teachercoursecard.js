@@ -88,6 +88,7 @@ const TeacherCourseCard = ({
               <Button
                 className="rounded w-full bg-primary-700 border-none hover:bg-primary-600 hover:text-customgreys-primarybg text-white-100 cursor-pointer"
                 onClick={() => onStudentLinkClick(course)}
+                
               >
                 <GoPeople className="w-4 h-4 mr-2" />
                 View {course.enrollment_count} Enrolled Students
