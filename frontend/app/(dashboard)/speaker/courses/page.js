@@ -106,7 +106,7 @@ const Courses = () => {
   };
 
   if (isLoading) return <Loading />;
-  if (isError || !courses) return <div>Error loading courses.</div>;
+  if (isError) return <div>Error loading courses.</div>;
   if (isRedirecting) return <LoadingOverlay />;
 
   return (

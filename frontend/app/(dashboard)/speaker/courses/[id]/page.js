@@ -12,7 +12,11 @@ import TopicModal from "./topicmodal";
 import LessonModal from "./lessonmodal";
 
 import { useAppStore } from "@/store/stateStore";
-import { useCategories } from "@/queries/speaker/courses";
+import {
+  useCategories,
+  useCourseDetail,
+  useCourses,
+} from "@/queries/speaker/courses";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -34,6 +38,7 @@ import FilePondPluginFileValidateType from "filepond-plugin-file-validate-type";
 
 import { ACCEPTED_IMAGE_TYPES } from "@/lib/utils";
 import useLessonStore from "@/store/lessonStore";
+import { Separator } from "@radix-ui/react-context-menu";
 
 registerPlugin(
   FilePondPluginImageExifOrientation,
@@ -46,23 +51,34 @@ const CourseEditor = () => {
   const params = useParams();
   const id = params.id;
 
-  const isCreating = useAppStore((state) => state.isCreating);
+  const {
+    data: course,
+    isLoading: courseLoading,
+    isError: courseError,
+  } = useCourseDetail(id);
+
+  const { data: categories, isLoading, isError } = useCategories();
+
+  const [files, setFiles] = useState(
+    course?.course_image
+      ? [
+          {
+            source: course.course_image,
+            options: {
+              type: "local",
+            },
+          },
+        ]
+      : []
+  );
+
   const setIsCreating = useAppStore((state) => state.setIsCreating);
-  const isRedirecting = useAppStore((state) => state.isRedirecting);
   const setIsRedirecting = useAppStore((state) => state.setIsRedirecting);
 
   const [selectedCategoryLabel, setSelectedCategoryLabel] =
     useState("Select a category");
 
-  const [selectedCategory, setSelectedCategory] = useState("");
-
-  const { data: categories, isLoading, isError } = useCategories();
   const lessons = useLessonStore((state) => state.courseEditor.lessons);
-
-  useEffect(() => {
-    setIsCreating(false);
-    setIsRedirecting(false);
-  }, []);
 
   const [formData, setFormData] = useState({
     courseTitle: "",
@@ -71,7 +87,43 @@ const CourseEditor = () => {
     courseImage: "",
   });
 
-  const [files, setFiles] = useState([]);
+  useEffect(() => {
+    if (course?.course_image) {
+      setFiles([
+        {
+          source: course.course_image,
+          options: {
+            type: "local",
+          },
+        },
+      ]);
+    }
+  }, [course?.course_image]);
+
+  useEffect(() => {
+    if (course && categories && categories.length > 0) {
+      const matchingCategory = categories.find(
+        (category) =>
+          category.category_id.toString() === course.category_id.toString()
+      );
+
+      setFormData((prev) => ({
+        ...prev,
+        courseTitle: course.title,
+        courseDescription: course.description,
+        courseCategory: course.category_id.toString(),
+      }));
+
+      if (matchingCategory) {
+        setSelectedCategoryLabel(matchingCategory.category_name);
+      }
+    }
+  }, [course, categories]);
+
+  useEffect(() => {
+    setIsCreating(false);
+    setIsRedirecting(false);
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -89,9 +141,9 @@ const CourseEditor = () => {
     setLessons,
   } = useLessonStore();
 
-  const course = [];
-
   const onSubmit = async (data) => {};
+
+  if (isError) return <p>Something went wrong</p>;
 
   if (isLoading) return <Loading />;
 
@@ -125,7 +177,7 @@ const CourseEditor = () => {
                 type="submit"
                 className="bg-primary-700 hover:bg-primary-600"
               >
-                Save Material
+              {course ? "Save Changes" : "Create Course"}
               </Button>
             </div>
           }
@@ -188,7 +240,7 @@ const CourseEditor = () => {
                       ...prev,
                       courseCategory: value,
                     }));
-                    setSelectedCategory(value);
+                    setSelectedCategoryLabel(value);
                   }}
                 >
                   <SelectTrigger className="w-full h-10 border-none bg-customgreys-primarybg p-4">
@@ -206,13 +258,17 @@ const CourseEditor = () => {
                     ))}
                   </SelectContent>
                 </Select>
-              ) : null}
+              ) : (
+                <span className="bg-red-100 text-red-800 text-md font-medium me-2 mt-5 px-2.5 py-0.5 rounded dark:bg-red-900 dark:text-red-300">
+                  No Categories found
+                </span>
+              )}
               <div className="flex justify-between items-center">
                 <Label
                   htmlFor="courseImage"
                   className={`text-customgreys-dirtyGrey text-sm `}
                 >
-                  Course Category
+                  Course Image
                 </Label>
               </div>
 
@@ -230,10 +286,16 @@ const CourseEditor = () => {
                         fileName: fileName,
                       },
                     }));
-                    console.log("Updated file:", file);
                   }
                 }}
-                server={null}
+                server={{
+                  load: (source, load, error, progress, abort, headers) => {
+                    fetch(source)
+                      .then((response) => response.blob())
+                      .then(load)
+                      .catch(error);
+                  },
+                }}
                 instantUpload={false}
                 name="courseImage"
                 allowMultiple={false}
@@ -250,33 +312,39 @@ const CourseEditor = () => {
               />
             </div>
           </div>
-
           <div className="bg-customgreys-darkGrey mt-4 md:mt-0 p-4 rounded-lg basis-1/2">
             <div className="flex justify-between items-center mb-2">
-              <h2 className="text-2xl font-semibold text-white">Lesson</h2>
-
-              <Select
-                onValueChange={(value) => {
-                  if (value === "lesson") {
-                    openLessonModal({ sectionIndex: 0 });
-                  } else if (value === "test") {
-                    alert("Test");
-                  }
-                }}
-              >
-                <SelectTrigger className="border-none text-primary-700 group w-auto">
-                  <div className="flex items-center">
-                    <Plus className="mr-1 h-4 w-4 text-primary-700 group-hover:white-100" />
-                    <span className="text-primary-700 group-hover:white-100">
-                      Add Section
-                    </span>
-                  </div>
-                </SelectTrigger>
-                <SelectContent className="bg-customgreys-darkGrey border-customgreys-dirtyGrey shadow">
-                  <SelectItem value="lesson">Add Lesson</SelectItem>
-                  <SelectItem value="test">Add Test</SelectItem>
-                </SelectContent>
-              </Select>
+              <h2 className="text-2xl font-semibold text-white">Lessons</h2>
+              <div className="flex items-center space-x-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => openLessonModal({ sectionIndex: null })}
+                  className="border-none text-primary-700 group"
+                >
+                  <Plus className="mr-1 h-4 w-4 text-primary-700 group-hover:white-100" />
+                  <span className="text-primary-700 group-hover:white-100">
+                    Add Lesson
+                  </span>
+                </Button>
+                <Separator
+                  orientation="vertical"
+                  className="h-6 w-[1px] bg-gray-300"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  // onClick={() => openLessonModal({ sectionIndex: null })}
+                  className="border-none text-primary-700 group"
+                >
+                  <Plus className="mr-1 h-4 w-4 text-primary-700 group-hover:white-100" />
+                  <span className="text-primary-700 group-hover:white-100">
+                    Add Test
+                  </span>
+                </Button>
+              </div>
             </div>
 
             {isLoading ? (
@@ -284,7 +352,7 @@ const CourseEditor = () => {
             ) : lessons?.length > 0 ? (
               <DroppableComponent />
             ) : (
-              <p>No sections available</p>
+              <p>No lessons available</p>
             )}
           </div>
         </div>

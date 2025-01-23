@@ -5,8 +5,8 @@ header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization, SESSION_ID, SESSION_TOKEN');
 
 
-require('../../../configs/conn.php');
-include_once('../../../middleware/helpers.php');
+require('../../configs/conn.php');
+include_once('../../middleware/helpers.php');
 
 
 use Firebase\JWT\JWT;

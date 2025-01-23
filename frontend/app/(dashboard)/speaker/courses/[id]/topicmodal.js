@@ -7,8 +7,25 @@ import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 
+// FilePond imports
+import { FilePond, registerPlugin } from "react-filepond";
+import "filepond/dist/filepond.min.css";
+import FilePondPluginFileValidateType from "filepond-plugin-file-validate-type";
+import FilePondPluginPdfPreview from "filepond-plugin-pdf-preview";
+import FilePondPluginMediaPreview from "filepond-plugin-media-preview";
+
+import "filepond-plugin-pdf-preview/dist/filepond-plugin-pdf-preview.min.css";
+
+// Register plugins
+registerPlugin(
+  FilePondPluginFileValidateType,
+  FilePondPluginPdfPreview,
+  FilePondPluginMediaPreview
+);
+
 const TopicModal = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [files, setFiles] = useState([]);
 
   const isTopicModalOpen = useLessonStore(
     (state) => state.courseEditor.isTopicModalOpen
@@ -24,18 +41,6 @@ const TopicModal = () => {
   const lessons = useLessonStore((state) => state.courseEditor.lessons);
   const addTopic = useLessonStore((state) => state.addTopic);
   const editTopic = useLessonStore((state) => state.editTopic);
-
-  // Debug state changes
-  useEffect(() => {
-    if (isTopicModalOpen) {
-      console.log("Modal opened with:", {
-        selectedLessonIndex,
-        selectedTopicIndex,
-        currentLesson:
-          selectedLessonIndex !== null ? lessons[selectedLessonIndex] : null,
-      });
-    }
-  }, [isTopicModalOpen, selectedLessonIndex, selectedTopicIndex, lessons]);
 
   const topic =
     selectedLessonIndex !== null && selectedTopicIndex !== null
@@ -55,14 +60,14 @@ const TopicModal = () => {
       const formData = new FormData(e.target);
       const title = formData.get("title");
       const content = formData.get("content");
-      const video = formData.get("video");
+
+      const uploadedFile = files.length > 0 ? files[0].file : null;
 
       if (!title || !content) {
         toast.error("Please fill in all required fields");
         return;
       }
 
-      // Ensure topics array exists
       if (!lessons[selectedLessonIndex].topics) {
         console.log("Initializing topics array for lesson");
         lessons[selectedLessonIndex].topics = [];
@@ -72,7 +77,15 @@ const TopicModal = () => {
         id: topic?.id || uuidv4(),
         title,
         content,
-        video: video instanceof File ? URL.createObjectURL(video) : video,
+
+        video:
+          uploadedFile && uploadedFile.type.startsWith("video/")
+            ? URL.createObjectURL(uploadedFile)
+            : topic?.video || null,
+        pdf:
+          uploadedFile && uploadedFile.type === "application/pdf"
+            ? URL.createObjectURL(uploadedFile)
+            : topic?.pdf || null,
       };
 
       console.log("Submitting topic data:", {
@@ -105,8 +118,21 @@ const TopicModal = () => {
     }
   };
 
+  useEffect(() => {
+    return () => {
+    
+      if (topic?.video && topic.video.startsWith("blob:")) {
+        URL.revokeObjectURL(topic.video);
+      }
+      if (topic?.pdf && topic.pdf.startsWith("blob:")) {
+        URL.revokeObjectURL(topic.pdf);
+      }
+    };
+  }, [topic]);
+
   const onClose = () => {
     closeTopicModal();
+    setFiles([]);
   };
 
   return (
@@ -149,17 +175,30 @@ const TopicModal = () => {
 
           <div className="mb-4">
             <label className="text-customgreys-dirtyGrey text-sm">
-              Topic Video
+              Topic Video or PDF
             </label>
-            <Input
-              type="file"
+            <FilePond
+              files={files}
+              onupdatefiles={setFiles}
+              allowMultiple={false}
+              maxFiles={1}
               name="video"
-              accept="video/*"
-              className="border-none bg-customgreys-darkGrey py-2 cursor-pointer mt-1"
+              labelIdle='Drag & Drop your video or PDF or <span class="filepond--label-action">Browse</span>'
+              acceptedFileTypes={["video/*", "application/pdf"]}
+              credits={false}
+              styleClassNamePondRoot="custom-filepond"
+              className="mt-1"
+              // Media preview specific configuration
+              allowMediaPreview={true}
+              mediaPreviewHeight={720}
+              // PDF preview specific configuration
+              allowPdfPreview={true}
+              pdfPreviewHeight={320}
+              pdfComponentExtraParams="toolbar=0&view=fit&page=1"
             />
-            {topic?.video && (
+            {topic?.video && !files.length && (
               <div className="my-2 text-sm text-gray-600">
-                Current video: {topic.video.split("/").pop()}
+                Current file: {topic.video.split("/").pop()}
               </div>
             )}
           </div>

@@ -23,6 +23,7 @@ export const getCourses = async () => {
     }
 
     return { success: true, data: res.data.data, message: "" };
+    
   } catch (error) {
     const errorMessage =
       error.response?.data?.message ||

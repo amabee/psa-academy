@@ -34,6 +34,7 @@ export const useCourses = () => {
   return useQuery({
     queryKey: ["courses"],
     queryFn: fetchCourses,
+    retry: false,
   });
 };
 
@@ -44,6 +45,7 @@ export const useCourseDetail = (courseId) => {
     enabled: !!courseId,
   });
 };
+
 export const useCategories = () => {
   return useQuery({
     queryKey: ["categories"],

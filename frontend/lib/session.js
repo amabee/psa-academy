@@ -16,7 +16,7 @@ export const getSession = async () => {
       return null;
     }
 
-    const res = await axios(`${BASE_URL}speaker/auth/auth.php`, {
+    const res = await axios(`${BASE_URL}auth/auth.php`, {
       method: "GET",
       params: {
         operation: "getSession",

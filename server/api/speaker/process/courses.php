@@ -90,7 +90,9 @@ class Courses
                 c.description,
                 c.course_status,
                 c.created_at,
-                cat.category_name
+                c.course_image,
+                cat.category_name,
+                cat.category_id
             FROM courses c
             INNER JOIN categories cat ON c.category_id = cat.category_id
             WHERE c.course_id = :course_id";
