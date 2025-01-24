@@ -1,6 +1,7 @@
 <?php
 
 use Ramsey\Uuid\Uuid;
+
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
@@ -65,7 +66,6 @@ class Courses
                 "data" => $result,
                 "message" => ""
             ]);
-
         } catch (PDOException $ex) {
 
             http_response_code(500);
@@ -180,7 +180,7 @@ class Courses
 
             $data = json_decode($json, true);
 
-            $isDataSet = InputHelper::requiredFields($data, ['course_id', 'user_id', 'category_id', 'title', 'description', 'course_status']);
+            $isDataSet = InputHelper::requiredFields($data, ['course_id', 'user_id']);
             if ($isDataSet !== true) {
                 return $isDataSet;
             }
@@ -189,14 +189,15 @@ class Courses
 
             $course_id = InputHelper::sanitizeString($data['course_id']);
             $user_id = (int) InputHelper::sanitizeInt($data['user_id']);
-            $category_id = (int) InputHelper::sanitizeInt($data['category_id']);
-            $title = InputHelper::sanitizeString($data['title']);
-            $description = InputHelper::sanitizeString($data['description']);
-            $course_status = InputHelper::sanitizeString($data['course_status']);
+            $category_id = (int) (InputHelper::sanitizeInt($data['category_id'] ?? 99));
+            $title = InputHelper::sanitizeString($data['title'] ?? 'not available');
+            $description = InputHelper::sanitizeString($data['description'] ?? 'not available');
+            $course_status = InputHelper::sanitizeString($data['course_status'] ?? 'draft');
+            $course_image = InputHelper::sanitizeString($data['course_image'] ?? 'default.jpg');
 
             $sql = "
-                INSERT INTO `courses`(`course_id`, `user_id`, `category_id`, `title`, `description`, `course_status`, `created_at`) 
-                VALUES (:course_id, :user_id, :category_id, :title, :description, :course_status, NOW())";
+                INSERT INTO `courses`(`course_id`, `user_id`, `category_id`, `title`, `description`, `course_status`, `course_image`, `created_at`) 
+                VALUES (:course_id, :user_id, :category_id, :title, :description, :course_status, :course_image, NOW())";
 
             $stmt = $this->conn->prepare($sql);
 
@@ -206,6 +207,7 @@ class Courses
             $stmt->bindParam(":title", $title);
             $stmt->bindParam(":description", $description);
             $stmt->bindParam(":course_status", $course_status);
+            $stmt->bindParam(":course_image", $course_image);
 
             if (!$stmt->execute()) {
                 $errorInfo = $stmt->errorInfo();
@@ -227,7 +229,6 @@ class Courses
                 "data" => [],
                 "message" => "Course created successfully."
             ]);
-
         } catch (PDOException $ex) {
             $this->conn->rollBack();
             http_response_code(500);
@@ -244,7 +245,11 @@ class Courses
     {
         try {
 
-            $data = is_string($json) ? json_decode($json, true) : $json;
+            //$data = is_string($json) ? json_decode($json, true) : $json;
+
+            $data = json_decode($json, true);
+
+            error_log("Data: " . json_encode($data));
 
             $isDataSet = InputHelper::requiredFields($data, ['course_id', 'user_id', 'category_id', 'title', 'description', 'course_status']);
             if ($isDataSet !== true) {
@@ -312,7 +317,6 @@ class Courses
                 "data" => [],
                 "message" => "Course updated successfully."
             ]);
-
         } catch (PDOException $ex) {
             $this->conn->rollBack();
             http_response_code(500);
@@ -366,7 +370,6 @@ class Courses
                 "data" => [],
                 "message" => "Course removed successfully."
             ]);
-
         } catch (PDOException $ex) {
             $this->conn->rollBack();
             http_response_code(500);
@@ -378,7 +381,6 @@ class Courses
             ]);
         }
     }
-
 }
 
 $course = new Courses();
@@ -537,7 +539,6 @@ if (isset($headers['authorization']) && $headers['authorization'] === $validApiK
             "message" => "Missing Parameters."
         ]);
     }
-
 } else {
     http_response_code(401);
     error_log("Headers: " . json_encode(getallheaders()));

@@ -11,7 +11,7 @@ import { useUser } from "@/app/providers/UserProvider";
 import Swal from "sweetalert2";
 import { useCourses } from "@/queries/speaker/courses";
 import { useAppStore } from "@/store/stateStore";
-import { generateCourseID } from "@/lib/actions/speaker/action";
+import { createCourse, generateCourseID } from "@/lib/actions/speaker/action";
 import LoadingOverlay from "@/components/shared/loadingoverlay";
 
 const Courses = () => {
@@ -27,7 +27,7 @@ const Courses = () => {
   const isRedirecting = useAppStore((state) => state.isRedirecting);
   const setIsRedirecting = useAppStore((state) => state.setIsRedirecting);
 
-  const handleCreateCourse = async () => {
+  const handleGenerateCourseID = async () => {
     setIsGenerating(true);
 
     try {
@@ -52,12 +52,9 @@ const Courses = () => {
         });
         return;
       }
-      setIsCreating(true);
-      setIsRedirecting(true);
-      setIsCreating(false);
-      router.push(`/speaker/courses/${data}`);
+
+      handleCreateCourse(data);
     } catch (error) {
-      setIsCreating(false);
       Swal.fire({
         title: "Error",
         text: error.message || "Failed to create course",
@@ -66,6 +63,37 @@ const Courses = () => {
       });
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleCreateCourse = async (course_id) => {
+    try {
+      const { success, data, message } = await createCourse(
+        course_id,
+        user.user.user_id
+      );
+
+      if (!success) {
+        Swal.fire({
+          title: "Error",
+          text: message || "Failed to create course",
+          icon: "error",
+          confirmButtonText: "Ok",
+        });
+        return;
+      }
+
+      setIsCreating(true);
+      setIsRedirecting(true);
+      setIsCreating(false);
+      router.push(`/speaker/courses/${course_id}`);
+    } catch (error) {
+      Swal.fire({
+        title: "Error",
+        text: error.message || "Failed to create course",
+        icon: "error",
+        confirmButtonText: "Ok",
+      });
     }
   };
 
@@ -88,10 +116,6 @@ const Courses = () => {
       return matchesSearch && matchesCategory;
     });
   }, [courses, searchTerm, selectedCategory]);
-
-  // const filteredCourses = () => {
-  //   return [];
-  // };
 
   const handleEdit = (course) => {
     router.push(`/speaker/courses/${course.course_id}`, {
@@ -116,7 +140,7 @@ const Courses = () => {
         subtitle="Browse your courses"
         rightElement={
           <Button
-            onClick={handleCreateCourse}
+            onClick={handleGenerateCourseID}
             disabled={isGenerating || isCreating}
             className="teacher-courses__header bg-primary-700 hover:bg-primary-600"
           >

@@ -4,16 +4,6 @@ import { getSession } from "./lib/session";
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
 
-  // console.log(`Middleware processing route: ${pathname}`);
-
-  if (
-    pathname.startsWith("/auth/") &&
-    pathname !== "/auth/signin" &&
-    pathname !== "/auth/signup"
-  ) {
-    return NextResponse.next();
-  }
-
   try {
     const session = await getSession();
 
@@ -35,6 +25,27 @@ export async function middleware(request) {
       },
     };
 
+    if (!session?.isAuthenticated) {
+      const response = NextResponse.redirect(
+        new URL("/auth/signin", request.url)
+      );
+
+      response.cookies.set("clear-user-data", "true", {
+        httpOnly: false,
+        path: "/",
+        maxAge: 10,
+      });
+
+      const isProtectedRoute =
+        Object.values(routeConfig).some((config) =>
+          config.pattern.test(pathname)
+        ) || pathname === "/";
+
+      if (isProtectedRoute && pathname !== "/auth/signin") {
+        return response;
+      }
+    }
+
     if (session?.isAuthenticated) {
       if (pathname === "/auth/signin" || pathname === "/auth/signup") {
         const redirectUrl = getRedirectUrlForUserType(
@@ -55,23 +66,21 @@ export async function middleware(request) {
           }
         }
       }
-    } else {
-      // Only redirect to signin if trying to access protected routes
-      const isProtectedRoute =
-        Object.values(routeConfig).some((config) =>
-          config.pattern.test(pathname)
-        ) || pathname === "/";
-
-      if (isProtectedRoute && pathname !== "/auth/signin") {
-        return NextResponse.redirect(new URL("/auth/signin", request.url));
-      }
     }
 
     return NextResponse.next();
   } catch (e) {
-    console.error("Middleware error:", e);
     if (pathname !== "/auth/signin") {
-      return NextResponse.redirect(new URL("/auth/signin", request.url));
+      const response = NextResponse.redirect(
+        new URL("/auth/signin", request.url)
+      );
+      response.cookies.set("clear-user-data", "true", {
+        httpOnly: false,
+        path: "/",
+        maxAge: 10,
+      });
+
+      return response;
     }
     return NextResponse.next();
   }
@@ -80,17 +89,14 @@ export async function middleware(request) {
 function getRedirectUrlForUserType(userType, baseUrl) {
   switch (userType) {
     case 1:
-      "/welcome";
-      return;
     case 2:
-      "/welcome";
-      return;
+      return "/welcome";
     case 3:
       return "/speaker/courses";
     case 4:
       return "/student/courses";
     default:
-      return "/dashboard";
+      return "/welcome";
   }
 }
 

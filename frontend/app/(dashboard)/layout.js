@@ -10,6 +10,7 @@ import ChaptersSidebar from "./student/courses/[courseId]/ChapterSideBar";
 import "./dashboard_css.css";
 import { LoadingOverlay } from "@/components/shared/loadingoverlay";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "@/components/ui/sonner";
 
 const queryClient = new QueryClient();
 
@@ -58,6 +59,7 @@ export default function DashboardLayout(props) {
             </div>
           </div>
         </div>
+        <Toaster />
       </SidebarProvider>
     </QueryClientProvider>
   );

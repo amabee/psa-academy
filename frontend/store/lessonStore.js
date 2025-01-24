@@ -47,7 +47,6 @@ const createActions = (set) => ({
       },
     })),
 
-  // Test Modal Actions
   openTestModal: ({ lessonIndex, topicIndex, testIndex }) =>
     set((state) => ({
       courseEditor: {
@@ -147,7 +146,6 @@ const createActions = (set) => ({
       },
     })),
 
-  // Test CRUD Operations
   addTest: ({ lessonIndex, topicIndex, test }) =>
     set((state) => ({
       courseEditor: {

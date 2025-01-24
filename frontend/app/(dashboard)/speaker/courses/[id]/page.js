@@ -12,11 +12,7 @@ import TopicModal from "./topicmodal";
 import LessonModal from "./lessonmodal";
 
 import { useAppStore } from "@/store/stateStore";
-import {
-  useCategories,
-  useCourseDetail,
-  useCourses,
-} from "@/queries/speaker/courses";
+import { useCategories, useCourseDetail } from "@/queries/speaker/courses";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -39,6 +35,10 @@ import FilePondPluginFileValidateType from "filepond-plugin-file-validate-type";
 import { ACCEPTED_IMAGE_TYPES } from "@/lib/utils";
 import useLessonStore from "@/store/lessonStore";
 import { Separator } from "@radix-ui/react-context-menu";
+import { set } from "date-fns";
+import { updateCourse } from "@/lib/actions/speaker/action";
+import { useUser } from "@/app/providers/UserProvider";
+import { toast } from "sonner";
 
 registerPlugin(
   FilePondPluginImageExifOrientation,
@@ -50,6 +50,7 @@ const CourseEditor = () => {
   const router = useRouter();
   const params = useParams();
   const id = params.id;
+  const user = useUser();
 
   const {
     data: course,
@@ -63,7 +64,7 @@ const CourseEditor = () => {
     course?.course_image
       ? [
           {
-            source: course.course_image,
+            source: process.env.NEXT_PUBLIC_IMAGE_URL + course.course_image,
             options: {
               type: "local",
             },
@@ -83,35 +84,54 @@ const CourseEditor = () => {
   const [formData, setFormData] = useState({
     courseTitle: "",
     courseDescription: "",
-    courseCategory: "",
+    courseCategory: 0,
     courseImage: "",
+    courseStatus: 0,
   });
 
   useEffect(() => {
     if (course?.course_image) {
-      setFiles([
-        {
-          source: course.course_image,
-          options: {
-            type: "local",
-          },
+      const fullImageUrl = `${process.env.NEXT_PUBLIC_IMAGE_URL}image_serve.php?image=${course.course_image}`;
+
+      fetch(fullImageUrl, {
+        mode: "cors",
+        headers: {
+          Origin: "http://localhost:3000",
         },
-      ]);
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Image fetch failed");
+          }
+          return response.blob();
+        })
+        .then((blob) => {
+          setFiles([
+            {
+              source: fullImageUrl,
+              options: {
+                type: "local",
+              },
+            },
+          ]);
+        })
+        .catch((error) => {
+          console.error("Image loading error:", error);
+        });
     }
   }, [course?.course_image]);
 
   useEffect(() => {
     if (course && categories && categories.length > 0) {
       const matchingCategory = categories.find(
-        (category) =>
-          category.category_id.toString() === course.category_id.toString()
+        (category) => category.category_id === course.category_id
       );
 
       setFormData((prev) => ({
         ...prev,
         courseTitle: course.title,
         courseDescription: course.description,
-        courseCategory: course.category_id.toString(),
+        courseCategory: course.category_id,
       }));
 
       if (matchingCategory) {
@@ -141,7 +161,32 @@ const CourseEditor = () => {
     setLessons,
   } = useLessonStore();
 
-  const onSubmit = async (data) => {};
+  const onUpdate = async (e) => {
+    e.preventDefault();
+    try {
+      const courseImage = formData.courseImage?.file || null;
+
+      const { success, data, message } = await updateCourse(
+        id,
+        user.user.user_id,
+        formData.courseTitle,
+        formData.courseDescription,
+        formData.courseCategory,
+        formData.courseStatus,
+        courseImage
+      );
+
+      if (!success) {
+        toast.error(message || "Failed to update course");
+        return;
+      }
+    } catch (error) {
+      console.error("Submission error:", error);
+      toast.error("An error occurred while updating the course");
+    }
+  };
+
+  console.log(formData.courseCategory);
 
   if (isError) return <p>Something went wrong</p>;
 
@@ -159,7 +204,11 @@ const CourseEditor = () => {
         </button>
       </div>
 
-      <form onSubmit={() => {}}>
+      <form
+        onSubmit={(e) => {
+          onUpdate(e);
+        }}
+      >
         <Header
           title="Course Setup"
           subtitle="Complete all fields and save your course"
@@ -171,13 +220,18 @@ const CourseEditor = () => {
                 type="switch"
                 className="flex items-center space-x-2"
                 inputClassName=" data-[state=checked]:bg-green-500"
-                onChange={() => alert("Saving as Draft")}
+                onChange={() =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    courseStatus: prev.courseStatus === 0 ? 1 : 0,
+                  }))
+                }
               />
               <Button
                 type="submit"
                 className="bg-primary-700 hover:bg-primary-600"
               >
-              {course ? "Save Changes" : "Create Course"}
+                {course ? "Save Changes" : "Create Course"}
               </Button>
             </div>
           }
@@ -234,13 +288,20 @@ const CourseEditor = () => {
 
               {categories && categories.length > 0 ? (
                 <Select
-                  value={formData.courseCategory}
+                  value={formData.courseCategory?.toString() || 99}
                   onValueChange={(value) => {
                     setFormData((prev) => ({
                       ...prev,
-                      courseCategory: value,
+                      courseCategory: value ? parseInt(value) : null,
                     }));
-                    setSelectedCategoryLabel(value);
+
+                    const selectedCategory = categories.find(
+                      (category) => category.category_id.toString() === value
+                    );
+
+                    if (selectedCategory) {
+                      setSelectedCategoryLabel(selectedCategory.category_name);
+                    }
                   }}
                 >
                   <SelectTrigger className="w-full h-10 border-none bg-customgreys-primarybg p-4">
@@ -290,8 +351,24 @@ const CourseEditor = () => {
                 }}
                 server={{
                   load: (source, load, error, progress, abort, headers) => {
-                    fetch(source)
-                      .then((response) => response.blob())
+                    fetch(source, {
+                      mode: "cors",
+                      headers: {
+                        Origin: "http://localhost:3000",
+                      },
+                    })
+                      .then((response) => {
+                        const imageFileName = source.includes("image_serve.php")
+                          ? new URLSearchParams(new URL(source).search).get(
+                              "image"
+                            )
+                          : source.split("/").pop();
+
+                        return response.blob().then((blob) => {
+                          blob.name = imageFileName;
+                          return blob;
+                        });
+                      })
                       .then(load)
                       .catch(error);
                   },
@@ -336,7 +413,7 @@ const CourseEditor = () => {
                   type="button"
                   variant="outline"
                   size="sm"
-                  // onClick={() => openLessonModal({ sectionIndex: null })}
+                  onClick={() => toast("Feature coming soon")}
                   className="border-none text-primary-700 group"
                 >
                   <Plus className="mr-1 h-4 w-4 text-primary-700 group-hover:white-100" />

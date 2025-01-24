@@ -69,7 +69,7 @@ const TopicModal = () => {
       }
 
       if (!lessons[selectedLessonIndex].topics) {
-        console.log("Initializing topics array for lesson");
+        // console.log("Initializing topics array for lesson");
         lessons[selectedLessonIndex].topics = [];
       }
 
@@ -88,11 +88,11 @@ const TopicModal = () => {
             : topic?.pdf || null,
       };
 
-      console.log("Submitting topic data:", {
-        lessonIndex: selectedLessonIndex,
-        topicIndex: selectedTopicIndex,
-        topicData,
-      });
+      // console.log("Submitting topic data:", {
+      //   lessonIndex: selectedLessonIndex,
+      //   topicIndex: selectedTopicIndex,
+      //   topicData,
+      // });
 
       if (selectedTopicIndex === null) {
         addTopic({

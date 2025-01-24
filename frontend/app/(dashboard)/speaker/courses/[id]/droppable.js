@@ -73,10 +73,10 @@ const TopicItem = ({ topic, topicIndex, lessonIndex, draggableProvider }) => {
           size="sm"
           className="droppable-chapter__button"
           onClick={() => {
-            console.log("Opening topic modal for edit:", {
-              lessonIndex,
-              topicIndex,
-            });
+            // console.log("Opening topic modal for edit:", {
+            //   lessonIndex,
+            //   topicIndex,
+            // });
             openTopicModal({ lessonIndex, topicIndex });
           }}
         >
@@ -103,7 +103,7 @@ export default function DroppableComponent() {
 
   // Debug lessons changes
   useEffect(() => {
-    console.log("Lessons updated:", lessons);
+    // console.log("Lessons updated:", lessons);
   }, [lessons]);
 
   const handleLessonDragEnd = (result) => {
@@ -211,10 +211,10 @@ export default function DroppableComponent() {
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        console.log("Opening topic modal for new topic:", {
-                          lessonIndex,
-                          topicIndex: null,
-                        });
+                        // console.log("Opening topic modal for new topic:", {
+                        //   lessonIndex,
+                        //   topicIndex: null,
+                        // });
                         openTopicModal({ lessonIndex, topicIndex: null });
                       }}
                       className="add-chapter-button group mt-4"
