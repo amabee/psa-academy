@@ -1,3 +1,12 @@
+<IfModule mod_headers.c>
+ 
+    Header always set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+    Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With, Origin, Accept"
+    Header always set Access-Control-Allow-Credentials "true"
+</IfModule>
+
 <FilesMatch "^(composer\.lock|composer\.json|\.env|\.gitignore)$">
     Require all denied
 </FilesMatch>
+
+SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1

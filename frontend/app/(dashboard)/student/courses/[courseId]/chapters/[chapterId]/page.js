@@ -32,8 +32,6 @@ const Course = () => {
     setHasMarkedComplete,
   } = useCourseProgressData(courseId, chapterId);
 
-  console.log("Current Chapter?:", currentChapter);
-
   const playerRef = useRef(null);
 
   const handleProgress = ({ played }) => {

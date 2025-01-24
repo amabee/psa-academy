@@ -18,6 +18,7 @@ import FilePondPluginImageExifOrientation from "filepond-plugin-image-exif-orien
 import FilePondPluginImagePreview from "filepond-plugin-image-preview";
 import "filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css";
 import { Switch } from "../ui/switch";
+import { Controller } from "react-hook-form";
 
 registerPlugin(FilePondPluginImageExifOrientation, FilePondPluginImagePreview);
 
@@ -37,121 +38,168 @@ const CustomFormField = ({
   value,
   onChange,
   initialValue,
+  control,
+  renderField,
 }) => {
   const renderFormControl = () => {
-    switch (type) {
-      case "textarea":
-        return (
-          <Textarea
-            placeholder={placeholder}
-            value={value}
-            onChange={onChange}
-            name={name}
-            rows={3}
-            className={`border-none bg-customgreys-darkGrey p-4 ${inputClassName}`}
-          />
-        );
-      case "select":
-        return (
-          <Select
-            value={value || initialValue}
-            onValueChange={(newValue) =>
-              onChange({ target: { name, value: newValue } })
-            }
-          >
-            <SelectTrigger
-              className={`w-full border-none bg-customgreys-primarybg p-4 ${inputClassName}`}
-            >
-              <SelectValue placeholder={placeholder} />
-            </SelectTrigger>
-            <SelectContent className="w-full bg-customgreys-primarybg border-customgreys-dirtyGrey shadow">
-              {options?.map((option) => (
-                <SelectItem
-                  key={option.value}
-                  value={option.value}
-                  className="cursor-pointer hover:!bg-gray-100 hover:!text-customgreys-darkGrey"
-                >
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        );
-      case "switch":
-        return (
-          <div className="flex items-center space-x-2">
-            <Switch
-              checked={value}
-              onCheckedChange={(checked) =>
-                onChange({ target: { name, value: checked } })
-              }
-              id={name}
-              className={`${inputClassName}`}
+    const formControl = () => {
+      switch (type) {
+        case "textarea":
+          return (
+            <Textarea
+              placeholder={placeholder}
+              value={value}
+              onChange={onChange}
+              name={name}
+              rows={3}
+              className={`border-none bg-customgreys-darkGrey p-4 ${inputClassName}`}
             />
-            <Label htmlFor={name} className={labelClassName}>
-              {label}
-            </Label>
-          </div>
-        );
-      case "file":
-        const ACCEPTED_VIDEO_TYPES = ["video/mp4", "video/webm", "video/ogg"];
-        const acceptedFileTypes = accept ? [accept] : ACCEPTED_VIDEO_TYPES;
+          );
+        case "select":
+          return (
+            <Select
+              value={value || initialValue}
+              onValueChange={(newValue) =>
+                onChange({ target: { name, value: newValue } })
+              }
+            >
+              <SelectTrigger
+                className={`w-full h-10 border-none bg-customgreys-primarybg p-4 ${inputClassName}`}
+              >
+                <SelectValue placeholder={placeholder} />
+              </SelectTrigger>
+              <SelectContent className="w-full bg-customgreys-primarybg border-customgreys-dirtyGrey shadow">
+                {options?.map((option) => (
+                  <SelectItem
+                    key={option.value}
+                    value={option.value}
+                    className="cursor-pointer hover:!bg-gray-100 hover:!text-customgreys-darkGrey"
+                  >
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          );
+        case "switch":
+          return (
+            <div className="flex items-center space-x-2">
+              <Switch
+                checked={value}
+                onCheckedChange={(checked) =>
+                  onChange({ target: { name, value: checked } })
+                }
+                id={name}
+                className={`${inputClassName}`}
+              />
+              <Label htmlFor={name} className={labelClassName}>
+                {label}
+              </Label>
+            </div>
+          );
+        case "file":
+          const ACCEPTED_VIDEO_TYPES = ["video/mp4", "video/webm", "video/ogg"];
+          const acceptedFileTypes = accept ? [accept] : ACCEPTED_VIDEO_TYPES;
 
-        return (
-          <FilePond
-            className={`${inputClassName}`}
-            files={value ? [value] : []}
-            allowMultiple={multiple}
-            onupdatefiles={(fileItems) => {
-              onChange({
-                target: {
-                  name,
-                  value: multiple
-                    ? fileItems.map((fileItem) => fileItem.file)
-                    : fileItems[0]?.file,
-                },
-              });
-            }}
-            acceptedFileTypes={acceptedFileTypes}
-            labelIdle={`Drag & Drop your files or <span class="filepond--label-action">Browse</span>`}
-            credits={false}
-          />
-        );
-      case "number":
-        return (
-          <Input
-            type="number"
-            placeholder={placeholder}
-            value={value}
-            onChange={onChange}
-            name={name}
-            className={`border-none bg-customgreys-darkGrey p-4 ${inputClassName}`}
-            disabled={disabled}
-          />
-        );
-      case "multi-input":
-        return (
-          <MultiInputField
-            name={name}
-            value={value}
-            onChange={onChange}
-            placeholder={placeholder}
-            inputClassName={inputClassName}
-          />
-        );
-      default:
-        return (
-          <Input
-            type={type}
-            placeholder={placeholder}
-            value={value}
-            onChange={onChange}
-            name={name}
-            className={`border-none bg-customgreys-primarybg p-4 ${inputClassName}`}
-            disabled={disabled}
-          />
-        );
+          return (
+            <FilePond
+              className={`${inputClassName}`}
+              files={value ? [value] : []}
+              allowMultiple={multiple}
+              onupdatefiles={(fileItems) => {
+                onChange({
+                  target: {
+                    name,
+                    value: multiple
+                      ? fileItems.map((fileItem) => fileItem.file)
+                      : fileItems[0]?.file,
+                  },
+                });
+              }}
+              acceptedFileTypes={acceptedFileTypes}
+              labelIdle={`Drag & Drop your files or <span class="filepond--label-action">Browse</span>`}
+              credits={false}
+            />
+          );
+        case "image":
+          const ACCEPTED_IMAGE_TYPES = [
+            "image/jpeg",
+            "image/png",
+            "image/gif",
+            "image/webp",
+          ];
+
+          return (
+            <FilePond
+              className={`${inputClassName}`}
+              files={value ? [value] : []}
+              allowMultiple={false}
+              onupdatefiles={(fileItems) => {
+                onChange({
+                  target: {
+                    name,
+                    value: fileItems[0]?.file || null,
+                  },
+                });
+              }}
+              acceptedFileTypes={ACCEPTED_IMAGE_TYPES}
+              labelIdle={`Drag & Drop your image or <span class="filepond--label-action">Browse</span>`}
+              imagePreviewHeight={170}
+              credits={false}
+              stylePanelAspectRatio="16:9"
+              dropOnPage
+            />
+          );
+        case "number":
+          return (
+            <Input
+              type="number"
+              placeholder={placeholder}
+              value={value}
+              onChange={onChange}
+              name={name}
+              className={`border-none bg-customgreys-darkGrey p-4 ${inputClassName}`}
+              disabled={disabled}
+            />
+          );
+        case "multi-input":
+          return (
+            <MultiInputField
+              name={name}
+              value={value}
+              onChange={onChange}
+              placeholder={placeholder}
+              inputClassName={inputClassName}
+            />
+          );
+        default:
+          return (
+            <Input
+              type={type}
+              placeholder={placeholder}
+              value={value}
+              onChange={onChange}
+              name={name}
+              className={`border-none text-white bg-customgreys-primarybg p-4 h-18 ${inputClassName}`}
+              disabled={disabled}
+            />
+          );
+      }
+    };
+
+    if (control) {
+      return (
+        <Controller
+          name={name}
+          control={control}
+          render={({ field }) =>
+            renderField ? renderField(field) : formControl()
+          }
+        />
+      );
     }
+
+    return formControl();
   };
 
   return (

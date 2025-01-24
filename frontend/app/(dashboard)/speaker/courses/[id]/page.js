@@ -3,224 +3,440 @@
 import CustomFormField from "@/components/shared/customformfield";
 import Header from "@/components/shared/header";
 import { Button } from "@/components/ui/button";
-import { Form } from "@/components/ui/form";
-import {
-  centsToDollars,
-  createCourseFormData,
-  uploadAllVideos,
-} from "@/lib/utils";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, Plus } from "lucide-react";
+
+import { ArrowLeft, Edit, Plus } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
-import { useForm, FormProvider } from "react-hook-form";
 import DroppableComponent from "./droppable";
-import ChapterModal from "./chaptermodal";
-import SectionModal from "./sectionmodal";
-import * as z from "zod";
-import useStore from "@/state";
+import TopicModal from "./topicmodal";
+import LessonModal from "./lessonmodal";
 
-// Define form validation schema
-const formSchema = z.object({
-  courseTitle: z.string().min(1, "Course title is required"),
-  courseDescription: z.string().min(1, "Course description is required"),
-  courseCategory: z.string().min(1, "Course category is required"),
-  coursePrice: z.string().min(1, "Course price is required"),
-  courseStatus: z.boolean().default(false),
-});
+import { useAppStore } from "@/store/stateStore";
+import { useCategories, useCourseDetail } from "@/queries/speaker/courses";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import Loading from "@/components/shared/loading";
+import { registerPlugin } from "filepond";
+import { FilePond } from "react-filepond";
+import "filepond/dist/filepond.min.css";
+import FilePondPluginImageExifOrientation from "filepond-plugin-image-exif-orientation";
+import FilePondPluginImagePreview from "filepond-plugin-image-preview";
+import "filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css";
+import FilePondPluginFileValidateType from "filepond-plugin-file-validate-type";
+
+import { ACCEPTED_IMAGE_TYPES } from "@/lib/utils";
+import useLessonStore from "@/store/lessonStore";
+import { Separator } from "@radix-ui/react-context-menu";
+import { set } from "date-fns";
+import { updateCourse } from "@/lib/actions/speaker/action";
+import { useUser } from "@/app/providers/UserProvider";
+import { toast } from "sonner";
+
+registerPlugin(
+  FilePondPluginImageExifOrientation,
+  FilePondPluginImagePreview,
+  FilePondPluginFileValidateType
+);
 
 const CourseEditor = () => {
   const router = useRouter();
   const params = useParams();
   const id = params.id;
+  const user = useUser();
 
   const {
-    addSection,
-    isChapterModalOpen,
-    openChapterModal,
-    openSectionModal,
-    closeSectionModal,
-    setSections
-  } = useStore();
+    data: course,
+    isLoading: courseLoading,
+    isError: courseError,
+  } = useCourseDetail(id);
 
-  const isLoading = false;
-  const course = [];
+  const { data: categories, isLoading, isError } = useCategories();
 
-  const sections = useStore((state) => state.courseEditor.sections);
+  const [files, setFiles] = useState(
+    course?.course_image
+      ? [
+          {
+            source: process.env.NEXT_PUBLIC_IMAGE_URL + course.course_image,
+            options: {
+              type: "local",
+            },
+          },
+        ]
+      : []
+  );
 
-  console.log('CourseEditor rendering with sections:', sections);
+  const setIsCreating = useAppStore((state) => state.setIsCreating);
+  const setIsRedirecting = useAppStore((state) => state.setIsRedirecting);
 
-  
-  // Initialize form with React Hook Form
-  const form = useForm({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      courseTitle: "",
-      courseDescription: "",
-      courseCategory: "",
-      coursePrice: "0",
-      courseStatus: false,
-    },
+  const [selectedCategoryLabel, setSelectedCategoryLabel] =
+    useState("Select a category");
+
+  const lessons = useLessonStore((state) => state.courseEditor.lessons);
+
+  const [formData, setFormData] = useState({
+    courseTitle: "",
+    courseDescription: "",
+    courseCategory: 0,
+    courseImage: "",
+    courseStatus: 0,
   });
 
-  const updateCourse = () => {};
+  useEffect(() => {
+    if (course?.course_image) {
+      const fullImageUrl = `${process.env.NEXT_PUBLIC_IMAGE_URL}image_serve.php?image=${course.course_image}`;
 
-  const getUploadVideoUrl = () => {};
+      fetch(fullImageUrl, {
+        mode: "cors",
+        headers: {
+          Origin: "http://localhost:3000",
+        },
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Image fetch failed");
+          }
+          return response.blob();
+        })
+        .then((blob) => {
+          setFiles([
+            {
+              source: fullImageUrl,
+              options: {
+                type: "local",
+              },
+            },
+          ]);
+        })
+        .catch((error) => {
+          console.error("Image loading error:", error);
+        });
+    }
+  }, [course?.course_image]);
 
-  const dispatch = () => {};
-
-  // Update form values when course data is available
-
-  // useEffect(() => {
-  //   if (course) {
-  //     form.reset({
-  //       courseTitle: course.title || "",
-  //       courseDescription: course.description || "",
-  //       courseCategory: course.category || "",
-  //       coursePrice: centsToDollars(course.price) || "0",
-  //       courseStatus: course.status === "Published",
-  //     });
-  //     setSections(course.sections || []);
-  //   }
-  // }, [course, form.reset]);
-
-  const onSubmit = async (data) => {
-    try {
-      const updatedSections = await uploadAllVideos(
-        sections,
-        id,
-        getUploadVideoUrl
+  useEffect(() => {
+    if (course && categories && categories.length > 0) {
+      const matchingCategory = categories.find(
+        (category) => category.category_id === course.category_id
       );
 
-      const formData = createCourseFormData(data, updatedSections);
+      setFormData((prev) => ({
+        ...prev,
+        courseTitle: course.title,
+        courseDescription: course.description,
+        courseCategory: course.category_id,
+      }));
 
-      await updateCourse({
-        courseId: id,
-        formData,
-      }).unwrap();
+      if (matchingCategory) {
+        setSelectedCategoryLabel(matchingCategory.category_name);
+      }
+    }
+  }, [course, categories]);
+
+  useEffect(() => {
+    setIsCreating(false);
+    setIsRedirecting(false);
+  }, []);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const {
+    openTopicModal,
+    isTopicModalOpen,
+    openLessonModal,
+    closeLessonModal,
+    setLessons,
+  } = useLessonStore();
+
+  const onUpdate = async (e) => {
+    e.preventDefault();
+    try {
+      const courseImage = formData.courseImage?.file || null;
+
+      const { success, data, message } = await updateCourse(
+        id,
+        user.user.user_id,
+        formData.courseTitle,
+        formData.courseDescription,
+        formData.courseCategory,
+        formData.courseStatus,
+        courseImage
+      );
+
+      if (!success) {
+        toast.error(message || "Failed to update course");
+        return;
+      }
     } catch (error) {
-      console.error("Failed to update course:", error);
+      console.error("Submission error:", error);
+      toast.error("An error occurred while updating the course");
     }
   };
+
+  console.log(formData.courseCategory);
+
+  if (isError) return <p>Something went wrong</p>;
+
+  if (isLoading) return <Loading />;
 
   return (
     <div>
       <div className="flex items-center gap-5 mb-5">
         <button
           className="flex items-center border border-customgreys-dirtyGrey rounded-lg p-2 gap-2 cursor-pointer hover:bg-customgreys-dirtyGrey hover:text-white-100 text-customgreys-dirtyGrey"
-          onClick={() => router.push("/teacher/courses", { scroll: false })}
+          onClick={() => router.push("/speaker/courses", { scroll: false })}
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Courses</span>
         </button>
       </div>
 
-      <FormProvider {...form}>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
-            <Header
-              title="Course Setup"
-              subtitle="Complete all fields and save your course"
-              rightElement={
-                <div className="flex items-center space-x-4">
-                  <CustomFormField
-                    name="courseStatus"
-                    label="Course Status"
-                    type="switch"
-                    className="flex items-center space-x-2"
-                    inputClassName=" data-[state=checked]:bg-green-500"
-                    onChange={() => alert("Saving as Draft")}
-                  />
-                  <Button
-                    type="submit"
-                    className="bg-primary-700 hover:bg-primary-600"
-                  >
-                    {form.watch("courseStatus")
-                      ? "Update Published Course"
-                      : "Save Material"}
-                  </Button>
-                </div>
-              }
-            />
+      <form
+        onSubmit={(e) => {
+          onUpdate(e);
+        }}
+      >
+        <Header
+          title="Course Setup"
+          subtitle="Complete all fields and save your course"
+          rightElement={
+            <div className="flex items-center space-x-4">
+              <CustomFormField
+                name="courseStatus"
+                label="Course Status"
+                type="switch"
+                className="flex items-center space-x-2"
+                inputClassName=" data-[state=checked]:bg-green-500"
+                onChange={() =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    courseStatus: prev.courseStatus === 0 ? 1 : 0,
+                  }))
+                }
+              />
+              <Button
+                type="submit"
+                className="bg-primary-700 hover:bg-primary-600"
+              >
+                {course ? "Save Changes" : "Create Course"}
+              </Button>
+            </div>
+          }
+        />
 
-            <div className="flex justify-between md:flex-row flex-col gap-10 mt-5 font-dm-sans">
-              <div className="basis-1/2">
-                <div className="space-y-4">
-                  <CustomFormField
-                    name="courseTitle"
-                    label="Course Title"
-                    type="text"
-                    placeholder="Write course title here"
-                    className="border-none"
-                  />
-
-                  <CustomFormField
-                    name="courseDescription"
-                    label="Course Description"
-                    type="textarea"
-                    placeholder="Write course description here"
-                  />
-
-                  <CustomFormField
-                    name="courseCategory"
-                    label="Course Category"
-                    type="select"
-                    placeholder="Select category here"
-                    options={[
-                      { value: "technology", label: "Technology" },
-                      { value: "science", label: "Science" },
-                      { value: "mathematics", label: "Mathematics" },
-                      {
-                        value: "Artificial Intelligence",
-                        label: "Artificial Intelligence",
-                      },
-                    ]}
-                  />
-
-                  {/* <CustomFormField
-                    name="coursePrice"
-                    label="Course Price"
-                    type="number"
-                    placeholder="0"
-                  /> */}
-                </div>
+        <div className="flex justify-between md:flex-row flex-col gap-10 mt-5 font-dm-sans">
+          <div className="basis-1/2">
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <Label
+                  htmlFor="courseTitle"
+                  className={`text-customgreys-dirtyGrey text-sm `}
+                >
+                  Course Title
+                </Label>
               </div>
 
-              <div className="bg-customgreys-darkGrey mt-4 md:mt-0 p-4 rounded-lg basis-1/2">
-                <div className="flex justify-between items-center mb-2">
-                  <h2 className="text-2xl font-semibold text-secondary-foreground">
-                    Sections
-                  </h2>
+              <Input
+                placeholder="Write course title here"
+                name="courseTitle"
+                className={`border-none text-white bg-customgreys-primarybg p-4 h-18`}
+                value={formData.courseTitle}
+                onChange={handleInputChange}
+              />
 
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openSectionModal({ sectionIndex: 0 })}
-                    className="border-none text-primary-700 group"
-                  >
-                    <Plus className="mr-1 h-4 w-4 text-primary-700 group-hover:white-100" />
-                    <span className="text-primary-700 group-hover:white-100">
-                      Add Section
-                    </span>
-                  </Button>
-                </div>
+              <div className="flex justify-between items-center">
+                <Label
+                  htmlFor="courseDescription"
+                  className={`text-customgreys-dirtyGrey text-sm `}
+                >
+                  Course Description
+                </Label>
+              </div>
 
-                {isLoading ? (
-                  <p>Loading course content...</p>
-                ) : sections?.length > 0 ? (
-                  <DroppableComponent />
-                ) : (
-                  <p>No sections available</p>
-                )}
+              <Textarea
+                name="courseDescription"
+                label="Course Description"
+                type="textarea"
+                placeholder="Write course description here"
+                rows={3}
+                className={`border-none bg-customgreys-darkGrey p-4`}
+                value={formData.courseDescription}
+                onChange={handleInputChange}
+              />
+
+              <div className="flex justify-between items-center">
+                <Label
+                  htmlFor="courseCategory"
+                  className={`text-customgreys-dirtyGrey text-sm `}
+                >
+                  Course Category
+                </Label>
+              </div>
+
+              {categories && categories.length > 0 ? (
+                <Select
+                  value={formData.courseCategory?.toString() || 99}
+                  onValueChange={(value) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      courseCategory: value ? parseInt(value) : null,
+                    }));
+
+                    const selectedCategory = categories.find(
+                      (category) => category.category_id.toString() === value
+                    );
+
+                    if (selectedCategory) {
+                      setSelectedCategoryLabel(selectedCategory.category_name);
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-full h-10 border-none bg-customgreys-primarybg p-4">
+                    <SelectValue placeholder={selectedCategoryLabel} />
+                  </SelectTrigger>
+                  <SelectContent className="w-full bg-customgreys-primarybg border-customgreys-dirtyGrey shadow">
+                    {categories.map((category) => (
+                      <SelectItem
+                        key={category.category_id}
+                        value={category.category_id.toString()}
+                        className="cursor-pointer hover:!bg-gray-100 hover:!text-customgreys-darkGrey"
+                      >
+                        {category.category_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <span className="bg-red-100 text-red-800 text-md font-medium me-2 mt-5 px-2.5 py-0.5 rounded dark:bg-red-900 dark:text-red-300">
+                  No Categories found
+                </span>
+              )}
+              <div className="flex justify-between items-center">
+                <Label
+                  htmlFor="courseImage"
+                  className={`text-customgreys-dirtyGrey text-sm `}
+                >
+                  Course Image
+                </Label>
+              </div>
+
+              <FilePond
+                files={files}
+                onupdatefiles={(fileItems) => {
+                  setFiles(fileItems);
+                  const file = fileItems[0]?.file;
+                  const fileName = fileItems[0]?.filename;
+                  if (file) {
+                    setFormData((prev) => ({
+                      ...prev,
+                      courseImage: {
+                        file: file,
+                        fileName: fileName,
+                      },
+                    }));
+                  }
+                }}
+                server={{
+                  load: (source, load, error, progress, abort, headers) => {
+                    fetch(source, {
+                      mode: "cors",
+                      headers: {
+                        Origin: "http://localhost:3000",
+                      },
+                    })
+                      .then((response) => {
+                        const imageFileName = source.includes("image_serve.php")
+                          ? new URLSearchParams(new URL(source).search).get(
+                              "image"
+                            )
+                          : source.split("/").pop();
+
+                        return response.blob().then((blob) => {
+                          blob.name = imageFileName;
+                          return blob;
+                        });
+                      })
+                      .then(load)
+                      .catch(error);
+                  },
+                }}
+                instantUpload={false}
+                name="courseImage"
+                allowMultiple={false}
+                acceptedFileTypes={ACCEPTED_IMAGE_TYPES}
+                labelFileTypeNotAllowed="Please upload an image file"
+                fileValidateTypeLabelExpectedTypes="Accepts: JPG, JPEG, PNG, GIF, WEBP"
+                dropValidation={true}
+                labelIdle={`Drag & Drop your image or <span class="filepond--label-action">Browse</span>`}
+                imagePreviewHeight={170}
+                credits={false}
+                stylePanelAspectRatio="16:9"
+                dropOnPage
+                fileSizeBase={2500}
+              />
+            </div>
+          </div>
+          <div className="bg-customgreys-darkGrey mt-4 md:mt-0 p-4 rounded-lg basis-1/2">
+            <div className="flex justify-between items-center mb-2">
+              <h2 className="text-2xl font-semibold text-white">Lessons</h2>
+              <div className="flex items-center space-x-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => openLessonModal({ sectionIndex: null })}
+                  className="border-none text-primary-700 group"
+                >
+                  <Plus className="mr-1 h-4 w-4 text-primary-700 group-hover:white-100" />
+                  <span className="text-primary-700 group-hover:white-100">
+                    Add Lesson
+                  </span>
+                </Button>
+                <Separator
+                  orientation="vertical"
+                  className="h-6 w-[1px] bg-gray-300"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => toast("Feature coming soon")}
+                  className="border-none text-primary-700 group"
+                >
+                  <Plus className="mr-1 h-4 w-4 text-primary-700 group-hover:white-100" />
+                  <span className="text-primary-700 group-hover:white-100">
+                    Add Test
+                  </span>
+                </Button>
               </div>
             </div>
-          </form>
-        </Form>
-      </FormProvider>
 
-      {/* <ChapterModal /> */}
-      <SectionModal />
+            {isLoading ? (
+              <p>Loading course content...</p>
+            ) : lessons?.length > 0 ? (
+              <DroppableComponent />
+            ) : (
+              <p>No lessons available</p>
+            )}
+          </div>
+        </div>
+      </form>
+
+      <TopicModal />
+      <LessonModal />
     </div>
   );
 };
