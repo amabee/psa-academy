@@ -28,7 +28,7 @@ const TeacherCourseCard = ({
     <Card className="course-card-teacher group">
       <CardHeader className="course-card-teacher__header">
         {/* <Image
-          src={`${process.env.NEXT_PUBLIC_IMAGE_URL}${course.course_image}`}
+          src={`${process.env.NEXT_PUBLIC_ROOT_URL}${course.course_image}`}
           alt={course.title}
           width={370}
           height={150}
@@ -39,7 +39,7 @@ const TeacherCourseCard = ({
 
         <img
           className="course-card-teacher__image"
-          src={`${process.env.NEXT_PUBLIC_IMAGE_URL}image_serve.php?image=${course.course_image}`}
+          src={`${process.env.NEXT_PUBLIC_ROOT_URL}image_serve.php?image=${course.course_image}`}
           loading="priority"
           alt={course.title}
           width={370}

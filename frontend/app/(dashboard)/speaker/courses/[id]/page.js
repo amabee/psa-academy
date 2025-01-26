@@ -64,7 +64,7 @@ const CourseEditor = () => {
     course?.course_image
       ? [
           {
-            source: process.env.NEXT_PUBLIC_IMAGE_URL + course.course_image,
+            source: process.env.NEXT_PUBLIC_ROOT_URL + course.course_image,
             options: {
               type: "local",
             },
@@ -91,7 +91,7 @@ const CourseEditor = () => {
 
   useEffect(() => {
     if (course?.course_image) {
-      const fullImageUrl = `${process.env.NEXT_PUBLIC_IMAGE_URL}image_serve.php?image=${course.course_image}`;
+      const fullImageUrl = `${process.env.NEXT_PUBLIC_ROOT_URL}image_serve.php?image=${course.course_image}`;
 
       fetch(fullImageUrl, {
         mode: "cors",
