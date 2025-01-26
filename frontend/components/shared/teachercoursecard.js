@@ -12,10 +12,6 @@ import { Button } from "../ui/button";
 import { Pencil, Trash2 } from "lucide-react";
 import { GoPeople } from "react-icons/go";
 
-const imageLoader = () => {
-  return `https://tenor.com/view/elsword-laby-ew-popcorn-drama-gif-18848305`;
-};
-
 const TeacherCourseCard = ({
   course,
   onEdit,
@@ -27,14 +23,23 @@ const TeacherCourseCard = ({
   return (
     <Card className="course-card-teacher group">
       <CardHeader className="course-card-teacher__header">
-        <img
+        <Image
+          className="course-card-teacher__image"
+          src={`${process.env.NEXT_PUBLIC_ROOT_URL}image_serve.php?image=${course.course_image}`}
+          loading="eager"
+          alt={course.title}
+          width={370}
+          height={150}
+          quality={75}
+        />
+        {/* <img
           className="course-card-teacher__image"
           src={`${process.env.NEXT_PUBLIC_ROOT_URL}image_serve.php?image=${course.course_image}`}
           loading="priority"
           alt={course.title}
           width={370}
           height={150}
-        />
+        /> */}
       </CardHeader>
 
       <CardContent className="course-card-teacher__content">

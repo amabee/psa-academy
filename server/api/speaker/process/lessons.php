@@ -57,6 +57,72 @@ class Categories
 
             $isDataSet = InputHelper::requiredFields(
                 $data,
+                ['lesson_id', 'title', 'description', 'sequence_number']
+            );
+
+            if ($isDataSet !== true) {
+                return json_encode([
+                    "status" => 422,
+                    "success" => false,
+                    "data" => [],
+                    "message" => "Missing Parameter. $isDataSet"
+                ]);
+            }
+
+            $lesson_id = InputHelper::sanitizeString($data['lesson_id']);
+            $title = InputHelper::sanitizeString($data['title']);
+            $course_id = InputHelper::sanitizeString($data['course_id']);
+            $description = InputHelper::sanitizeString($data['description']);
+            $resources = InputHelper::sanitizeString($data['resources']) ? InputHelper::sanitizeString($data['resources']) : "Resources not available";
+            $sequence_number = InputHelper::sanitizeInt($data['sequence_number']);
+
+            $sql = "INSERT INTO `lessons`(`lesson_id`, `course_id`, `lesson_title`, `lesson_description`, `resources`, `sequence_number`, `created_at`) 
+                    VALUES (:lesson_id, :course_id, :title, :description, :resources, :sequence_number, NOW())";
+
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bindParam(":lesson_id", $lesson_id);
+            $stmt->bindParam(":course_id", $course_id);
+            $stmt->bindParam(":title", $title);
+            $stmt->bindParam(":description", $description);
+            $stmt->bindParam(":resources", $resources);
+            $stmt->bindParam(":sequence_number", $sequence_number);
+
+            if ($stmt->execute()) {
+                http_response_code(201);
+                return json_encode([
+                    "status" => 201,
+                    "success" => true,
+                    "data" => [],
+                    "message" => "Lesson created successfully."
+                ]);
+            } else {
+                http_response_code(500);
+                return json_encode([
+                    "status" => 500,
+                    "success" => false,
+                    "data" => [],
+                    "message" => "An error occurred. Please try again."
+                ]);
+            }
+
+        } catch (PDOException $ex) {
+            http_response_code(500);
+            return json_encode([
+                "status" => 500,
+                "success" => false,
+                "data" => [],
+                "message" => $ex->getMessage()
+            ]);
+        }
+    }
+
+    public function editLesson($json)
+    {
+        try {
+            $data = json_decode($json, true);
+
+            $isDataSet = InputHelper::requiredFields(
+                $data,
                 ['lesson_id', 'title', 'description', 'resources', 'sequence_number']
             );
 
@@ -73,11 +139,17 @@ class Categories
             $title = InputHelper::sanitizeString($data['title']);
             $course_id = InputHelper::sanitizeString($data['course_id']);
             $description = InputHelper::sanitizeString($data['description']);
-            $resources = InputHelper::sanitizeString($data['resources']);
+            $resources = InputHelper::sanitizeString($data['resources']) ?? "";
             $sequence_number = InputHelper::sanitizeInt($data['sequence_number']);
 
-            $sql = "INSERT INTO `lessons`(`lesson_id`, `course_id`, `lesson_title`, `lesson_description`, `resources`, `sequence_number`, `created_at`) 
-                    VALUES (:lesson_id, :course_id, :title, :description, :resources, :sequence_number, NOW())";
+            $sql = "UPDATE `lessons` 
+                SET `course_id` = :course_id,
+                    `lesson_title` = :title,
+                    `lesson_description` = :description,
+                    `resources` = :resources,
+                    `sequence_number` = :sequence_number,
+                    `updated_at` = NOW() 
+                WHERE `lesson_id` = :lesson_id";
 
             $stmt = $this->conn->prepare($sql);
             $stmt->bindParam(":lesson_id", $lesson_id);
@@ -88,13 +160,25 @@ class Categories
             $stmt->bindParam(":sequence_number", $sequence_number);
 
             if ($stmt->execute()) {
-                return json_encode([
-                    "status" => 201,
-                    "success" => true,
-                    "data" => [],
-                    "message" => "Lesson created successfully."
-                ]);
+                if ($stmt->rowCount() > 0) {
+                    http_response_code(200);
+                    return json_encode([
+                        "status" => 200,
+                        "success" => true,
+                        "data" => [],
+                        "message" => "Lesson updated successfully."
+                    ]);
+                } else {
+                    http_response_code(404);
+                    return json_encode([
+                        "status" => 404,
+                        "success" => false,
+                        "data" => [],
+                        "message" => "Lesson not found or no changes made."
+                    ]);
+                }
             } else {
+                http_response_code(500);
                 return json_encode([
                     "status" => 500,
                     "success" => false,
@@ -102,8 +186,8 @@ class Categories
                     "message" => "An error occurred. Please try again."
                 ]);
             }
-
         } catch (PDOException $ex) {
+            http_response_code(500);
             return json_encode([
                 "status" => 500,
                 "success" => false,
@@ -112,6 +196,146 @@ class Categories
             ]);
         }
     }
+
+    public function updateLessonSequence($json)
+    {
+        try {
+            $data = json_decode($json, true);
+
+            if (!is_array($data) || empty($data)) {
+                return json_encode([
+                    "status" => 422,
+                    "success" => false,
+                    "data" => [],
+                    "message" => "Invalid data provided."
+                ]);
+            }
+
+            $this->conn->beginTransaction();
+
+            foreach ($data as $item) {
+                $isDataSet = InputHelper::requiredFields(
+                    $item,
+                    ['lesson_id', 'sequence_number']
+                );
+
+                if ($isDataSet !== true) {
+                    $this->conn->rollBack();
+                    return json_encode([
+                        "status" => 422,
+                        "success" => false,
+                        "data" => [],
+                        "message" => "Missing Parameter. $isDataSet"
+                    ]);
+                }
+
+                $lesson_id = InputHelper::sanitizeString($item['lesson_id']);
+                $sequence_number = InputHelper::sanitizeInt($item['sequence_number']);
+
+                $sql = "UPDATE `lessons` 
+                    SET `sequence_number` = :sequence_number,
+                        `updated_at` = NOW() 
+                    WHERE `lesson_id` = :lesson_id";
+
+                $stmt = $this->conn->prepare($sql);
+                $stmt->bindParam(":lesson_id", $lesson_id);
+                $stmt->bindParam(":sequence_number", $sequence_number);
+
+                if (!$stmt->execute()) {
+                    $this->conn->rollBack();
+                    return json_encode([
+                        "status" => 500,
+                        "success" => false,
+                        "data" => [],
+                        "message" => "Failed to update lesson with ID $lesson_id."
+                    ]);
+                }
+            }
+
+            $this->conn->commit();
+
+            return json_encode([
+                "status" => 200,
+                "success" => true,
+                "data" => [],
+                "message" => "Lesson sequences updated successfully."
+            ]);
+        } catch (PDOException $ex) {
+            $this->conn->rollBack();
+            return json_encode([
+                "status" => 500,
+                "success" => false,
+                "data" => [],
+                "message" => $ex->getMessage()
+            ]);
+        }
+    }
+
+
+    public function deleteLesson($json)
+    {
+        try {
+            $data = json_decode($json, true);
+
+            $isDataSet = InputHelper::requiredFields(
+                $data,
+                ['lesson_id']
+            );
+
+            if ($isDataSet !== true) {
+                return json_encode([
+                    "status" => 422,
+                    "success" => false,
+                    "data" => [],
+                    "message" => "Missing Parameter. $isDataSet"
+                ]);
+            }
+
+            $lesson_id = InputHelper::sanitizeString($data['lesson_id']);
+
+            $sql = "DELETE FROM `lessons` WHERE `lesson_id` = :lesson_id";
+
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bindParam(":lesson_id", $lesson_id);
+
+            if ($stmt->execute()) {
+                if ($stmt->rowCount() > 0) {
+                    http_response_code(200);
+                    return json_encode([
+                        "status" => 200,
+                        "success" => true,
+                        "data" => [],
+                        "message" => "Lesson deleted successfully."
+                    ]);
+                } else {
+                    http_response_code(404);
+                    return json_encode([
+                        "status" => 404,
+                        "success" => false,
+                        "data" => [],
+                        "message" => "Lesson not found or no changes made."
+                    ]);
+                }
+            } else {
+                http_response_code(500);
+                return json_encode([
+                    "status" => 500,
+                    "success" => false,
+                    "data" => [],
+                    "message" => "An error occurred. Please try again."
+                ]);
+            }
+        } catch (PDOException $ex) {
+            http_response_code(500);
+            return json_encode([
+                "status" => 500,
+                "success" => false,
+                "data" => [],
+                "message" => $ex->getMessage()
+            ]);
+        }
+    }
+
 }
 
 $categories = new Categories();
@@ -137,6 +361,23 @@ if (isset($headers['authorization']) && $headers['authorization'] === $validApiK
             $operation = isset($_POST["operation"]) ? $_POST["operation"] : null;
             $json = isset($_POST["json"]) ? $_POST["json"] : null;
             break;
+
+        case 'PUT':
+            $input = file_get_contents("php://input");
+            $data = json_decode($input, true);
+
+            $operation = isset($data["operation"]) ? $data["operation"] : null;
+            $json = isset($data["json"]) ? $data["json"] : null;
+
+            break;
+
+        case 'DELETE':
+            $input = file_get_contents("php://input");
+            $data = json_decode($input, true);
+            $operation = isset($data["operation"]) ? $data["operation"] : null;
+            $json = isset($data["json"]) ? $data["json"] : null;
+            break;
+
 
         default:
             http_response_code(405);
@@ -179,6 +420,47 @@ if (isset($headers['authorization']) && $headers['authorization'] === $validApiK
                 }
                 break;
 
+            case "updateLesson":
+                if ($requestMethod === "POST") {
+                    echo $categories->editLesson($json);
+                } else {
+                    http_response_code(405);
+                    echo json_encode([
+                        "status" => 405,
+                        "success" => false,
+                        "data" => [],
+                        "message" => "Invalid request method for login. Use POST."
+                    ]);
+                }
+                break;
+
+            case "updateLessonSequence":
+                if ($requestMethod === "POST") {
+                    echo $categories->updateLessonSequence($json);
+                } else {
+                    http_response_code(405);
+                    echo json_encode([
+                        "status" => 405,
+                        "success" => false,
+                        "data" => [],
+                        "message" => "Invalid request method for login. Use POST."
+                    ]);
+                }
+                break;
+
+            case "deleteLesson":
+                if ($requestMethod === "DELETE") {
+                    echo $categories->deleteLesson($json);
+                } else {
+                    http_response_code(405);
+                    echo json_encode([
+                        "status" => 405,
+                        "success" => false,
+                        "data" => [],
+                        "message" => "Invalid request method for login. Use DELETE."
+                    ]);
+                }
+                break;
 
             default:
                 http_response_code(400);
@@ -192,6 +474,7 @@ if (isset($headers['authorization']) && $headers['authorization'] === $validApiK
         }
     } else {
         http_response_code(422);
+        error_log("Parameters: $operation" . PHP_EOL . "JSON DATA: $json");
         echo json_encode([
             "status" => 422,
             "success" => false,

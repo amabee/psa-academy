@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Loading from "@/components/shared/loading";
+
 import { registerPlugin } from "filepond";
 import { FilePond } from "react-filepond";
 import "filepond/dist/filepond.min.css";
@@ -35,11 +36,10 @@ import FilePondPluginFileValidateType from "filepond-plugin-file-validate-type";
 import { ACCEPTED_IMAGE_TYPES } from "@/lib/utils";
 import useLessonStore from "@/store/lessonStore";
 import { Separator } from "@radix-ui/react-context-menu";
-import { set } from "date-fns";
-import { updateCourse } from "@/lib/actions/speaker/action";
+import { generateLessonID, updateCourse } from "@/lib/actions/speaker/action";
 import { useUser } from "@/app/providers/UserProvider";
 import { toast } from "sonner";
-import { Toggle } from "@/components/ui/toggle";
+
 
 registerPlugin(
   FilePondPluginImageExifOrientation,
@@ -82,6 +82,7 @@ const CourseEditor = () => {
     useState("Select a category");
 
   const [isImageChanged, setIsImageChanged] = useState(false);
+  const [isGeneratingLessonID, setIsGeneratingLessonID] = useState(false);
 
   const lessons = useLessonStore((state) => state.courseEditor.lessons);
 
@@ -200,6 +201,33 @@ const CourseEditor = () => {
     } finally {
       setIsImageChanged(false);
       setIsCreating(false);
+    }
+  };
+
+  const handleGenerateLessonID = async (e) => {
+    e.preventDefault();
+    setIsGeneratingLessonID(true);
+
+    try {
+      const { success, data, message } = await generateLessonID();
+
+      if (!success) {
+        toast.error(message || "Failed to generate lesson ID");
+        return;
+      }
+
+      useLessonStore.getState().setGeneratedLessonID(data);
+      console.log("Generated Lesson ID:", data);
+      console.log(
+        "Current Store State:",
+        useLessonStore.getState().courseEditor.generatedLessonID
+      );
+
+      openLessonModal({ lessonIndex: null });
+    } catch (error) {
+      toast.error("Failed to generate lesson ID");
+    } finally {
+      setIsGeneratingLessonID(false);
     }
   };
 
@@ -476,13 +504,29 @@ const CourseEditor = () => {
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => openLessonModal({ sectionIndex: null })}
+                  onClick={(e) => handleGenerateLessonID(e)}
                   className="border-none text-primary-700 group"
+                  disabled={isGeneratingLessonID}
                 >
-                  <Plus className="mr-1 h-4 w-4 text-primary-700 group-hover:white-100" />
-                  <span className="text-primary-700 group-hover:white-100">
-                    Add Lesson
-                  </span>
+                  {isGeneratingLessonID ? (
+                    <>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-4 h-4 border-2 border-t-transparent border-b-blue-500 border-l-green-500 border-r-red-500 rounded-full animate-spin"></div>
+
+                        <span className="text-primary-700 group-hover:text-white">
+                          Generating Lesson ID...
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {" "}
+                      <Plus className="mr-1 h-4 w-4 text-primary-700 group-hover:text-white" />{" "}
+                      <span className="text-primary-700 group-hover:text-white">
+                        Add Lesson
+                      </span>
+                    </>
+                  )}
                 </Button>
                 <Separator
                   orientation="vertical"

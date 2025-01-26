@@ -337,7 +337,14 @@ export const generateLessonID = async () => {
 
 // LESSON CUD OPERATIONS
 
-export const createLesson = async (lesson_id, course_id, description) => {
+export const createLesson = async (
+  lesson_id,
+  course_id,
+  title,
+  description,
+  resources,
+  sequence_number
+) => {
   const formData = new FormData();
   formData.append("operation", "createLesson");
   formData.append(
@@ -345,7 +352,10 @@ export const createLesson = async (lesson_id, course_id, description) => {
     JSON.stringify({
       lesson_id: lesson_id,
       course_id: course_id,
+      title: title,
       description: description,
+      resources: resources,
+      sequence_number: sequence_number,
     })
   );
   try {
@@ -358,7 +368,7 @@ export const createLesson = async (lesson_id, course_id, description) => {
     });
 
     if (res.status !== 201 || res.statusText !== "Created") {
-      return { success: false, data: [], message: "Status Error" };
+      return { success: false, data: res.data, message: "Status error" };
     }
 
     if (res.success == false) {
@@ -375,6 +385,125 @@ export const createLesson = async (lesson_id, course_id, description) => {
       error.response?.data?.message ||
       error.message ||
       "An error occurred during login";
+    return { success: false, data: [], message: errorMessage };
+  }
+};
+
+export const updateLesson = async (
+  lesson_id,
+  course_id,
+  title,
+  description,
+  resources,
+  sequence_number
+) => {
+  try {
+    const formData = new FormData();
+    formData.append("operation", "updateLesson");
+
+    const jsonData = {
+      lesson_id: lesson_id,
+      course_id: course_id,
+      title: title,
+      description: description,
+      resources: resources,
+      sequence_number: sequence_number,
+    };
+
+    formData.append("json", JSON.stringify(jsonData));
+
+    const res = await axios(`${BASE_URL}speaker/process/lessons.php`, {
+      method: "POST",
+      data: formData,
+      headers: {
+        Authorization: SECRET_KEY,
+      },
+    });
+
+    return {
+      success: true,
+      data: res.data,
+      message: "Lesson updated successfully",
+    };
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message ||
+      error.message ||
+      "An error occurred updating the lesson";
+    return {
+      success: false,
+      data: [],
+      message: errorMessage,
+    };
+  }
+};
+
+export const deleteLesson = async (lesson_id) => {
+  try {
+    const res = await axios.delete(`${BASE_URL}speaker/process/lessons.php`, {
+      headers: {
+        Authorization: SECRET_KEY,
+      },
+      data: {
+        operation: "deleteLesson",
+        json: JSON.stringify({
+          lesson_id: lesson_id,
+        }),
+      },
+    });
+
+    if (res.status !== 200) {
+      return { success: false, data: [], message: "Status Error" };
+    }
+
+    if (res.success == false) {
+      return {
+        success: false,
+        data: [],
+        message: "Something went wrong deleting lesson",
+      };
+    }
+
+    return { success: true, data: [], message: res.data.message };
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message ||
+      error.message ||
+      "An error occurred while removing the lesson";
+    return { success: false, data: [], message: errorMessage };
+  }
+};
+
+export const updateLessonSequence = async (lessonUpdates) => {
+  const formData = new FormData();
+  formData.append("operation", "updateLessonSequence");
+  formData.append("json", JSON.stringify(lessonUpdates));
+
+  try {
+    const res = await axios(`${BASE_URL}speaker/process/lessons.php`, {
+      method: "POST",
+      data: formData,
+      headers: {
+        Authorization: SECRET_KEY,
+      },
+    });
+
+    if (res.status !== 200) {
+      return { success: false, data: [], message: "Status Error" };
+    }
+
+    if (res.data.success === false) {
+      return {
+        success: false,
+        data: [],
+        message:
+          res.data.message || "Something went wrong updating lesson sequence",
+      };
+    }
+
+    return { success: true, data: res.data.data, message: res.data.message };
+  } catch (error) {
+    const errorMessage = error.response?.data?.message || error.message;
     return { success: false, data: [], message: errorMessage };
   }
 };

@@ -18,7 +18,7 @@ import {
 } from "@/lib/actions/speaker/action";
 import LoadingOverlay from "@/components/shared/loadingoverlay";
 import { useQueryClient } from "@tanstack/react-query";
-
+import { set } from "date-fns";
 
 const Courses = () => {
   const router = useRouter();
@@ -122,6 +122,7 @@ const Courses = () => {
   }, [courses, searchTerm, selectedCategory]);
 
   const handleEdit = (course) => {
+    setIsRedirecting(true);
     router.push(`/speaker/courses/${course.course_id}`, {
       scroll: false,
     });

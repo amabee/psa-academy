@@ -2,16 +2,33 @@
 
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { Button } from "@/components/ui/button";
-import { Trash2, Edit, Plus, GripVertical } from "lucide-react";
+import { Trash2, Edit, Plus, GripVertical, Loader2 } from "lucide-react";
 import { useEffect } from "react";
 import useLessonStore from "@/store/lessonStore";
+import { updateLessonSequence } from "@/lib/actions/speaker/action";
+import { toast } from "sonner";
 
 const LessonHeader = ({ lesson, lessonIndex, dragHandleProps }) => {
   const openLessonModal = useLessonStore((state) => state.openLessonModal);
-  const deleteLesson = useLessonStore((state) => state.deleteLesson);
+  const openDeletionModal = useLessonStore((state) => state.openDeletionModal);
+
+  const isDeleting = useLessonStore((state) => state.isDeleting);
 
   return (
-    <div className="droppable-section__header" {...dragHandleProps}>
+    <div
+      className={`droppable-section__header relative ${
+        isDeleting ? "opacity-50 pointer-events-none" : ""
+      }`}
+      {...dragHandleProps}
+    >
+      {isDeleting && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/20">
+          <div className="bg-white px-4 py-2 rounded-md shadow-md flex items-center">
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <span className="text-sm text-gray-700">Deleting...</span>
+          </div>
+        </div>
+      )}
       <div className="droppable-section__title-wrapper">
         <div className="droppable-section__title-container">
           <div className="droppable-section__title">
@@ -24,6 +41,7 @@ const LessonHeader = ({ lesson, lessonIndex, dragHandleProps }) => {
               variant="ghost"
               size="sm"
               className="p-0"
+              disabled={isDeleting}
               onClick={() => openLessonModal({ lessonIndex })}
             >
               <Edit className="h-5 w-5" />
@@ -33,14 +51,17 @@ const LessonHeader = ({ lesson, lessonIndex, dragHandleProps }) => {
               variant="ghost"
               size="sm"
               className="p-0"
-              onClick={() => deleteLesson(lessonIndex)}
+              onClick={() => openDeletionModal({ lessonIndex })}
+              disabled={isDeleting}
             >
               <Trash2 className="h-5 w-5" />
             </Button>
           </div>
         </div>
         {lesson.lesson_description && (
-          <p className="droppable-section__description">{lesson.lesson_description}</p>
+          <p className="droppable-section__description">
+            {lesson.lesson_description}
+          </p>
         )}
       </div>
     </div>
@@ -73,10 +94,6 @@ const TopicItem = ({ topic, topicIndex, lessonIndex, draggableProvider }) => {
           size="sm"
           className="droppable-chapter__button"
           onClick={() => {
-            // console.log("Opening topic modal for edit:", {
-            //   lessonIndex,
-            //   topicIndex,
-            // });
             openTopicModal({ lessonIndex, topicIndex });
           }}
         >
@@ -101,12 +118,11 @@ export default function DroppableComponent() {
   const setLessons = useLessonStore((state) => state.setLessons);
   const openTopicModal = useLessonStore((state) => state.openTopicModal);
 
-  // Debug lessons changes
   useEffect(() => {
-    // console.log("Lessons updated:", lessons);
+    console.log("Lessons updated:", lessons);
   }, [lessons]);
 
-  const handleLessonDragEnd = (result) => {
+  const handleLessonDragEnd = async (result) => {
     if (!result.destination) return;
 
     const startIndex = result.source.index;
@@ -115,7 +131,29 @@ export default function DroppableComponent() {
     const updatedLessons = [...lessons];
     const [reorderedLesson] = updatedLessons.splice(startIndex, 1);
     updatedLessons.splice(endIndex, 0, reorderedLesson);
+
     setLessons(updatedLessons);
+
+    const lessonUpdates = updatedLessons.map((lesson, index) => ({
+      lesson_id: lesson.lesson_id,
+      sequence_number: index + 1,
+    }));
+
+    try {
+      const { success, data, message } = await updateLessonSequence(
+        lessonUpdates
+      );
+
+      if (!success) {
+        setLessons(lessons);
+        toast.error(message || "Failed to update lesson sequence");
+      } else {
+        toast.success("Lesson sequence updated successfully!");
+      }
+    } catch (error) {
+      setLessons(lessons);
+      toast.error(error.message || "An error occurred while updating sequence");
+    }
   };
 
   const handleTopicDragEnd = (result, lessonIndex) => {
@@ -132,7 +170,6 @@ export default function DroppableComponent() {
     setLessons(updatedLessons);
   };
 
-  // Make sure lessons exists and has topics array
   const ensureTopicsArray = (lessons) => {
     return lessons.map((lesson) => ({
       ...lesson,
@@ -142,7 +179,6 @@ export default function DroppableComponent() {
 
   if (!lessons) return null;
 
-  // Ensure all lessons have a topics array
   const lessonsWithTopics = ensureTopicsArray(lessons);
 
   return (
