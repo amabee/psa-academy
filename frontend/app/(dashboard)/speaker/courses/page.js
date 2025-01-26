@@ -11,12 +11,19 @@ import { useUser } from "@/app/providers/UserProvider";
 import Swal from "sweetalert2";
 import { useCourses } from "@/queries/speaker/courses";
 import { useAppStore } from "@/store/stateStore";
-import { createCourse, generateCourseID } from "@/lib/actions/speaker/action";
+import {
+  createCourse,
+  deleteCourse,
+  generateCourseID,
+} from "@/lib/actions/speaker/action";
 import LoadingOverlay from "@/components/shared/loadingoverlay";
+import { useQueryClient } from "@tanstack/react-query";
+
 
 const Courses = () => {
   const router = useRouter();
   const user = useUser();
+  const queryClient = useQueryClient();
 
   const { data: courses, isLoading, isError } = useCourses();
 
@@ -26,6 +33,10 @@ const Courses = () => {
   const setIsCreating = useAppStore((state) => state.setIsCreating);
   const isRedirecting = useAppStore((state) => state.isRedirecting);
   const setIsRedirecting = useAppStore((state) => state.setIsRedirecting);
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleGenerateCourseID = async () => {
     setIsGenerating(true);
@@ -97,13 +108,6 @@ const Courses = () => {
     }
   };
 
-  const deleteCourse = () => {
-    throw new Error("Not Implemented");
-  };
-
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
-
   const filteredCourses = useMemo(() => {
     if (!courses) return [];
 
@@ -124,10 +128,58 @@ const Courses = () => {
   };
 
   const handleDelete = async (course) => {
-    // if (window.confirm("Are you sure you want to delete this course?")) {
-    //   await deleteCourse(course.courseId).unwrap();
-    // }
+    Swal.fire({
+      title:
+        '<div style="font-size:18px;">Are you sure you want to delete this course?</div>',
+      text: "You won't be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, delete it!",
+    }).then(async (result) => {
+      try {
+        setIsDeleting(true);
+        if (result.isConfirmed) {
+          const { success, data, message } = await deleteCourse(
+            course.course_id
+          );
+          if (!success) {
+            Swal.fire({
+              title: "Error",
+              text: message || "Failed to delete course",
+              icon: "error",
+              confirmButtonText: "Ok",
+            });
+            return;
+          }
+          await queryClient.invalidateQueries(["courses"]);
+          Swal.fire("Deleted!", "Your course has been deleted.", "success");
+        }
+      } catch (error) {
+        Swal.fire({
+          title: "Error",
+          text: error.message || "Failed to delete course",
+          icon: "error",
+          confirmButtonText: "Ok",
+        });
+      } finally {
+        setIsDeleting(false);
+      }
+    });
   };
+
+  if (isDeleting) {
+    Swal.fire({
+      title: "Deleting Course...",
+      text: "Please wait while we delete the course",
+      imageUrl: "/images/swal_loader.gif",
+      imageWidth: 150,
+      imageHeight: 150,
+      showConfirmButton: false,
+      allowOutsideClick: false,
+    });
+  }
 
   if (isLoading) return <Loading />;
   if (isError) return <div>Error loading courses.</div>;

@@ -39,6 +39,7 @@ import { set } from "date-fns";
 import { updateCourse } from "@/lib/actions/speaker/action";
 import { useUser } from "@/app/providers/UserProvider";
 import { toast } from "sonner";
+import { Toggle } from "@/components/ui/toggle";
 
 registerPlugin(
   FilePondPluginImageExifOrientation,
@@ -74,10 +75,13 @@ const CourseEditor = () => {
   );
 
   const setIsCreating = useAppStore((state) => state.setIsCreating);
+  const isCreating = useAppStore((state) => state.isCreating);
   const setIsRedirecting = useAppStore((state) => state.setIsRedirecting);
 
   const [selectedCategoryLabel, setSelectedCategoryLabel] =
     useState("Select a category");
+
+  const [isImageChanged, setIsImageChanged] = useState(false);
 
   const lessons = useLessonStore((state) => state.courseEditor.lessons);
 
@@ -114,6 +118,8 @@ const CourseEditor = () => {
               },
             },
           ]);
+
+          setIsImageChanged(false);
         })
         .catch((error) => {
           console.error("Image loading error:", error);
@@ -131,8 +137,13 @@ const CourseEditor = () => {
         ...prev,
         courseTitle: course.title,
         courseDescription: course.description,
-        courseCategory: course.category_id,
+        courseCategory: course?.category_id,
+        courseStatus: course?.course_status,
       }));
+
+      if (course.lessons) {
+        setLessons(course.lessons);
+      }
 
       if (matchingCategory) {
         setSelectedCategoryLabel(matchingCategory.category_name);
@@ -164,7 +175,9 @@ const CourseEditor = () => {
   const onUpdate = async (e) => {
     e.preventDefault();
     try {
-      const courseImage = formData.courseImage?.file || null;
+      setIsCreating(true);
+
+      const courseImage = isImageChanged ? formData.courseImage?.file : null;
 
       const { success, data, message } = await updateCourse(
         id,
@@ -180,16 +193,17 @@ const CourseEditor = () => {
         toast.error(message || "Failed to update course");
         return;
       }
+
+      toast.success("Course updated successfully");
     } catch (error) {
-      console.error("Submission error:", error);
       toast.error("An error occurred while updating the course");
+    } finally {
+      setIsImageChanged(false);
+      setIsCreating(false);
     }
   };
 
-  console.log(formData.courseCategory);
-
   if (isError) return <p>Something went wrong</p>;
-
   if (isLoading) return <Loading />;
 
   return (
@@ -214,24 +228,74 @@ const CourseEditor = () => {
           subtitle="Complete all fields and save your course"
           rightElement={
             <div className="flex items-center space-x-4">
-              <CustomFormField
-                name="courseStatus"
-                label="Course Status"
-                type="switch"
-                className="flex items-center space-x-2"
-                inputClassName=" data-[state=checked]:bg-green-500"
-                onChange={() =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    courseStatus: prev.courseStatus === 0 ? 1 : 0,
-                  }))
-                }
-              />
+              {/* CUSTOM SWITCH */}
+              <div className="flex items-center space-x-4">
+                <label className="text-sm text-gray-300">
+                  {formData.courseStatus === "publish" ? "Published" : "Draft"}
+                </label>
+                <div
+                  className={`
+                            w-14 h-8 rounded-full cursor-pointer relative transition-colors duration-300
+                            ${
+                              formData.courseStatus === "publish"
+                                ? "bg-green-500"
+                                : "bg-gray-300"
+                            }
+                          `}
+                  onClick={() =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      courseStatus:
+                        prev.courseStatus === "draft" ? "publish" : "draft",
+                    }))
+                  }
+                >
+                  <div
+                    className={`
+                    absolute top-1 w-6 h-6 bg-white-100 rounded-full shadow-md transition-transform duration-300
+                    ${
+                      formData.courseStatus === "publish"
+                        ? "translate-x-7"
+                        : "translate-x-1"
+                    }
+                  `}
+                  />
+                </div>
+              </div>
               <Button
                 type="submit"
-                className="bg-primary-700 hover:bg-primary-600"
+                className="bg-primary-700 hover:bg-primary-600 flex items-center justify-center"
+                disabled={isCreating}
               >
-                {course ? "Save Changes" : "Create Course"}
+                {isCreating ? (
+                  <>
+                    <svg
+                      className="animate-spin h-5 w-5 mr-2 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C6.48 0 0 6.48 0 12h4zm2 5.291V16a8 8 0 018 8v-4c-2.21 0-4-1.79-4-4h-4z"
+                      ></path>
+                    </svg>
+                    Saving Changes...
+                  </>
+                ) : course ? (
+                  "Save Changes"
+                ) : (
+                  "Create Course"
+                )}
               </Button>
             </div>
           }
@@ -292,7 +356,9 @@ const CourseEditor = () => {
                   onValueChange={(value) => {
                     setFormData((prev) => ({
                       ...prev,
-                      courseCategory: value ? parseInt(value) : null,
+                      courseCategory: value
+                        ? parseInt(value)
+                        : course.category_id,
                     }));
 
                     const selectedCategory = categories.find(
@@ -301,6 +367,16 @@ const CourseEditor = () => {
 
                     if (selectedCategory) {
                       setSelectedCategoryLabel(selectedCategory.category_name);
+                    } else {
+                      const originalCategory = categories.find(
+                        (category) =>
+                          category.category_id === course.category_id
+                      );
+                      setSelectedCategoryLabel(
+                        originalCategory
+                          ? originalCategory.category_name
+                          : "Select a category"
+                      );
                     }
                   }}
                 >
@@ -340,6 +416,7 @@ const CourseEditor = () => {
                   const file = fileItems[0]?.file;
                   const fileName = fileItems[0]?.filename;
                   if (file) {
+                    const isActuallyChanged = course?.course_image !== fileName;
                     setFormData((prev) => ({
                       ...prev,
                       courseImage: {
@@ -347,6 +424,8 @@ const CourseEditor = () => {
                         fileName: fileName,
                       },
                     }));
+
+                    setIsImageChanged(isActuallyChanged);
                   }
                 }}
                 server={{

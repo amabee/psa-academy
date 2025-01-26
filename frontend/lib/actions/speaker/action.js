@@ -4,7 +4,7 @@ import axios from "axios";
 const SECRET_KEY = process.env.SECRET_KEY;
 const BASE_URL = process.env.NEXT_PUBLIC_ROOT_URL;
 
-// GET DATAS
+// GET COURSE DATAS
 
 export const getCourses = async () => {
   try {
@@ -136,7 +136,7 @@ export const getCategories = async () => {
   }
 };
 
-// CUD OPERATIONS
+// COURSE CUD OPERATIONS
 
 export const createCourse = async (course_id, user_id) => {
   const formData = new FormData();
@@ -186,27 +186,32 @@ export const updateCourse = async (
   course_image
 ) => {
   try {
-    const res = await axios.put(
-      `${BASE_URL}speaker/process/courses.php`,
-      {
-        operation: "updateCourse",
-        json: JSON.stringify({
-          course_id: course_id,
-          user_id: user_id,
-          category_id: category_id,
-          title: title,
-          description: description,
-          course_status: course_status,
-          course_image: course_image,
-        }),
+    const formData = new FormData();
+    formData.append("operation", "updateCourse");
+
+    const jsonData = {
+      course_id: course_id,
+      user_id: user_id,
+      category_id: category_id,
+      title: title,
+      description: description,
+      course_status: course_status,
+    };
+
+    formData.append("json", JSON.stringify(jsonData));
+
+    if (course_image !== null) {
+      formData.append("course_image", course_image);
+    }
+
+    const res = await axios(`${BASE_URL}speaker/process/courses.php`, {
+      method: "POST",
+      data: formData,
+      headers: {
+        Authorization: SECRET_KEY,
+        "Content-Type": "multipart/form-data",
       },
-      {
-        headers: {
-          Authorization: SECRET_KEY,
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    });
 
     return {
       success: true,
@@ -227,12 +232,125 @@ export const updateCourse = async (
 };
 
 export const deleteCourse = async (course_id) => {
-  const formData = new FormData();
-  formData.append("operation", "deleteCourse");
-  formData.append("json", JSON.stringify({ course_id: course_id }));
   try {
-    const res = await axios(`${BASE_URL}speaker/process/courses.php`, {
-      method: "DELETE",
+    const res = await axios.delete(`${BASE_URL}speaker/process/courses.php`, {
+      headers: {
+        Authorization: SECRET_KEY,
+      },
+      data: {
+        operation: "removeCourse",
+        json: JSON.stringify({
+          course_id: course_id,
+        }),
+      },
+    });
+
+    if (res.status !== 200) {
+      return { success: false, data: [], message: "Status Error" };
+    }
+
+    if (res.success == false) {
+      return {
+        success: false,
+        data: [],
+        message: "Something went wrong deleting course",
+      };
+    }
+
+    return { success: true, data: res.data.message, message: "" };
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message ||
+      error.message ||
+      "An error occurred while removing the course";
+    return { success: false, data: [], message: errorMessage };
+  }
+};
+
+// GET LESSONS DATAS
+
+export const getLessonDetails = async (lesson_id) => {
+  try {
+    const res = await axios(`${BASE_URL}speaker/process/lessons.php`, {
+      method: "GET",
+      params: {
+        operation: "getLessonDetail",
+        json: JSON.stringify({
+          lesson_id: lesson_id,
+        }),
+      },
+
+      headers: {
+        Authorization: SECRET_KEY,
+      },
+    });
+
+    if (res.status !== 200) {
+      return { success: false, data: [], message: "Stats error" };
+    }
+
+    return { success: true, data: res.data.data, message: "" };
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message ||
+      error.message ||
+      "An error occurred while fetching lesson detail";
+    return { success: false, data: [], message: errorMessage };
+  }
+};
+
+export const generateLessonID = async () => {
+  try {
+    const res = await axios(`${BASE_URL}speaker/process/lessons.php`, {
+      method: "GET",
+      params: {
+        operation: "generateLessonID",
+        json: JSON.stringify([]),
+      },
+
+      headers: {
+        Authorization: SECRET_KEY,
+      },
+    });
+
+    if (res.status !== 200) {
+      return { success: false, data: [], message: "Status error" };
+    }
+
+    if (res.success == false) {
+      return {
+        success: false,
+        data: [],
+        message: "Something went wrong generating lesson id",
+      };
+    }
+
+    return { success: true, data: res.data.message, message: "" };
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message ||
+      error.message ||
+      "An error occurred during login";
+    return { success: false, data: [], message: errorMessage };
+  }
+};
+
+// LESSON CUD OPERATIONS
+
+export const createLesson = async (lesson_id, course_id, description) => {
+  const formData = new FormData();
+  formData.append("operation", "createLesson");
+  formData.append(
+    "json",
+    JSON.stringify({
+      lesson_id: lesson_id,
+      course_id: course_id,
+      description: description,
+    })
+  );
+  try {
+    const res = await axios(`${BASE_URL}speaker/process/lessons.php`, {
+      method: "POST",
       data: formData,
       headers: {
         Authorization: SECRET_KEY,
@@ -247,7 +365,7 @@ export const deleteCourse = async (course_id) => {
       return {
         success: false,
         data: [],
-        message: "Something went wrong deleting course",
+        message: "Something went wrong creating lesson",
       };
     }
 

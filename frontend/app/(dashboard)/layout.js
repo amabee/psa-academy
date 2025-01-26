@@ -59,7 +59,7 @@ export default function DashboardLayout(props) {
             </div>
           </div>
         </div>
-        <Toaster />
+        <Toaster richColors closeButton />
       </SidebarProvider>
     </QueryClientProvider>
   );

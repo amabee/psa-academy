@@ -3,7 +3,7 @@ import CustomModal from "@/components/shared/custommodal";
 import { Button } from "@/components/ui/button";
 import useLessonStore from "@/store/lessonStore";
 import { X } from "lucide-react";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 
@@ -60,7 +60,7 @@ const LessonModal = () => {
   const onSubmit = () => {
     try {
       const lessonData = {
-        id: lesson?.id || uuidv4(),
+        id: lesson?.lesson_id,
         title: formData.title,
         description: formData.description,
         topics: lesson?.topics || [],
@@ -75,11 +75,14 @@ const LessonModal = () => {
       }
 
       onClose();
+
     } catch (error) {
       console.error("Error submitting lesson:", error);
       toast.error("Failed to save lesson");
     }
   };
+
+
 
   return (
     <CustomModal isOpen={isLessonModalOpen} onClose={onClose}>

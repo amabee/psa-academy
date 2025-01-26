@@ -16,7 +16,7 @@ const LessonHeader = ({ lesson, lessonIndex, dragHandleProps }) => {
         <div className="droppable-section__title-container">
           <div className="droppable-section__title">
             <GripVertical className="h-6 w-6 mb-1" />
-            <h3 className="text-lg font-medium">{lesson.title}</h3>
+            <h3 className="text-lg font-medium">{lesson.lesson_title}</h3>
           </div>
           <div className="droppable-chapter__actions">
             <Button
@@ -39,8 +39,8 @@ const LessonHeader = ({ lesson, lessonIndex, dragHandleProps }) => {
             </Button>
           </div>
         </div>
-        {lesson.description && (
-          <p className="droppable-section__description">{lesson.description}</p>
+        {lesson.lesson_description && (
+          <p className="droppable-section__description">{lesson.lesson_description}</p>
         )}
       </div>
     </div>
@@ -152,8 +152,8 @@ export default function DroppableComponent() {
           <div ref={provided.innerRef} {...provided.droppableProps}>
             {lessonsWithTopics.map((lesson, lessonIndex) => (
               <Draggable
-                key={lesson.id}
-                draggableId={lesson.id}
+                key={lesson.lesson_id}
+                draggableId={lesson.lesson_id}
                 index={lessonIndex}
               >
                 {(draggableProvider) => (
