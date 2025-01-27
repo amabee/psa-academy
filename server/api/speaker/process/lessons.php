@@ -11,7 +11,7 @@ require('../../../configs/conn.php');
 include('../../../middleware/helpers.php');
 
 
-class Categories
+class Lessons
 {
     private $conn;
     private $uuid;
@@ -53,6 +53,7 @@ class Categories
     public function createLesson($json)
     {
         try {
+            $this->conn->beginTransaction();
             $data = json_decode($json, true);
 
             $isDataSet = InputHelper::requiredFields(
@@ -88,6 +89,7 @@ class Categories
             $stmt->bindParam(":sequence_number", $sequence_number);
 
             if ($stmt->execute()) {
+                $this->conn->commit();
                 http_response_code(201);
                 return json_encode([
                     "status" => 201,
@@ -96,6 +98,7 @@ class Categories
                     "message" => "Lesson created successfully."
                 ]);
             } else {
+                $this->conn->rollBack();
                 http_response_code(500);
                 return json_encode([
                     "status" => 500,
@@ -104,8 +107,8 @@ class Categories
                     "message" => "An error occurred. Please try again."
                 ]);
             }
-
         } catch (PDOException $ex) {
+            $this->conn->rollBack();
             http_response_code(500);
             return json_encode([
                 "status" => 500,
@@ -119,6 +122,7 @@ class Categories
     public function editLesson($json)
     {
         try {
+            $this->conn->beginTransaction();
             $data = json_decode($json, true);
 
             $isDataSet = InputHelper::requiredFields(
@@ -161,6 +165,7 @@ class Categories
 
             if ($stmt->execute()) {
                 if ($stmt->rowCount() > 0) {
+                    $this->conn->commit();
                     http_response_code(200);
                     return json_encode([
                         "status" => 200,
@@ -169,6 +174,7 @@ class Categories
                         "message" => "Lesson updated successfully."
                     ]);
                 } else {
+                    $this->conn->rollBack();
                     http_response_code(404);
                     return json_encode([
                         "status" => 404,
@@ -178,6 +184,7 @@ class Categories
                     ]);
                 }
             } else {
+                $this->conn->rollBack();
                 http_response_code(500);
                 return json_encode([
                     "status" => 500,
@@ -187,6 +194,7 @@ class Categories
                 ]);
             }
         } catch (PDOException $ex) {
+            $this->conn->rollBack();
             http_response_code(500);
             return json_encode([
                 "status" => 500,
@@ -200,6 +208,7 @@ class Categories
     public function updateLessonSequence($json)
     {
         try {
+
             $data = json_decode($json, true);
 
             if (!is_array($data) || empty($data)) {
@@ -275,6 +284,8 @@ class Categories
     public function deleteLesson($json)
     {
         try {
+
+            $this->conn->beginTransaction();
             $data = json_decode($json, true);
 
             $isDataSet = InputHelper::requiredFields(
@@ -300,6 +311,7 @@ class Categories
 
             if ($stmt->execute()) {
                 if ($stmt->rowCount() > 0) {
+                    $this->conn->commit();
                     http_response_code(200);
                     return json_encode([
                         "status" => 200,
@@ -308,6 +320,7 @@ class Categories
                         "message" => "Lesson deleted successfully."
                     ]);
                 } else {
+                    $this->conn->rollBack();
                     http_response_code(404);
                     return json_encode([
                         "status" => 404,
@@ -317,6 +330,7 @@ class Categories
                     ]);
                 }
             } else {
+                $this->conn->rollBack();
                 http_response_code(500);
                 return json_encode([
                     "status" => 500,
@@ -326,19 +340,19 @@ class Categories
                 ]);
             }
         } catch (PDOException $ex) {
+            $this->conn->rollBack();
             http_response_code(500);
             return json_encode([
                 "status" => 500,
                 "success" => false,
                 "data" => [],
-                "message" => $ex->getMessage()
+                "message" => "Exception Error"
             ]);
         }
     }
-
 }
 
-$categories = new Categories();
+$lessons = new Lessons();
 
 $validApiKey = $_ENV['API_KEY'] ?? null;
 
@@ -394,7 +408,7 @@ if (isset($headers['authorization']) && $headers['authorization'] === $validApiK
 
             case "generateLessonID":
                 if ($requestMethod === "GET") {
-                    echo $categories->generateLessonID();
+                    echo $lessons->generateLessonID();
                 } else {
                     http_response_code(405);
                     echo json_encode([
@@ -408,7 +422,7 @@ if (isset($headers['authorization']) && $headers['authorization'] === $validApiK
 
             case "createLesson":
                 if ($requestMethod === "POST") {
-                    echo $categories->createLesson($json);
+                    echo $lessons->createLesson($json);
                 } else {
                     http_response_code(405);
                     echo json_encode([
@@ -422,7 +436,7 @@ if (isset($headers['authorization']) && $headers['authorization'] === $validApiK
 
             case "updateLesson":
                 if ($requestMethod === "POST") {
-                    echo $categories->editLesson($json);
+                    echo $lessons->editLesson($json);
                 } else {
                     http_response_code(405);
                     echo json_encode([
@@ -436,7 +450,7 @@ if (isset($headers['authorization']) && $headers['authorization'] === $validApiK
 
             case "updateLessonSequence":
                 if ($requestMethod === "POST") {
-                    echo $categories->updateLessonSequence($json);
+                    echo $lessons->updateLessonSequence($json);
                 } else {
                     http_response_code(405);
                     echo json_encode([
@@ -450,7 +464,7 @@ if (isset($headers['authorization']) && $headers['authorization'] === $validApiK
 
             case "deleteLesson":
                 if ($requestMethod === "DELETE") {
-                    echo $categories->deleteLesson($json);
+                    echo $lessons->deleteLesson($json);
                 } else {
                     http_response_code(405);
                     echo json_encode([

@@ -95,7 +95,7 @@ export const generateCourseID = async () => {
     const errorMessage =
       error.response?.data?.message ||
       error.message ||
-      "An error occurred during login";
+      "An error occurred while generating course id";
     return { success: false, data: [], message: errorMessage };
   }
 };
@@ -122,7 +122,7 @@ export const getCategories = async () => {
       return {
         success: false,
         data: [],
-        message: "Something went wrong generating course id",
+        message: "Something went wrong while fetching categories",
       };
     }
 
@@ -504,6 +504,74 @@ export const updateLessonSequence = async (lessonUpdates) => {
     return { success: true, data: res.data.data, message: res.data.message };
   } catch (error) {
     const errorMessage = error.response?.data?.message || error.message;
+    return { success: false, data: [], message: errorMessage };
+  }
+};
+
+// GET TOPIC DATAS
+
+export const generateTopicID = async () => {
+  try {
+    const res = await axios(`${BASE_URL}speaker/process/topics.php`, {
+      method: "GET",
+      params: {
+        operation: "generateTopicID",
+        json: JSON.stringify([]),
+      },
+
+      headers: {
+        Authorization: SECRET_KEY,
+      },
+    });
+
+    if (res.status !== 200) {
+      return { success: false, data: [], message: "Status error" };
+    }
+
+    if (res.success == false) {
+      return {
+        success: false,
+        data: [],
+        message: "Something went wrong generating topic id",
+      };
+    }
+
+    return { success: true, data: res.data.message, message: "" };
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message ||
+      error.message ||
+      "An error occurred while generating topic id";
+    return { success: false, data: [], message: errorMessage };
+  }
+};
+
+export const getTopicDetails = async (topic_id) => {
+  try {
+    const res = await axios(`${BASE_URL}speaker/process/topics.php`, {
+      method: "GET",
+      params: {
+        operation: "getTopicDetails",
+        json: JSON.stringify({
+          topic_id: topic_id,
+        }),
+      },
+
+      headers: {
+        Authorization: SECRET_KEY,
+      },
+    });
+
+    if (res.status !== 200) {
+      return { success: false, data: [], message: "Status error" };
+    }
+
+    return { success: true, data: res.data.data, message: "" };
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message ||
+      error.message ||
+      "An error occurred while fetching topic details";
     return { success: false, data: [], message: errorMessage };
   }
 };

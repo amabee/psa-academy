@@ -12,7 +12,7 @@ const LessonHeader = ({ lesson, lessonIndex, dragHandleProps }) => {
   const openLessonModal = useLessonStore((state) => state.openLessonModal);
   const openDeletionModal = useLessonStore((state) => state.openDeletionModal);
 
-  const isDeleting = useLessonStore((state) => state.isDeleting);
+  const isDeleting = useLessonStore((state) => state.courseEditor.isDeleting);
 
   return (
     <div
@@ -85,7 +85,7 @@ const TopicItem = ({ topic, topicIndex, lessonIndex, draggableProvider }) => {
     >
       <div className="droppable-chapter__title">
         <GripVertical className="h-4 w-4 mb-[2px]" />
-        <p className="text-sm">{`${topicIndex + 1}. ${topic.title}`}</p>
+        <p className="text-sm">{`${topicIndex + 1}. ${topic.topic_title}`}</p>
       </div>
       <div className="droppable-chapter__actions">
         <Button
@@ -222,8 +222,8 @@ export default function DroppableComponent() {
                           >
                             {lesson.topics?.map((topic, topicIndex) => (
                               <Draggable
-                                key={topic.id}
-                                draggableId={topic.id}
+                                key={topic.topic_id}
+                                draggableId={topic.topic_id}
                                 index={topicIndex}
                               >
                                 {(draggableProvider) => (
@@ -247,10 +247,10 @@ export default function DroppableComponent() {
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        // console.log("Opening topic modal for new topic:", {
-                        //   lessonIndex,
-                        //   topicIndex: null,
-                        // });
+                        console.log("Opening topic modal for new topic:", {
+                          lessonIndex,
+                          topicIndex: null,
+                        });
                         openTopicModal({ lessonIndex, topicIndex: null });
                       }}
                       className="add-chapter-button group mt-4"

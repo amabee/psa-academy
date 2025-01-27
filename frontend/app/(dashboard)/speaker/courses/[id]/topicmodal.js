@@ -15,6 +15,7 @@ import FilePondPluginPdfPreview from "filepond-plugin-pdf-preview";
 import FilePondPluginMediaPreview from "filepond-plugin-media-preview";
 
 import "filepond-plugin-pdf-preview/dist/filepond-plugin-pdf-preview.min.css";
+import { getTopicDetails } from "@/lib/actions/speaker/action";
 
 // Register plugins
 registerPlugin(
@@ -23,15 +24,58 @@ registerPlugin(
   FilePondPluginMediaPreview
 );
 
+const AnimeLoading = () => {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[500px]">
+      <div className="relative">
+        <div className="absolute inset-0 w-24 h-24 rounded-full animate-[spin_3s_linear_infinite] before:content-[''] before:absolute before:inset-0 before:rounded-full before:bg-gradient-to-r before:from-pink-500 before:via-purple-500 before:to-cyan-500 before:animate-[spin_3s_linear_infinite] after:content-[''] after:absolute after:inset-1 after:rounded-full after:bg-gray-900"></div>
+
+        <div className="relative w-24 h-24">
+          <div className="absolute w-full h-full border-t-4 border-purple-500 rounded-full animate-[spin_1s_linear_infinite]"></div>
+          <div className="absolute w-full h-full border-r-4 border-cyan-500 rounded-full animate-[spin_2s_linear_infinite]"></div>
+          <div className="absolute w-full h-full border-b-4 border-pink-500 rounded-full animate-[spin_3s_linear_infinite]"></div>
+        </div>
+
+        <div className="absolute top-1/2 left-1/2 w-4 h-4 -translate-x-1/2 -translate-y-1/2">
+          <div className="w-full h-full bg-white rounded-full animate-pulse"></div>
+        </div>
+      </div>
+
+      <div className="mt-4 text-xl font-medium text-white-100">
+        <span className="inline-block animate-[pulse_2s_ease-in-out_infinite]">
+          Loading Data
+        </span>
+        <span className="inline-block animate-[pulse_2s_ease-in-out_infinite] delay-100">
+          .
+        </span>
+        <span className="inline-block animate-[pulse_2s_ease-in-out_infinite] delay-200">
+          .
+        </span>
+        <span className="inline-block animate-[pulse_2s_ease-in-out_infinite] delay-300">
+          .
+        </span>
+      </div>
+    </div>
+  );
+};
+
 const TopicModal = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [files, setFiles] = useState([]);
+  const [formData, setFormData] = useState({
+    topic_id: "",
+    lesson_id: "",
+    topic_title: "",
+    topic_description: "",
+    file: "",
+  });
+
+  const [isLoading, setIsLoading] = useState(false);
 
   const isTopicModalOpen = useLessonStore(
     (state) => state.courseEditor.isTopicModalOpen
   );
   const closeTopicModal = useLessonStore((state) => state.closeTopicModal);
-
   const selectedLessonIndex = useLessonStore(
     (state) => state.courseEditor.selectedLessonIndex
   );
@@ -42,11 +86,26 @@ const TopicModal = () => {
   const addTopic = useLessonStore((state) => state.addTopic);
   const editTopic = useLessonStore((state) => state.editTopic);
 
-  const topic =
+  const topicDetails =
     selectedLessonIndex !== null && selectedTopicIndex !== null
       ? lessons[selectedLessonIndex].topics[selectedTopicIndex]
       : undefined;
 
+  // Reset form when modal closes or when switching between add/edit modes
+  useEffect(() => {
+    if (!isTopicModalOpen) {
+      setFormData({
+        topic_id: "",
+        lesson_id: "",
+        topic_title: "",
+        topic_description: "",
+        file: "",
+      });
+      setFiles([]);
+    }
+  }, [isTopicModalOpen]);
+
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -57,10 +116,8 @@ const TopicModal = () => {
         return;
       }
 
-      const formData = new FormData(e.target);
-      const title = formData.get("title");
-      const content = formData.get("content");
-
+      const title = formData.topic_title;
+      const content = formData.topic_description;
       const uploadedFile = files.length > 0 ? files[0].file : null;
 
       if (!title || !content) {
@@ -69,30 +126,15 @@ const TopicModal = () => {
       }
 
       if (!lessons[selectedLessonIndex].topics) {
-        // console.log("Initializing topics array for lesson");
         lessons[selectedLessonIndex].topics = [];
       }
 
       const topicData = {
-        id: topic?.id || uuidv4(),
-        title,
-        content,
-
-        video:
-          uploadedFile && uploadedFile.type.startsWith("video/")
-            ? URL.createObjectURL(uploadedFile)
-            : topic?.video || null,
-        pdf:
-          uploadedFile && uploadedFile.type === "application/pdf"
-            ? URL.createObjectURL(uploadedFile)
-            : topic?.pdf || null,
+        topic_id: topicDetails?.topic_id,
+        topic_title: title,
+        topic_description: content,
+        file: uploadedFile ? uploadedFile : formData.file,
       };
-
-      // console.log("Submitting topic data:", {
-      //   lessonIndex: selectedLessonIndex,
-      //   topicIndex: selectedTopicIndex,
-      //   topicData,
-      // });
 
       if (selectedTopicIndex === null) {
         addTopic({
@@ -119,20 +161,87 @@ const TopicModal = () => {
   };
 
   useEffect(() => {
-    return () => {
-    
-      if (topic?.video && topic.video.startsWith("blob:")) {
-        URL.revokeObjectURL(topic.video);
+    const fetchTopicDetail = async () => {
+      if (!topicDetails?.topic_id) {
+        // Reset form if there are no topic details
+        setFormData({
+          topic_id: "",
+          lesson_id: "",
+          topic_title: "",
+          topic_description: "",
+          file: "",
+        });
+        setFiles([]);
+        return;
       }
-      if (topic?.pdf && topic.pdf.startsWith("blob:")) {
-        URL.revokeObjectURL(topic.pdf);
+
+      setIsLoading(true);
+      const { success, data, message } = await getTopicDetails(
+        topicDetails.topic_id
+      );
+
+      if (!success) {
+        toast.error(message);
+        setIsLoading(false);
+        return;
       }
+
+      setFormData({
+        topic_id: data.topic_id || "",
+        lesson_id: data.lesson_id || "",
+        topic_title: data.topic_title || "",
+        topic_description: data.topic_description || "",
+        file: data.file_name || "",
+      });
+
+      setIsLoading(false);
     };
-  }, [topic]);
+
+    fetchTopicDetail();
+  }, [topicDetails]);
+
+  useEffect(() => {
+    if (formData?.file) {
+      const fullFileUrl = `${process.env.NEXT_PUBLIC_ROOT_URL}file_serve.php?file=${formData.file}`;
+
+      fetch(fullFileUrl, {
+        mode: "cors",
+        headers: {
+          Origin: "http://localhost:3000",
+        },
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("File fetch failed");
+          }
+          return response.blob();
+        })
+        .then((blob) => {
+          setFiles([
+            {
+              source: fullFileUrl,
+              options: {
+                type: "local",
+              },
+            },
+          ]);
+        })
+        .catch((error) => {
+          console.error("File loading error:", error);
+        });
+    }
+  }, [formData?.file]);
 
   const onClose = () => {
     closeTopicModal();
     setFiles([]);
+    setFormData({
+      topic_id: "",
+      lesson_id: "",
+      topic_title: "",
+      topic_description: "",
+      file: "",
+    });
   };
 
   return (
@@ -147,80 +256,119 @@ const TopicModal = () => {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="chapter-modal__form">
-          <div className="mb-4">
-            <label className="text-customgreys-dirtyGrey text-sm">
-              Topic Title
-            </label>
-            <Input
-              name="title"
-              defaultValue={topic?.title}
-              placeholder="Write topic title here"
-              className="mt-1"
-            />
-          </div>
+        {isLoading ? (
+          <AnimeLoading />
+        ) : (
+          <form onSubmit={handleSubmit} className="chapter-modal__form">
+            <div className="mb-4">
+              <label className="text-customgreys-dirtyGrey text-sm">
+                Topic Title
+              </label>
+              <Input
+                name="title"
+                value={formData.topic_title}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    topic_title: e.target.value,
+                  }))
+                }
+                placeholder="Write topic title here"
+                className="mt-1"
+              />
+            </div>
 
-          <div className="mb-4">
-            <label className="text-customgreys-dirtyGrey text-sm">
-              Topic Content
-            </label>
-            <textarea
-              name="content"
-              defaultValue={topic?.content}
-              placeholder="Write topic content here"
-              className="w-full mt-1 p-2 border rounded-md bg-customgreys-darkGrey"
-              rows={4}
-            />
-          </div>
+            <div className="mb-4">
+              <label className="text-customgreys-dirtyGrey text-sm">
+                Topic Description / Content
+              </label>
+              <textarea
+                name="content"
+                value={formData.topic_description}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    topic_description: e.target.value,
+                  }))
+                }
+                placeholder="Write topic content here"
+                className="w-full mt-1 p-2 border rounded-md bg-customgreys-darkGrey"
+                rows={4}
+              />
+            </div>
 
-          <div className="mb-4">
-            <label className="text-customgreys-dirtyGrey text-sm">
-              Topic Video or PDF
-            </label>
-            <FilePond
-              files={files}
-              onupdatefiles={setFiles}
-              allowMultiple={false}
-              maxFiles={1}
-              name="video"
-              labelIdle='Drag & Drop your video or PDF or <span class="filepond--label-action">Browse</span>'
-              acceptedFileTypes={["video/*", "application/pdf"]}
-              credits={false}
-              styleClassNamePondRoot="custom-filepond"
-              className="mt-1"
-              // Media preview specific configuration
-              allowMediaPreview={true}
-              mediaPreviewHeight={720}
-              // PDF preview specific configuration
-              allowPdfPreview={true}
-              pdfPreviewHeight={320}
-              pdfComponentExtraParams="toolbar=0&view=fit&page=1"
-            />
-            {topic?.video && !files.length && (
-              <div className="my-2 text-sm text-gray-600">
-                Current file: {topic.video.split("/").pop()}
-              </div>
-            )}
-          </div>
+            <div className="mb-4">
+              <label className="text-customgreys-dirtyGrey text-sm">
+                Topic Video or PDF
+              </label>
+              <FilePond
+                server={{
+                  load: (source, load, error, progress, abort, headers) => {
+                    fetch(source, {
+                      mode: "cors",
+                      headers: {
+                        Origin: "http://localhost:3000",
+                      },
+                    })
+                      .then(async (response) => {
+                        const imageFileName = (await source.includes(
+                          "file_serve.php"
+                        ))
+                          ? new URLSearchParams(new URL(source).search).get(
+                              "file"
+                            )
+                          : source.split("/").pop();
 
-          <div className="chapter-modal__actions">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              className="bg-primary-700"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? "Saving..." : "Save"}
-            </Button>
-          </div>
-        </form>
+                        const blob = await response.blob();
+                        blob.name = imageFileName;
+                        return blob;
+                      })
+                      .then(load)
+                      .catch(error);
+                  },
+                }}
+                files={files}
+                onupdatefiles={setFiles}
+                allowMultiple={false}
+                maxFiles={1}
+                name="video"
+                labelIdle='Drag & Drop your video or PDF or <span class="filepond--label-action">Browse</span>'
+                acceptedFileTypes={["video/*", "application/pdf"]}
+                credits={false}
+                styleClassNamePondRoot="custom-filepond"
+                className="mt-1"
+                allowMediaPreview={true}
+                mediaPreviewHeight={720}
+                allowPdfPreview={true}
+                pdfPreviewHeight={320}
+                pdfComponentExtraParams="toolbar=0&view=fit&page=1"
+              />
+              {formData?.file && !files.length && (
+                <div className="my-2 text-sm text-gray-600">
+                  Current file: {formData.file.split("/").pop()}
+                </div>
+              )}
+            </div>
+
+            <div className="chapter-modal__actions">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="bg-primary-700"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Saving..." : "Save"}
+              </Button>
+            </div>
+          </form>
+        )}
       </div>
     </CustomModal>
   );
