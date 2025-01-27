@@ -121,14 +121,6 @@ const createActions = (set) => ({
       },
     })),
 
-  // deleteLesson: (index) =>
-  //   set((state) => ({
-  //     courseEditor: {
-  //       ...state.courseEditor,
-  //       lessons: state.courseEditor.lessons.filter((_, i) => i !== index),
-  //     },
-  //   })),
-
   deleteLesson: () =>
     set((state) => {
       const { selectedLessonIndex, lessons } = state.courseEditor;
@@ -146,21 +138,36 @@ const createActions = (set) => ({
       };
     }),
 
-  addTopic: ({ lessonIndex, topic }) =>
+  setGeneratedTopicID: (topicID) =>
     set((state) => ({
       courseEditor: {
         ...state.courseEditor,
-        lessons: state.courseEditor.lessons.map((lesson, index) => {
-          if (index === lessonIndex) {
-            return {
-              ...lesson,
-              topics: [...lesson.topics, topic],
-            };
-          }
-          return lesson;
-        }),
+        generatedTopicID: topicID,
       },
     })),
+
+  addTopic: ({ lessonIndex, topic }) =>
+    set((state) => {
+      const finalTopic = topic.topic_id
+        ? topic
+        : { ...topic, topic_id: state.courseEditor.generatedTopicID };
+
+      return {
+        courseEditor: {
+          ...state.courseEditor,
+          lessons: state.courseEditor.lessons.map((lesson, index) => {
+            if (index === lessonIndex) {
+              return {
+                ...lesson,
+                topics: [...lesson.topics, finalTopic],
+              };
+            }
+            return lesson;
+          }),
+          generatedTopicID: null,
+        },
+      };
+    }),
 
   editTopic: ({ lessonIndex, topicIndex, topic }) =>
     set((state) => ({
@@ -290,6 +297,7 @@ const useLessonStore = create((set) => ({
     selectedTopicIndex: null,
     selectedTestIndex: null,
     generatedLessonID: null,
+    generatedTopicID: null,
     isDeleting: false,
   },
   ...createActions(set),

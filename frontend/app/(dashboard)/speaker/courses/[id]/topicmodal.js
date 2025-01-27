@@ -15,7 +15,7 @@ import FilePondPluginPdfPreview from "filepond-plugin-pdf-preview";
 import FilePondPluginMediaPreview from "filepond-plugin-media-preview";
 
 import "filepond-plugin-pdf-preview/dist/filepond-plugin-pdf-preview.min.css";
-import { getTopicDetails } from "@/lib/actions/speaker/action";
+import { createTopic, getTopicDetails } from "@/lib/actions/speaker/action";
 
 // Register plugins
 registerPlugin(
@@ -86,12 +86,15 @@ const TopicModal = () => {
   const addTopic = useLessonStore((state) => state.addTopic);
   const editTopic = useLessonStore((state) => state.editTopic);
 
+  const generatedTopicID = useLessonStore(
+    (state) => state.courseEditor.generatedTopicID
+  );
+
   const topicDetails =
     selectedLessonIndex !== null && selectedTopicIndex !== null
       ? lessons[selectedLessonIndex].topics[selectedTopicIndex]
       : undefined;
 
-  // Reset form when modal closes or when switching between add/edit modes
   useEffect(() => {
     if (!isTopicModalOpen) {
       setFormData({
@@ -129,24 +132,48 @@ const TopicModal = () => {
         lessons[selectedLessonIndex].topics = [];
       }
 
+      const sequence_number =
+        selectedTopicIndex === null
+          ? lessons[selectedLessonIndex].topics.length + 1
+          : lessons[selectedLessonIndex].topics[selectedTopicIndex]
+              .sequence_number;
+
       const topicData = {
-        topic_id: topicDetails?.topic_id,
+        topic_id: generatedTopicID,
+        lesson_id: lessons[selectedLessonIndex].lesson_id,
         topic_title: title,
         topic_description: content,
         file: uploadedFile ? uploadedFile : formData.file,
       };
 
       if (selectedTopicIndex === null) {
+        const { success, data, message } = await createTopic(
+          topicData.topic_id,
+          topicData.lesson_id,
+          topicData.topic_title,
+          topicData.topic_description,
+          sequence_number,
+          uploadedFile
+        );
+
+        console.log(topicData);
+
         addTopic({
           lessonIndex: selectedLessonIndex,
-          topic: topicData,
+          topic: {
+            ...topicData,
+            sequence_number,
+          },
         });
         toast.success("Topic added successfully");
       } else {
         editTopic({
           lessonIndex: selectedLessonIndex,
           topicIndex: selectedTopicIndex,
-          topic: topicData,
+          topic: {
+            ...topicData,
+            sequence_number,
+          },
         });
         toast.success("Topic updated successfully");
       }
@@ -163,7 +190,6 @@ const TopicModal = () => {
   useEffect(() => {
     const fetchTopicDetail = async () => {
       if (!topicDetails?.topic_id) {
-        // Reset form if there are no topic details
         setFormData({
           topic_id: "",
           lesson_id: "",
@@ -304,27 +330,42 @@ const TopicModal = () => {
               <FilePond
                 server={{
                   load: (source, load, error, progress, abort, headers) => {
+                    const controller = new AbortController();
                     fetch(source, {
                       mode: "cors",
                       headers: {
                         Origin: "http://localhost:3000",
+                        "X-Requested-With": "XMLHttpRequest",
+                        Accept: "application/pdf,video/*",
                       },
+                      signal: controller.signal,
+                      credentials: "same-origin",
                     })
                       .then(async (response) => {
-                        const imageFileName = (await source.includes(
-                          "file_serve.php"
-                        ))
+                        const blob = await response.blob();
+                        const fileName = source.includes("file_serve.php")
                           ? new URLSearchParams(new URL(source).search).get(
                               "file"
                             )
                           : source.split("/").pop();
 
-                        const blob = await response.blob();
-                        blob.name = imageFileName;
-                        return blob;
+                        // Create a new blob with specific type
+                        const newBlob = new Blob([blob], {
+                          type: fileName.endsWith(".pdf")
+                            ? "application/pdf"
+                            : "video/mp4",
+                        });
+                        newBlob.name = fileName;
+
+                        load(newBlob);
                       })
-                      .then(load)
                       .catch(error);
+
+                    return {
+                      abort: () => {
+                        controller.abort();
+                      },
+                    };
                   },
                 }}
                 files={files}
@@ -342,6 +383,18 @@ const TopicModal = () => {
                 allowPdfPreview={true}
                 pdfPreviewHeight={320}
                 pdfComponentExtraParams="toolbar=0&view=fit&page=1"
+                instantUpload={false}
+                allowFileTypeValidation={true}
+                fileValidateTypeLabelExpectedTypes="Please upload a video or PDF file"
+                beforeAddFile={(file) => {
+                  if (
+                    file.fileType.includes("video/") ||
+                    file.fileType === "application/pdf"
+                  ) {
+                    return true;
+                  }
+                  return false;
+                }}
               />
               {formData?.file && !files.length && (
                 <div className="my-2 text-sm text-gray-600">

@@ -217,11 +217,6 @@ const CourseEditor = () => {
       }
 
       useLessonStore.getState().setGeneratedLessonID(data);
-      console.log("Generated Lesson ID:", data);
-      console.log(
-        "Current Store State:",
-        useLessonStore.getState().courseEditor.generatedLessonID
-      );
 
       openLessonModal({ lessonIndex: null });
     } catch (error) {

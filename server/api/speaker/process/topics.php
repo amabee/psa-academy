@@ -139,7 +139,7 @@ class Topics
                 // Generate unique filename
                 $fileExtension = pathinfo($file['name'], PATHINFO_EXTENSION);
                 $uniqueFileName = uniqid('topic_') . '.' . $fileExtension;
-                $uploadDir = 'media/course_files/';
+                $uploadDir = '../../../MEDIA/course_files/';
                 $uploadPath = $uploadDir . $uniqueFileName;
 
                 // Move uploaded file

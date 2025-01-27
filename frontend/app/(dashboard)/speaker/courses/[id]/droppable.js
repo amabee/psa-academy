@@ -3,10 +3,14 @@
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { Button } from "@/components/ui/button";
 import { Trash2, Edit, Plus, GripVertical, Loader2 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import useLessonStore from "@/store/lessonStore";
-import { updateLessonSequence } from "@/lib/actions/speaker/action";
+import {
+  generateTopicID,
+  updateLessonSequence,
+} from "@/lib/actions/speaker/action";
 import { toast } from "sonner";
+import { useAppStore } from "@/store/stateStore";
 
 const LessonHeader = ({ lesson, lessonIndex, dragHandleProps }) => {
   const openLessonModal = useLessonStore((state) => state.openLessonModal);
@@ -118,9 +122,29 @@ export default function DroppableComponent() {
   const setLessons = useLessonStore((state) => state.setLessons);
   const openTopicModal = useLessonStore((state) => state.openTopicModal);
 
-  useEffect(() => {
-    console.log("Lessons updated:", lessons);
-  }, [lessons]);
+  const [isCreating, setIsCreating] = useState(false);
+
+  const createTopicID = async (lessonIndex) => {
+    try {
+      setIsCreating(true);
+      const { success, data, message } = await generateTopicID();
+
+      if (!success) {
+        return console.log(message);
+      }
+
+      console.log("Droppable Data", data);
+
+      useLessonStore.getState().setGeneratedTopicID(data);
+
+      openTopicModal({ lessonIndex, topicIndex: null });
+    } catch (error) {
+      toast.error("Exception Error occured while generating topic id");
+      return;
+    } finally {
+      setIsCreating(false);
+    }
+  };
 
   const handleLessonDragEnd = async (result) => {
     if (!result.destination) return;
@@ -246,19 +270,41 @@ export default function DroppableComponent() {
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => {
-                        console.log("Opening topic modal for new topic:", {
-                          lessonIndex,
-                          topicIndex: null,
-                        });
-                        openTopicModal({ lessonIndex, topicIndex: null });
-                      }}
+                      onClick={() => createTopicID(lessonIndex)}
                       className="add-chapter-button group mt-4"
                     >
-                      <Plus className="add-chapter-button__icon" />
-                      <span className="add-chapter-button__text">
-                        Add Topic
-                      </span>
+                      {isCreating ? (
+                        <>
+                          <svg
+                            className="animate-spin h-5 w-5 mr-2 text-white"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            ></circle>
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C6.48 0 0 6.48 0 12h4zm2 5.291V16a8 8 0 018 8v-4c-2.21 0-4-1.79-4-4h-4z"
+                            ></path>
+                          </svg>
+                          Generating Topic ID...
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="add-chapter-button__icon" />
+                          <span className="add-chapter-button__text">
+                            Add Topic
+                          </span>
+                        </>
+                      )}
                     </Button>
                   </div>
                 )}

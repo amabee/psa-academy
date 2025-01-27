@@ -575,3 +575,76 @@ export const getTopicDetails = async (topic_id) => {
     return { success: false, data: [], message: errorMessage };
   }
 };
+
+// TOPIC CUD OPERATIONS
+
+export const createTopic = async (
+  topic_id,
+  lesson_id,
+  topic_title,
+  topic_description,
+  sequence_number,
+  file
+) => {
+  try {
+    const formData = new FormData();
+
+    // Add basic topic data
+    const jsonData = {
+      topic_id: topic_id,
+      lesson_id: lesson_id,
+      topic_title: topic_title,
+      topic_description: topic_description,
+      sequence_number: sequence_number,
+    };
+
+    formData.append("operation", "createTopic");
+    formData.append("json", JSON.stringify(jsonData));
+
+    // Add single file if it exists
+    if (file) {
+      // Validate file type
+      const allowedTypes = [
+        "image/jpeg",
+        "image/png",
+        "image/gif",
+        "application/pdf",
+      ];
+      if (!allowedTypes.includes(file.type)) {
+        throw new Error(
+          "Invalid file type. Allowed types are JPEG, PNG, GIF, and PDF."
+        );
+      }
+      formData.append("file", file);
+    }
+
+    const res = await axios(`${BASE_URL}speaker/process/topics.php`, {
+      method: "POST",
+      data: formData,
+      headers: {
+        Authorization: SECRET_KEY,
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    if (res.status !== 201 || res.statusText !== "Created") {
+      return { success: false, data: [], message: "Status Error" };
+    }
+
+    if (res.success === false) {
+      return {
+        success: false,
+        data: [],
+        message: "Something went wrong creating topic",
+      };
+    }
+
+    return { success: true, data: res.data.message, message: "" };
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message ||
+      error.message ||
+      "An error occurred while creating the topic";
+    return { success: false, data: [], message: errorMessage };
+  }
+};
