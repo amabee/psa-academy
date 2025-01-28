@@ -578,6 +578,45 @@ export const getTopicDetails = async (topic_id) => {
 
 // TOPIC CUD OPERATIONS
 
+export const uploadFileChunks = async (file) => {
+  const chunkSize = 2048 * 2048;
+  const totalChunks = Math.ceil(file.size / chunkSize);
+  const fileId = crypto.randomUUID();
+
+  for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+    const chunk = file.slice(
+      chunkIndex * chunkSize,
+      Math.min((chunkIndex + 1) * chunkSize, file.size)
+    );
+
+    const formData = new FormData();
+    formData.append("chunk", new Blob([chunk]), "chunk");
+    formData.append("chunkIndex", chunkIndex);
+    formData.append("totalChunks", totalChunks);
+    formData.append("fileId", fileId);
+    formData.append("fileName", file.name);
+    formData.append("fileType", file.type);
+
+    try {
+      const response = await axios(`${BASE_URL}upload_chunkz.php`, {
+        method: "POST",
+        data: formData,
+        headers: {
+          Authorization: SECRET_KEY,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      if (response.data.success && response.data.data?.fileName) {
+        return response.data.data.fileName;
+      }
+    } catch (error) {
+      console.error("Chunk upload failed:", error);
+      throw error;
+    }
+  }
+};
+
 export const createTopic = async (
   topic_id,
   lesson_id,
@@ -587,36 +626,24 @@ export const createTopic = async (
   file
 ) => {
   try {
-    const formData = new FormData();
+    let fileName = null;
 
-    // Add basic topic data
+    if (file) {
+      fileName = await uploadFileChunks(file);
+    }
+
     const jsonData = {
-      topic_id: topic_id,
-      lesson_id: lesson_id,
-      topic_title: topic_title,
-      topic_description: topic_description,
-      sequence_number: sequence_number,
+      topic_id,
+      lesson_id,
+      topic_title,
+      topic_description,
+      sequence_number,
+      file_name: fileName,
     };
 
+    const formData = new FormData();
     formData.append("operation", "createTopic");
     formData.append("json", JSON.stringify(jsonData));
-
-    // Add single file if it exists
-    if (file) {
-      // Validate file type
-      const allowedTypes = [
-        "image/jpeg",
-        "image/png",
-        "image/gif",
-        "application/pdf",
-      ];
-      if (!allowedTypes.includes(file.type)) {
-        throw new Error(
-          "Invalid file type. Allowed types are JPEG, PNG, GIF, and PDF."
-        );
-      }
-      formData.append("file", file);
-    }
 
     const res = await axios(`${BASE_URL}speaker/process/topics.php`, {
       method: "POST",
@@ -631,15 +658,11 @@ export const createTopic = async (
       return { success: false, data: [], message: "Status Error" };
     }
 
-    if (res.success === false) {
-      return {
-        success: false,
-        data: [],
-        message: "Something went wrong creating topic",
-      };
-    }
-
-    return { success: true, data: res.data.message, message: "" };
+    return {
+      success: true,
+      data: res.data.message,
+      message: "Topic created successfully",
+    };
   } catch (error) {
     const errorMessage =
       error.response?.data?.message ||

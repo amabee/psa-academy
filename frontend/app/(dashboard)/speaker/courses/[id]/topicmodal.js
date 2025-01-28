@@ -128,51 +128,48 @@ const TopicModal = () => {
         return;
       }
 
-      if (!lessons[selectedLessonIndex].topics) {
-        lessons[selectedLessonIndex].topics = [];
-      }
-
       const sequence_number =
         selectedTopicIndex === null
           ? lessons[selectedLessonIndex].topics.length + 1
           : lessons[selectedLessonIndex].topics[selectedTopicIndex]
               .sequence_number;
 
-      const topicData = {
-        topic_id: generatedTopicID,
-        lesson_id: lessons[selectedLessonIndex].lesson_id,
-        topic_title: title,
-        topic_description: content,
-        file: uploadedFile ? uploadedFile : formData.file,
-      };
+      const { success, data, message } = await createTopic(
+        generatedTopicID,
+        lessons[selectedLessonIndex].lesson_id,
+        title,
+        content,
+        sequence_number,
+        uploadedFile
+      );
+
+      if (!success) {
+        toast.error(message);
+        return;
+      }
 
       if (selectedTopicIndex === null) {
-        const { success, data, message } = await createTopic(
-          topicData.topic_id,
-          topicData.lesson_id,
-          topicData.topic_title,
-          topicData.topic_description,
-          sequence_number,
-          uploadedFile
-        );
-
-        console.log(topicData);
-
         addTopic({
           lessonIndex: selectedLessonIndex,
           topic: {
-            ...topicData,
+            topic_id: generatedTopicID,
+            lesson_id: lessons[selectedLessonIndex].lesson_id,
+            topic_title: title,
+            topic_description: content,
             sequence_number,
+            // file_name: data.fileName,
           },
         });
-        toast.success("Topic added successfully");
+        toast.success(data);
       } else {
         editTopic({
           lessonIndex: selectedLessonIndex,
           topicIndex: selectedTopicIndex,
           topic: {
-            ...topicData,
-            sequence_number,
+            ...topicDetails,
+            topic_title: title,
+            topic_description: content,
+            file_name: data.fileName,
           },
         });
         toast.success("Topic updated successfully");
@@ -349,11 +346,10 @@ const TopicModal = () => {
                             )
                           : source.split("/").pop();
 
-                        // Create a new blob with specific type
                         const newBlob = new Blob([blob], {
                           type: fileName.endsWith(".pdf")
                             ? "application/pdf"
-                            : "video/mp4",
+                            : "video/*",
                         });
                         newBlob.name = fileName;
 

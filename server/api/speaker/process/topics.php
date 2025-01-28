@@ -125,37 +125,7 @@ class Topics
             $topic_description = InputHelper::sanitizeString($data['topic_description']);
             $sequence_number = InputHelper::sanitizeString($data['sequence_number']);
 
-            // Handle file upload
-            $file_name = null;
-            if (isset($_FILES['file'])) {
-                $file = $_FILES['file'];
-
-                // Validate file type
-                $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'];
-                if (!in_array($file['type'], $allowedTypes)) {
-                    throw new Exception("Invalid file type");
-                }
-
-                // Generate unique filename
-                $fileExtension = pathinfo($file['name'], PATHINFO_EXTENSION);
-                $uniqueFileName = uniqid('topic_') . '.' . $fileExtension;
-                $uploadDir = '../../../MEDIA/course_files/';
-                $uploadPath = $uploadDir . $uniqueFileName;
-
-                // Move uploaded file
-                if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
-                    $file_name = $uniqueFileName;
-                } else {
-                    $this->conn->rollBack();
-                    http_response_code(500);
-                    return json_encode([
-                        "status" => 500,
-                        "success" => false,
-                        "data" => [],
-                        "message" => "File upload failed"
-                    ]);
-                }
-            }
+            $file_name = isset($data['file_name']) ? InputHelper::sanitizeString($data['file_name']) : null;
 
             // Insert into topic table
             $sql = "INSERT INTO `topic`(`topic_id`, `lesson_id`, `topic_title`, `topic_description`, `sequence_number`, `created_at`) 
@@ -173,7 +143,6 @@ class Topics
                 return json_encode(["status" => 500, "success" => false, "data" => [], "message" => "Failed to create topic"]);
             }
 
-            // Insert into materials table if a file was uploaded
             if ($file_name) {
                 $materialSql = "INSERT INTO `materials`(`topic_id`, `file_name`) VALUES (:topic_id, :file_name)";
                 $materialStmt = $this->conn->prepare($materialSql);
