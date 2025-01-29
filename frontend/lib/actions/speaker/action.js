@@ -582,13 +582,10 @@ export const uploadFileChunks = async (file) => {
   const chunkSize = 2048 * 2048;
   const totalChunks = Math.ceil(file.size / chunkSize);
   const fileId = crypto.randomUUID();
+  let uploadedChunks = 0;
 
-  for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
-    const chunk = file.slice(
-      chunkIndex * chunkSize,
-      Math.min((chunkIndex + 1) * chunkSize, file.size)
-    );
-
+  // Add retry logic
+  const uploadChunkWithRetry = async (chunk, chunkIndex, retries = 3) => {
     const formData = new FormData();
     formData.append("chunk", new Blob([chunk]), "chunk");
     formData.append("chunkIndex", chunkIndex);
@@ -607,13 +604,52 @@ export const uploadFileChunks = async (file) => {
         },
       });
 
-      if (response.data.success && response.data.data?.fileName) {
-        return response.data.data.fileName;
+      if (response.data.success) {
+        uploadedChunks++;
+        return response.data;
       }
+      throw new Error("Upload failed");
     } catch (error) {
-      console.error("Chunk upload failed:", error);
+      if (retries > 0) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        return uploadChunkWithRetry(chunk, chunkIndex, retries - 1);
+      }
       throw error;
     }
+  };
+
+  // Upload chunks in parallel with concurrency limit
+  const concurrencyLimit = 3;
+  const chunks = [];
+
+  for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+    const chunk = file.slice(
+      chunkIndex * chunkSize,
+      Math.min((chunkIndex + 1) * chunkSize, file.size)
+    );
+    chunks.push({ chunk, chunkIndex });
+  }
+
+  try {
+    let fileName = null;
+    for (let i = 0; i < chunks.length; i += concurrencyLimit) {
+      const chunkBatch = chunks.slice(i, i + concurrencyLimit);
+      const uploadPromises = chunkBatch.map(({ chunk, chunkIndex }) =>
+        uploadChunkWithRetry(chunk, chunkIndex)
+      );
+
+      const results = await Promise.all(uploadPromises);
+      const lastResult = results[results.length - 1];
+
+      if (lastResult.data?.fileName) {
+        fileName = lastResult.data.fileName;
+      }
+    }
+
+    return fileName;
+  } catch (error) {
+    console.error("File upload failed:", error);
+    throw new Error(`Upload failed: ${error.message}`);
   }
 };
 
@@ -623,15 +659,9 @@ export const createTopic = async (
   topic_title,
   topic_description,
   sequence_number,
-  file
+  fileName
 ) => {
   try {
-    let fileName = null;
-
-    if (file) {
-      fileName = await uploadFileChunks(file);
-    }
-
     const jsonData = {
       topic_id,
       lesson_id,

@@ -5,7 +5,6 @@ import useLessonStore from "@/store/lessonStore";
 import { X } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { v4 as uuidv4 } from "uuid";
 
 // FilePond imports
 import { FilePond, registerPlugin } from "react-filepond";
@@ -13,55 +12,29 @@ import "filepond/dist/filepond.min.css";
 import FilePondPluginFileValidateType from "filepond-plugin-file-validate-type";
 import FilePondPluginPdfPreview from "filepond-plugin-pdf-preview";
 import FilePondPluginMediaPreview from "filepond-plugin-media-preview";
-
+import FilePondPluginFileValidateSize from "filepond-plugin-file-validate-size";
 import "filepond-plugin-pdf-preview/dist/filepond-plugin-pdf-preview.min.css";
-import { createTopic, getTopicDetails } from "@/lib/actions/speaker/action";
+import "filepond-plugin-media-preview/dist/filepond-plugin-media-preview.min.css";
 
-// Register plugins
+import { createTopic, getTopicDetails } from "@/lib/actions/speaker/action";
+import { AnimeLoading } from "@/components/shared/animeloading";
+import { useFileUpload } from "@/client/uploadProgress";
+
+// Register FilePond plugins
 registerPlugin(
   FilePondPluginFileValidateType,
   FilePondPluginPdfPreview,
-  FilePondPluginMediaPreview
+  FilePondPluginMediaPreview,
+  FilePondPluginFileValidateSize
 );
-
-const AnimeLoading = () => {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-[500px]">
-      <div className="relative">
-        <div className="absolute inset-0 w-24 h-24 rounded-full animate-[spin_3s_linear_infinite] before:content-[''] before:absolute before:inset-0 before:rounded-full before:bg-gradient-to-r before:from-pink-500 before:via-purple-500 before:to-cyan-500 before:animate-[spin_3s_linear_infinite] after:content-[''] after:absolute after:inset-1 after:rounded-full after:bg-gray-900"></div>
-
-        <div className="relative w-24 h-24">
-          <div className="absolute w-full h-full border-t-4 border-purple-500 rounded-full animate-[spin_1s_linear_infinite]"></div>
-          <div className="absolute w-full h-full border-r-4 border-cyan-500 rounded-full animate-[spin_2s_linear_infinite]"></div>
-          <div className="absolute w-full h-full border-b-4 border-pink-500 rounded-full animate-[spin_3s_linear_infinite]"></div>
-        </div>
-
-        <div className="absolute top-1/2 left-1/2 w-4 h-4 -translate-x-1/2 -translate-y-1/2">
-          <div className="w-full h-full bg-white rounded-full animate-pulse"></div>
-        </div>
-      </div>
-
-      <div className="mt-4 text-xl font-medium text-white-100">
-        <span className="inline-block animate-[pulse_2s_ease-in-out_infinite]">
-          Loading Data
-        </span>
-        <span className="inline-block animate-[pulse_2s_ease-in-out_infinite] delay-100">
-          .
-        </span>
-        <span className="inline-block animate-[pulse_2s_ease-in-out_infinite] delay-200">
-          .
-        </span>
-        <span className="inline-block animate-[pulse_2s_ease-in-out_infinite] delay-300">
-          .
-        </span>
-      </div>
-    </div>
-  );
-};
 
 const TopicModal = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [files, setFiles] = useState([]);
+  const { uploadFile, uploadProgress, isUploading } = useFileUpload();
+  const [uploadedFileName, setUploadedFileName] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isExistingFile, setIsExistingFile] = useState(false);
   const [formData, setFormData] = useState({
     topic_id: "",
     lesson_id: "",
@@ -70,8 +43,7 @@ const TopicModal = () => {
     file: "",
   });
 
-  const [isLoading, setIsLoading] = useState(false);
-
+  // Zustand store hooks
   const isTopicModalOpen = useLessonStore(
     (state) => state.courseEditor.isTopicModalOpen
   );
@@ -85,7 +57,6 @@ const TopicModal = () => {
   const lessons = useLessonStore((state) => state.courseEditor.lessons);
   const addTopic = useLessonStore((state) => state.addTopic);
   const editTopic = useLessonStore((state) => state.editTopic);
-
   const generatedTopicID = useLessonStore(
     (state) => state.courseEditor.generatedTopicID
   );
@@ -105,23 +76,27 @@ const TopicModal = () => {
         file: "",
       });
       setFiles([]);
+      setUploadedFileName(null);
     }
   }, [isTopicModalOpen]);
 
-  // Handle form submission
+  const isFileFromDatabase = (fileName) => {
+    return fileName === formData.file;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
       if (selectedLessonIndex === null) {
-        console.error("selectedLessonIndex is null");
-        return;
+        throw new Error("No lesson selected");
       }
 
       const title = formData.topic_title;
       const content = formData.topic_description;
-      const uploadedFile = files.length > 0 ? files[0].file : null;
+
+      const finalFileName = isExistingFile ? formData.file : uploadedFileName;
 
       if (!title || !content) {
         toast.error("Please fill in all required fields");
@@ -140,12 +115,11 @@ const TopicModal = () => {
         title,
         content,
         sequence_number,
-        uploadedFile
+        finalFileName
       );
 
       if (!success) {
-        toast.error(message);
-        return;
+        throw new Error(message);
       }
 
       if (selectedTopicIndex === null) {
@@ -157,7 +131,7 @@ const TopicModal = () => {
             topic_title: title,
             topic_description: content,
             sequence_number,
-            // file_name: data.fileName,
+            file_name: uploadedFileName,
           },
         });
         toast.success(data);
@@ -169,7 +143,7 @@ const TopicModal = () => {
             ...topicDetails,
             topic_title: title,
             topic_description: content,
-            file_name: data.fileName,
+            file_name: uploadedFileName,
           },
         });
         toast.success("Topic updated successfully");
@@ -178,7 +152,7 @@ const TopicModal = () => {
       closeTopicModal();
     } catch (error) {
       console.error("Error in handleSubmit:", error);
-      toast.error("Failed to save topic");
+      toast.error(error.message || "Failed to save topic");
     } finally {
       setIsSubmitting(false);
     }
@@ -195,6 +169,7 @@ const TopicModal = () => {
           file: "",
         });
         setFiles([]);
+        setUploadedFileName(null);
         return;
       }
 
@@ -216,6 +191,11 @@ const TopicModal = () => {
         topic_description: data.topic_description || "",
         file: data.file_name || "",
       });
+
+      if (data.file_name) {
+        setUploadedFileName(data.file_name);
+        setIsExistingFile(true);
+      }
 
       setIsLoading(false);
     };
@@ -248,8 +228,10 @@ const TopicModal = () => {
               },
             },
           ]);
+          setIsExistingFile(true);
         })
         .catch((error) => {
+          setIsExistingFile(false);
           console.error("File loading error:", error);
         });
     }
@@ -258,6 +240,7 @@ const TopicModal = () => {
   const onClose = () => {
     closeTopicModal();
     setFiles([]);
+    setUploadedFileName(null);
     setFormData({
       topic_id: "",
       lesson_id: "",
@@ -278,6 +261,20 @@ const TopicModal = () => {
             <X className="w-6 h-6" />
           </button>
         </div>
+
+        {isUploading && (
+          <div className="mt-2 mb-4 px-4">
+            <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+              <div
+                className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                style={{ width: `${uploadProgress}%` }}
+              />
+            </div>
+            <p className="text-sm text-gray-500 mt-1">
+              Uploading: {Math.round(uploadProgress)}%
+            </p>
+          </div>
+        )}
 
         {isLoading ? (
           <AnimeLoading />
@@ -325,6 +322,82 @@ const TopicModal = () => {
                 Topic Video or PDF
               </label>
               <FilePond
+                files={files}
+                onupdatefiles={(fileItems) => {
+                  setFiles(fileItems);
+                  if (fileItems.length === 0) {
+                    setUploadedFileName(null);
+                    setIsExistingFile(false);
+                    return;
+                  }
+
+                  const currentFile = fileItems[0];
+
+                  if (
+                    currentFile.source ===
+                    `${process.env.NEXT_PUBLIC_ROOT_URL}file_serve.php?file=${formData.file}`
+                  ) {
+                    setIsExistingFile(true);
+                    setUploadedFileName(formData.file);
+                  } else {
+                    setIsExistingFile(false);
+                  }
+                }}
+                allowMultiple={false}
+                maxFiles={1}
+                name="video"
+                allowFileSizeValidation={true}
+                maxFileSize="200mb"
+                maxTotalFileSize="200mb"
+                labelMaxFileSizeExceeded="File is too large. Limit is 200mb"
+                labelMaxFileSize="Maximum file size is 200mb"
+                labelIdle='Drag & Drop your video or PDF or <span class="filepond--label-action">Browse</span>'
+                acceptedFileTypes={["video/*", "application/pdf"]}
+                credits={false}
+                styleClassNamePondRoot="custom-filepond"
+                className="mt-1"
+                allowMediaPreview={true}
+                mediaPreviewHeight={720}
+                allowPdfPreview={true}
+                pdfPreviewHeight={320}
+                pdfComponentExtraParams="toolbar=0&view=fit&page=1"
+                instantUpload={false}
+                allowFileTypeValidation={true}
+                fileValidateTypeLabelExpectedTypes="Please upload a video or PDF file"
+                beforeAddFile={(file) => {
+                  if (
+                    file.fileType.includes("video/") ||
+                    file.fileType === "application/pdf"
+                  ) {
+                    return true;
+                  }
+                  return false;
+                }}
+                onaddfile={async (error, fileItem) => {
+                  if (error) {
+                    toast.error("Error adding file");
+                    return;
+                  }
+
+                  if (isFileFromDatabase(fileItem.filename)) {
+                    setIsExistingFile(true);
+                    return;
+                  }
+
+                  setIsExistingFile(false);
+                  try {
+                    const fileName = await uploadFile(fileItem.file);
+                    setUploadedFileName(fileName);
+                    toast.success("File uploaded successfully");
+                  } catch (error) {
+                    console.error("Upload failed:", error);
+                    toast.error("Failed to upload file");
+                  }
+                }}
+                onremovefile={() => {
+                  setUploadedFileName(null);
+                }}
+                disabled={isUploading}
                 server={{
                   load: (source, load, error, progress, abort, headers) => {
                     const controller = new AbortController();
@@ -364,34 +437,12 @@ const TopicModal = () => {
                     };
                   },
                 }}
-                files={files}
-                onupdatefiles={setFiles}
-                allowMultiple={false}
-                maxFiles={1}
-                name="video"
-                labelIdle='Drag & Drop your video or PDF or <span class="filepond--label-action">Browse</span>'
-                acceptedFileTypes={["video/*", "application/pdf"]}
-                credits={false}
-                styleClassNamePondRoot="custom-filepond"
-                className="mt-1"
-                allowMediaPreview={true}
-                mediaPreviewHeight={720}
-                allowPdfPreview={true}
-                pdfPreviewHeight={320}
-                pdfComponentExtraParams="toolbar=0&view=fit&page=1"
-                instantUpload={false}
-                allowFileTypeValidation={true}
-                fileValidateTypeLabelExpectedTypes="Please upload a video or PDF file"
-                beforeAddFile={(file) => {
-                  if (
-                    file.fileType.includes("video/") ||
-                    file.fileType === "application/pdf"
-                  ) {
-                    return true;
-                  }
-                  return false;
-                }}
               />
+              {uploadedFileName && (
+                <div className="my-2 text-sm text-gray-600">
+                  File uploaded: {uploadedFileName}
+                </div>
+              )}
               {formData?.file && !files.length && (
                 <div className="my-2 text-sm text-gray-600">
                   Current file: {formData.file.split("/").pop()}
@@ -404,16 +455,16 @@ const TopicModal = () => {
                 type="button"
                 variant="outline"
                 onClick={onClose}
-                disabled={isSubmitting}
+                disabled={isSubmitting || isUploading}
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 className="bg-primary-700"
-                disabled={isSubmitting}
+                disabled={isSubmitting || isUploading}
               >
-                {isSubmitting ? "Saving..." : "Save"}
+                {isSubmitting || isUploading ? "Saving..." : "Save"}
               </Button>
             </div>
           </form>

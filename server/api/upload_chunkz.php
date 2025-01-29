@@ -13,8 +13,13 @@ class ChunkUploadHandler
     public function __construct()
     {
         $baseDir = realpath(__DIR__ . '/../MEDIA/');
-        $this->uploadDir =  $baseDir . '\course_files\\';
+        $this->uploadDir = $baseDir . '\course_files\\';
         $this->chunkDir = $baseDir . '\temp_chunks\\';
+
+        if (!file_exists($this->uploadDir)) {
+            $create_dir = @mkdir($this->uploadDir, 0777, true);
+            error_log("Upload Directory creation. "($create_dir ? "successful" : "failed") . ": " . $this->uploadDir);
+        }
 
         if (!file_exists($this->chunkDir)) {
             $created = @mkdir($this->chunkDir, 0777, true);
@@ -41,8 +46,8 @@ class ChunkUploadHandler
             }
 
             $chunk = $_FILES['chunk'];
-            $chunkIndex = (int)$_POST['chunkIndex'];
-            $totalChunks = (int)$_POST['totalChunks'];
+            $chunkIndex = (int) $_POST['chunkIndex'];
+            $totalChunks = (int) $_POST['totalChunks'];
             $fileId = $_POST['fileId'];
             $originalFileName = $_POST['fileName'] ?? '';
             $originalFileType = $_POST['fileType'] ?? '';
@@ -110,7 +115,17 @@ class ChunkUploadHandler
             $chunkPath = "{$this->chunkDir}{$fileId}_{$i}";
             $chunk = file_get_contents($chunkPath);
             fwrite($finalFile, $chunk);
-            unlink($chunkPath);
+
+            // Add error logging for unlink operation
+            error_log("Attempting to delete chunk: " . $chunkPath);
+            if (!unlink($chunkPath)) {
+                error_log("Failed to delete chunk: " . $chunkPath);
+                error_log("PHP error: " . error_get_last()['message']);
+                error_log("File exists: " . (file_exists($chunkPath) ? 'yes' : 'no'));
+                error_log("File permissions: " . substr(sprintf('%o', fileperms($chunkPath)), -4));
+            } else {
+                error_log("Successfully deleted chunk: " . $chunkPath);
+            }
         }
 
         fclose($finalFile);
