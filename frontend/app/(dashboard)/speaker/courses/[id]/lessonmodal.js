@@ -90,6 +90,7 @@ const LessonModal = () => {
         lesson_description: formData.description,
         resources: formData.resources,
         sequence_number: lesson?.sequence_number,
+        topics: lesson?.topics || [],
       };
 
       setIsCreating(true);

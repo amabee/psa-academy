@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import useLessonStore from "@/store/lessonStore";
 import { X } from "lucide-react";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 
 // FilePond imports
@@ -43,6 +43,8 @@ const TopicModal = () => {
     file: "",
   });
 
+  const pondRef = useRef(null);
+
   // Zustand store hooks
   const isTopicModalOpen = useLessonStore(
     (state) => state.courseEditor.isTopicModalOpen
@@ -55,6 +57,7 @@ const TopicModal = () => {
     (state) => state.courseEditor.selectedTopicIndex
   );
   const lessons = useLessonStore((state) => state.courseEditor.lessons);
+
   const addTopic = useLessonStore((state) => state.addTopic);
   const editTopic = useLessonStore((state) => state.editTopic);
   const generatedTopicID = useLessonStore(
@@ -68,6 +71,10 @@ const TopicModal = () => {
 
   useEffect(() => {
     if (!isTopicModalOpen) {
+      if (pondRef.current) {
+        pondRef.current.removeFiles();
+      }
+
       setFormData({
         topic_id: "",
         lesson_id: "",
@@ -238,7 +245,9 @@ const TopicModal = () => {
   }, [formData?.file]);
 
   const onClose = () => {
-    closeTopicModal();
+    if (pondRef.current) {
+      pondRef.current.removeFiles();
+    }
     setFiles([]);
     setUploadedFileName(null);
     setFormData({
@@ -248,6 +257,8 @@ const TopicModal = () => {
       topic_description: "",
       file: "",
     });
+
+    closeTopicModal();
   };
 
   return (
@@ -322,20 +333,28 @@ const TopicModal = () => {
                 Topic Video or PDF
               </label>
               <FilePond
+                ref={pondRef}
                 files={files}
                 onupdatefiles={(fileItems) => {
                   setFiles(fileItems);
-                  if (fileItems.length === 0) {
+
+                  if (!fileItems || fileItems.length === 0) {
                     setUploadedFileName(null);
                     setIsExistingFile(false);
                     return;
                   }
 
                   const currentFile = fileItems[0];
+                  if (!currentFile) {
+                    setIsExistingFile(false);
+                    return;
+                  }
 
                   if (
+                    currentFile.source &&
+                    formData?.file &&
                     currentFile.source ===
-                    `${process.env.NEXT_PUBLIC_ROOT_URL}file_serve.php?file=${formData.file}`
+                      `${process.env.NEXT_PUBLIC_ROOT_URL}file_serve.php?file=${formData.file}`
                   ) {
                     setIsExistingFile(true);
                     setUploadedFileName(formData.file);
@@ -345,6 +364,7 @@ const TopicModal = () => {
                 }}
                 allowMultiple={false}
                 maxFiles={1}
+                instantUpload={false}
                 name="video"
                 allowFileSizeValidation={true}
                 maxFileSize="200mb"
@@ -361,9 +381,14 @@ const TopicModal = () => {
                 allowPdfPreview={true}
                 pdfPreviewHeight={320}
                 pdfComponentExtraParams="toolbar=0&view=fit&page=1"
-                instantUpload={false}
                 allowFileTypeValidation={true}
                 fileValidateTypeLabelExpectedTypes="Please upload a video or PDF file"
+                beforePdfPreviewLoad={(file) => {
+                  if (file && file.fileType === "application/pdf") {
+                    return true;
+                  }
+                  return false;
+                }}
                 beforeAddFile={(file) => {
                   if (
                     file.fileType.includes("video/") ||
@@ -387,6 +412,7 @@ const TopicModal = () => {
                   setIsExistingFile(false);
                   try {
                     const fileName = await uploadFile(fileItem.file);
+
                     setUploadedFileName(fileName);
                     toast.success("File uploaded successfully");
                   } catch (error) {
@@ -435,6 +461,27 @@ const TopicModal = () => {
                         controller.abort();
                       },
                     };
+                  },
+                  process: async (
+                    fieldName,
+                    file,
+                    metadata,
+                    load,
+                    error,
+                    progress,
+                    abort
+                  ) => {
+                    try {
+                      const fileName = await uploadFile(file);
+                      const interval = setInterval(() => {
+                        progress(true, uploadProgress, 100);
+                        if (uploadProgress === 100) clearInterval(interval);
+                      }, 500);
+
+                      load(fileName);
+                    } catch (err) {
+                      error("Upload failed");
+                    }
                   },
                 }}
               />
