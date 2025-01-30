@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jan 19, 2025 at 02:57 PM
+-- Generation Time: Jan 27, 2025 at 09:48 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -77,7 +77,48 @@ CREATE TABLE `categories` (
 
 INSERT INTO `categories` (`category_id`, `category_name`) VALUES
 (1, 'Technology'),
-(2, 'Artificial Intelligence');
+(2, 'Artificial Intelligence'),
+(3, 'Mathematics'),
+(4, 'Science'),
+(5, 'Programming'),
+(6, 'Web Development'),
+(7, 'Data Science'),
+(8, 'Business'),
+(9, 'Finance'),
+(10, 'Arts'),
+(11, 'Music'),
+(12, 'Health & Wellness'),
+(13, 'Fitness'),
+(14, 'Cooking'),
+(15, 'Photography'),
+(16, 'Graphic Design'),
+(17, 'Digital Marketing'),
+(18, 'Writing & Publishing'),
+(19, 'Languages'),
+(20, 'History'),
+(21, 'Psychology'),
+(22, 'Personal Development'),
+(23, 'Public Speaking'),
+(24, 'Time Management'),
+(25, 'Leadership'),
+(26, 'Education'),
+(27, 'Engineering'),
+(28, 'Architecture'),
+(29, 'Interior Design'),
+(30, 'Fashion Design'),
+(31, 'Film & Video'),
+(32, 'UI/UX Design'),
+(33, 'Cybersecurity'),
+(34, 'Blockchain'),
+(35, 'Mobile App Development'),
+(36, 'Game Development'),
+(37, 'Networking'),
+(38, 'Cloud Computing'),
+(39, 'Project Management'),
+(40, 'Career Development'),
+(41, 'Social Media Management'),
+(42, 'Environmental Studies'),
+(99, 'Not Defined');
 
 -- --------------------------------------------------------
 
@@ -114,7 +155,7 @@ CREATE TABLE `choices` (
 CREATE TABLE `commentsorquestions` (
   `comment_id` int(11) NOT NULL,
   `user_id` int(11) DEFAULT NULL,
-  `topic_id` int(11) DEFAULT NULL,
+  `topic_id` varchar(255) DEFAULT NULL,
   `comment_text` text DEFAULT NULL,
   `created_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -143,8 +184,7 @@ CREATE TABLE `courses` (
 --
 
 INSERT INTO `courses` (`index_id`, `course_id`, `user_id`, `category_id`, `title`, `description`, `course_image`, `course_status`, `created_at`, `updated_at`) VALUES
-(4, '1939cdb9-6f0a-4c83-95fd-e520e18d5e32', 1, 1, 'Programming Essentials', 'desc 1', 'https://yavuzceliker.github.io/sample-images/image-2.jpg', 'Description', '2025-01-18 21:26:53', NULL),
-(2, 'a1282260-2d56-4627-8af8-8dbafab6f0fa', 1, 1, 'Introduction to Programming', 'Introduction to Programming', 'https://yavuzceliker.github.io/sample-images/image-3.jpg', 'published', '2025-01-18 19:03:31', NULL);
+(15, '47d2d511-a3f2-4292-a338-03269c3c58f4', 1, 39, 'Intro to Java Programming', 'Intro to Java Programming', 'course_6796df0d0aa55.png', 'publish', '2025-01-27 09:11:47', '2025-01-27 09:19:09');
 
 -- --------------------------------------------------------
 
@@ -196,18 +236,36 @@ CREATE TABLE `lessons` (
   `lesson_id` varchar(255) NOT NULL,
   `course_id` varchar(255) DEFAULT NULL,
   `lesson_title` varchar(255) DEFAULT NULL,
-  `content` text DEFAULT NULL,
+  `lesson_description` text DEFAULT NULL,
   `resources` text DEFAULT NULL,
   `sequence_number` int(11) DEFAULT NULL,
-  `is_Completed` smallint(6) DEFAULT NULL
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `lessons`
 --
 
-INSERT INTO `lessons` (`lesson_id`, `course_id`, `lesson_title`, `content`, `resources`, `sequence_number`, `is_Completed`) VALUES
-('db18bf0c-6a03-473f-8f92-265e5bb9567f', '1939cdb9-6f0a-4c83-95fd-e520e18d5e32', 'Chapter 1', 'Sheesh', 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', 1, 0);
+INSERT INTO `lessons` (`lesson_id`, `course_id`, `lesson_title`, `lesson_description`, `resources`, `sequence_number`, `created_at`, `updated_at`) VALUES
+('1cb2d8c5-9a0a-4cc6-8fa1-9e94673c80c1', '47d2d511-a3f2-4292-a338-03269c3c58f4', 'Introduction to Machine Learning', 'Introduction to Machine Learning', 'Resources not available', 3, '2025-01-27 14:17:21', '2025-01-27 14:38:50'),
+('a0cea95a-fc70-4c8f-9a68-4e6f456ed4ff', '47d2d511-a3f2-4292-a338-03269c3c58f4', 'Web Development Basics', 'Learn the essentials of web development, including creating static web pages with HTML and CSS. You&#039;ll understand how websites are structured and styled.\n', 'Resources not available', 2, '2025-01-27 10:11:36', '2025-01-27 14:38:50'),
+('d6f480c6-af0b-421b-82a9-fbdd8710b55c', '47d2d511-a3f2-4292-a338-03269c3c58f4', 'Introduction to Programming', 'This course aims to prepare you for problem solving through programming. In this course, you&#039;ll be introduced to the C Programming Language. You&#039;ll learn about various constructs supported by C Language and use them to write programs which can solve scientific problems', 'Resources not available', 1, '2025-01-27 09:24:38', '2025-01-27 14:38:50');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `lesson_progress`
+--
+
+CREATE TABLE `lesson_progress` (
+  `progress_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `lesson_id` varchar(255) NOT NULL,
+  `is_completed` tinyint(4) DEFAULT 0,
+  `completion_date` datetime DEFAULT NULL,
+  `last_accessed` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -217,9 +275,16 @@ INSERT INTO `lessons` (`lesson_id`, `course_id`, `lesson_title`, `content`, `res
 
 CREATE TABLE `materials` (
   `material_id` int(11) NOT NULL,
-  `topic_id` int(11) DEFAULT NULL,
-  `file_path` varchar(255) DEFAULT NULL
+  `topic_id` varchar(255) NOT NULL,
+  `file_name` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `materials`
+--
+
+INSERT INTO `materials` (`material_id`, `topic_id`, `file_name`) VALUES
+(1, 'b5651866-fb8c-4554-bf82-ef0eec2cd856', 'sample_media.pdf');
 
 -- --------------------------------------------------------
 
@@ -307,15 +372,28 @@ CREATE TABLE `sessions` (
 --
 
 INSERT INTO `sessions` (`session_id`, `user_id`, `session_token`, `ip_address`, `user_agent`, `login_time`, `last_active_time`, `expires_at`, `is_active`) VALUES
+('022b560d63f42ef20017fab40b6a577e002d2462a1566e576702aab74efba6e5', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczNzk1NDY4MSwiZXhwIjoxNzM3OTYxODgxLCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.t90DoaPTpXYiTgQmYn-kt5DuMSHZ7GCW4SssCvvdRBU', '::1', 'axios/1.7.9', '2025-01-27 13:11:21', '2025-01-27 13:11:21', '2025-01-27 15:11:21', 1),
+('025ec10ff6801d6972674033cd57ec7cb3fb309af788697da5c851f152934938', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczNzk2MzQxNywiZXhwIjoxNzM3OTcwNjE3LCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.msnbkdDhgASMXEV7mv7tOny1Ngw1wyfy1WCAR4SBUP4', '::1', 'axios/1.7.9', '2025-01-27 15:36:57', '2025-01-27 15:36:57', '2025-01-27 17:36:57', 1),
 ('0e1e2c9ea44c72feb633b7d2af144031c75c0c452a093d174543dc4518385d7b', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczNzI4NDUwMiwiZXhwIjoxNzM3MjkxNzAyLCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.v1RPJnaYqUl3Drkc7ERByPcnyVOYL8ttYxm_uUs9Rio', '::1', 'axios/1.7.9', '2025-01-19 19:01:42', '2025-01-19 19:01:42', '2025-01-19 21:01:42', 1),
+('24f074bfe400cf9a02a02b7ef7cc2b4cb5dc49e5faf946c54df61b46f1a409f7', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczNzcwMjY4MCwiZXhwIjoxNzM3NzA5ODgwLCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.uMyfSbL_UBM7b5yy3oSiYdZSZ6BHjjp40mxyXiGKX4s', '::1', 'axios/1.7.9', '2025-01-24 15:11:20', '2025-01-24 15:11:20', '2025-01-24 17:11:20', 1),
+('3dea0e9dccd998c01501082272ef5d9677ebccdff5fe5a1ba2c92e9ac82e1df7', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczNzY4NzYwMCwiZXhwIjoxNzM3Njk0ODAwLCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.TliLyKk8eK6Xpa5A5gS_eEpchuQM7VOqBy14K54nFX8', '::1', 'axios/1.7.9', '2025-01-24 11:00:00', '2025-01-24 11:00:00', '2025-01-24 13:00:00', 1),
+('4a3e3956e07b3cd7c8e9cd82efaef78c56bcfcb629aa866311fc86887fad5569', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczNzY5NTE2NywiZXhwIjoxNzM3NzAyMzY3LCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.7HN43RfBv_hdo2HwM99BlP56r9j4X4UT24f388QumIs', '::1', 'axios/1.7.9', '2025-01-24 13:06:07', '2025-01-24 13:06:07', '2025-01-24 15:06:07', 1),
+('598c915cecc4a4e7433f70dfddb7b511876dd87b4544e8e9716eb17bdb877f33', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczNzQ1OTY2OSwiZXhwIjoxNzM3NDY2ODY5LCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.ylZEkLigIX-YF7_Z8ewxrdIiIi_2FW3YsRO8iw3Yu28', '::1', 'axios/1.7.9', '2025-01-21 19:41:09', '2025-01-21 19:41:09', '2025-01-21 21:41:09', 1),
+('778b3a86ceb66585ad2741f5adc2976faffa16cc451d1fea183632fdc6ad739f', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczNzM3ODc4NCwiZXhwIjoxNzM3Mzg1OTg0LCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.UVIndqRQ_9n6xW9xI6PMvRhz5YKXdCITxawMGGpsDZ0', '::1', 'axios/1.7.9', '2025-01-20 21:13:04', '2025-01-20 21:13:04', '2025-01-20 23:13:04', 1),
 ('7f66f8b63d692b121c5ff2ae6a3087c23e4b9f69d4027f5b21b3aba5eba09c41', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczNzI4NDY5OCwiZXhwIjoxNzM3MjkxODk4LCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.qaEyOXz3BnNtFbn1MgnvpFG9X5c67wpKMI3QOTj8pOw', '::1', 'axios/1.7.9', '2025-01-19 19:04:58', '2025-01-19 19:04:58', '2025-01-19 21:04:58', 1),
 ('8ec1eb78363387438b9bf8143616e9c91639b9b8b3023b73fd7bd0b9ab1f15f7', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczNzI5NDI1OSwiZXhwIjoxNzM3MzAxNDU5LCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.FbdeaYcv2LVgTaesBDOPDbz7JZwpQm2ijFpMmN8bp8E', '::1', 'axios/1.7.9', '2025-01-19 21:44:19', '2025-01-19 21:44:19', '2025-01-19 23:44:19', 1),
 ('91ca70c0dcb20282107494897db14c9b0e8113d5fd2bdfd21828946aa4466f42', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczNzI4NDYyMCwiZXhwIjoxNzM3MjkxODIwLCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.Z561fM0iSAIOy09Xdh06cvbBzfG72qkG4YVr3vGPP1U', '::1', 'axios/1.7.9', '2025-01-19 19:03:40', '2025-01-19 19:03:40', '2025-01-19 21:03:40', 1),
 ('92691545aa3537f49c1ed9d29402610d87c41d93a272c3276fb025548b70e918', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczNzI4MzQ3MywiZXhwIjoxNzM3MjkwNjczLCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.a2EPkkBVz8eopJTd_qrbP8QpP0mbqzMABqUMrQm7Iyg', '::1', 'axios/1.7.9', '2025-01-19 18:44:33', '2025-01-19 18:44:33', '2025-01-19 20:44:33', 1),
+('aaf36cb01d3eb4432a126450fa89460cf5aaf63e7b3cc0183a4a643202ae8087', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczNzk0NzQzMSwiZXhwIjoxNzM3OTU0NjMxLCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.90_CL6B6KEuOgRbT-c8dfnwGOLUTOQ9jZiO6Z3wCIKE', '::1', 'axios/1.7.9', '2025-01-27 11:10:31', '2025-01-27 11:10:31', '2025-01-27 13:10:31', 1),
 ('b45c4b1f7e1a5baab885270466cbf5b58edcdfcc0551328f2216d40c2316fa10', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczNzI4NDMxNywiZXhwIjoxNzM3MjkxNTE3LCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.cOecLG8lOljysdmFD73e6N8ykOJaBW6g7BllhHivtBw', '::1', 'axios/1.7.9', '2025-01-19 18:58:37', '2025-01-19 18:58:37', '2025-01-19 20:58:37', 1),
+('c10cf259b59ef350fe7c665a44244face8319468a527aba28a49f0ecff3cf7ff', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczNzM3MTU2OCwiZXhwIjoxNzM3Mzc4NzY4LCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.rvLoBzUPUfzTbL9M9Z_Ao_1uLnGGupEoy2ZdxhjtcGA', '::1', 'axios/1.7.9', '2025-01-20 19:12:48', '2025-01-20 19:12:48', '2025-01-20 21:12:48', 1),
+('d3d7d5a4b7e043afbbaea7aee2d78d441522b200c906d5348ab5287e7039f252', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczNzkzOTkwOCwiZXhwIjoxNzM3OTQ3MTA4LCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.JYGDx2-ZtNlCruWq5ejZ1hQfb1XfmvvUTemk-w2AIIE', '::1', 'axios/1.7.9', '2025-01-27 09:05:08', '2025-01-27 09:05:08', '2025-01-27 11:05:08', 1),
+('e09439a747545de4c41abc12d7fe15dac27401f5094fe02d9af46c7e44843153', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczNzY5NTQyMCwiZXhwIjoxNzM3NzAyNjIwLCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.EeD75kEBtscQq5qFu7thZBwKznBfiy83tSIcj-wxqgU', '::1', 'axios/1.7.9', '2025-01-24 13:10:20', '2025-01-24 13:10:20', '2025-01-24 15:10:20', 1),
 ('e91fda7007ab571c21cd88313bc2fafdf2060da3cbad7e7aae6468e1d58f73b9', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczNzI4NDQ2NiwiZXhwIjoxNzM3MjkxNjY2LCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.h-KgTEspptesZMuM3mRXN4uL47mB9fvAs6tUf47lBx8', '::1', 'axios/1.7.9', '2025-01-19 19:01:06', '2025-01-19 19:01:06', '2025-01-19 21:01:06', 1),
+('eae800f1fd65ac1c97dc1dc7b96540140935606ad6b728fef68e5947a15346f6', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczNzY4MDA5NSwiZXhwIjoxNzM3Njg3Mjk1LCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.7pRzhTXttnhWf0YVYhAHOvkOpVVtC8lKSG7Ll9isADU', '::1', 'axios/1.7.9', '2025-01-24 08:54:55', '2025-01-24 08:54:55', '2025-01-24 10:54:55', 1),
 ('f356491b117442aa026a3338c90b32bf1e66e729d5d156d1187ac7ef6025f8ff', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczNzI4NDcyNCwiZXhwIjoxNzM3MjkxOTI0LCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.YsE4ONiN1v3TYDkONW4w_aYT03RiAhDZJfnjQ40qJDY', '::1', 'axios/1.7.9', '2025-01-19 19:05:24', '2025-01-19 19:05:24', '2025-01-19 21:05:24', 1),
-('fa42bff4ddcdf5b0af5a50a3cdc159b077280f2c3d2bf294e4955fd96954c03d', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczNzI4NDU3MSwiZXhwIjoxNzM3MjkxNzcxLCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.u9RRhosR9utmT29D5UvsF5hoMxZO97kFV5doPKy1Je0', '::1', 'axios/1.7.9', '2025-01-19 19:02:51', '2025-01-19 19:02:51', '2025-01-19 21:02:51', 1);
+('fa42bff4ddcdf5b0af5a50a3cdc159b077280f2c3d2bf294e4955fd96954c03d', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczNzI4NDU3MSwiZXhwIjoxNzM3MjkxNzcxLCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.u9RRhosR9utmT29D5UvsF5hoMxZO97kFV5doPKy1Je0', '::1', 'axios/1.7.9', '2025-01-19 19:02:51', '2025-01-19 19:02:51', '2025-01-19 21:02:51', 1),
+('fb7809fd36dc4026ec8308ff7e7b7865457767e78c6b0e4bb8cf75d0a7129052', 2, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczNzQ1OTYwMCwiZXhwIjoxNzM3NDY2ODAwLCJzdWIiOjIsInVzZXIiOnsiaWQiOjIsInVzZXJuYW1lIjoic3R1ZGVudDEiLCJmdWxsX25hbWUiOiJZc2thZWxhWWFlbmFGdWppbW90byIsImVtYWlsIjoieWFlbmFfeXNrYUBnbWFpbC5jb20iLCJ1c2VyX3R5cGVfaWQiOjR9fQ.sNpJ41k1SZwEFMWF_4Do5_HzyfNzIgCwAPMUPPuX1ts', '::1', 'axios/1.7.9', '2025-01-21 19:40:00', '2025-01-21 19:40:00', '2025-01-21 21:40:00', 1);
 
 -- --------------------------------------------------------
 
@@ -351,12 +429,25 @@ CREATE TABLE `tests` (
 --
 
 CREATE TABLE `topic` (
-  `topic_id` int(11) NOT NULL,
-  `lesson_id` int(11) DEFAULT NULL,
+  `topic_id` varchar(255) NOT NULL,
+  `lesson_id` varchar(255) DEFAULT NULL,
   `topic_title` varchar(255) DEFAULT NULL,
   `topic_description` text DEFAULT NULL,
-  `sequence_number` int(11) DEFAULT NULL
+  `sequence_number` int(11) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `topic`
+--
+
+INSERT INTO `topic` (`topic_id`, `lesson_id`, `topic_title`, `topic_description`, `sequence_number`, `created_at`, `updated_at`) VALUES
+('b5651866-fb8c-4554-bf82-ef0eec2cd856', 'a0cea95a-fc70-4c8f-9a68-4e6f456ed4ff', 'Chapter 1: Web Design Principles', 'Learn the essentials of web development, including creating static web pages with HTML and CSS. You\'ll understand how websites are structured and styled', 1, '2025-01-27 10:23:15', NULL),
+('d8a62c3b-74fd-48da-a64a-ec346f8c4b4d', 'a0cea95a-fc70-4c8f-9a68-4e6f456ed4ff', 'Chapter 2: HTML,CSS,JS: What are they?', 'Structuring web pages', 2, '2025-01-27 10:27:12', NULL),
+('f1453dc1-0ab0-45d7-8e35-8db7e996864d', 'a0cea95a-fc70-4c8f-9a68-4e6f456ed4ff', 'Chapter 3: Web Syntaxes and what are they.', 'Web Syntaxes', 3, '2025-01-27 11:10:00', NULL),
+('f6b1df6d-4864-4c20-9a76-4e55a268ac55', 'a0cea95a-fc70-4c8f-9a68-4e6f456ed4ff', 'Chapter 4: Into the stylesheet verse', 'Web Stylesheet designing', 4, '2025-01-27 11:20:56', NULL),
+('f6b9df6d-4864-4c20-9a76-4e55a268ac55', 'a0cea95a-fc70-4c8f-9a68-4e6f456ed4ff', 'Chapter 5: Into the stylesheet verse 2', 'Advance Stylesheet configs', 4, '2025-01-27 11:11:25', NULL);
 
 -- --------------------------------------------------------
 
@@ -392,7 +483,8 @@ CREATE TABLE `user` (
 --
 
 INSERT INTO `user` (`user_id`, `userType_id`, `username`, `password`, `is_Active`) VALUES
-(1, 3, 'johndoe', '$2a$12$KKwgz4PKbBrSIB0ilRaFAug55HtPdlWlC/f1x4HrbigS7TwysWXvC', 1);
+(1, 3, 'johndoe', '$2a$12$KKwgz4PKbBrSIB0ilRaFAug55HtPdlWlC/f1x4HrbigS7TwysWXvC', 1),
+(2, 4, 'student1', '$2a$12$KKwgz4PKbBrSIB0ilRaFAug55HtPdlWlC/f1x4HrbigS7TwysWXvC', 1);
 
 -- --------------------------------------------------------
 
@@ -427,7 +519,8 @@ CREATE TABLE `userinfo` (
 --
 
 INSERT INTO `userinfo` (`userInfo_id`, `user_id`, `first_name`, `middle_name`, `last_name`, `age`, `date_of_birth`, `sex`, `gender`, `email`, `phone`, `blood_type`, `allergies`, `ip`, `office_id`, `position`, `is_Pwd`, `is_SoloParent`, `is_Pregnant`) VALUES
-(1, 1, 'John', 'Mea', 'Doe', '25', '1995-02-20', 'Female', 'Female', 'johndoe@gmail.com', '09123456789', 'O+', 'none', NULL, NULL, 'Programmer', 0, 0, 0);
+(1, 1, 'John', 'Mea', 'Doe', '25', '1995-02-20', 'Female', 'Female', 'johndoe@gmail.com', '09123456789', 'O+', 'none', NULL, NULL, 'Programmer', 0, 0, 0),
+(2, 2, 'Yskaela', 'Yaena', 'Fujimoto', '25', '1999-12-12', 'female', 'female', 'yaena_yska@gmail.com', '991', 'O+', 'none', NULL, NULL, NULL, 0, 0, 0);
 
 -- --------------------------------------------------------
 
@@ -552,6 +645,14 @@ ALTER TABLE `grades`
 ALTER TABLE `lessons`
   ADD PRIMARY KEY (`lesson_id`),
   ADD KEY `course_id` (`course_id`);
+
+--
+-- Indexes for table `lesson_progress`
+--
+ALTER TABLE `lesson_progress`
+  ADD PRIMARY KEY (`progress_id`),
+  ADD KEY `user_id` (`user_id`),
+  ADD KEY `lesson_id` (`lesson_id`);
 
 --
 -- Indexes for table `materials`
@@ -684,7 +785,7 @@ ALTER TABLE `assignments`
 -- AUTO_INCREMENT for table `categories`
 --
 ALTER TABLE `categories`
-  MODIFY `category_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `category_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=100;
 
 --
 -- AUTO_INCREMENT for table `certifications`
@@ -708,7 +809,7 @@ ALTER TABLE `commentsorquestions`
 -- AUTO_INCREMENT for table `courses`
 --
 ALTER TABLE `courses`
-  MODIFY `index_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `index_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- AUTO_INCREMENT for table `enrollments`
@@ -729,10 +830,16 @@ ALTER TABLE `grades`
   MODIFY `grade_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `lesson_progress`
+--
+ALTER TABLE `lesson_progress`
+  MODIFY `progress_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `materials`
 --
 ALTER TABLE `materials`
-  MODIFY `material_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `material_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `notifications`
@@ -777,12 +884,6 @@ ALTER TABLE `tests`
   MODIFY `test_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `topic`
---
-ALTER TABLE `topic`
-  MODIFY `topic_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
 -- AUTO_INCREMENT for table `true_false`
 --
 ALTER TABLE `true_false`
@@ -792,13 +893,13 @@ ALTER TABLE `true_false`
 -- AUTO_INCREMENT for table `user`
 --
 ALTER TABLE `user`
-  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `userinfo`
 --
 ALTER TABLE `userinfo`
-  MODIFY `userInfo_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `userInfo_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `usersettings`
@@ -840,7 +941,7 @@ ALTER TABLE `choices`
 --
 ALTER TABLE `commentsorquestions`
   ADD CONSTRAINT `commentsorquestions_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`),
-  ADD CONSTRAINT `commentsorquestions_ibfk_2` FOREIGN KEY (`topic_id`) REFERENCES `topic` (`topic_id`);
+  ADD CONSTRAINT `commentsorquestions_ibfk_2` FOREIGN KEY (`topic_id`) REFERENCES `topic` (`topic_id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `courses`
@@ -875,10 +976,17 @@ ALTER TABLE `lessons`
   ADD CONSTRAINT `lessons_ibfk_1` FOREIGN KEY (`course_id`) REFERENCES `courses` (`course_id`) ON DELETE CASCADE;
 
 --
+-- Constraints for table `lesson_progress`
+--
+ALTER TABLE `lesson_progress`
+  ADD CONSTRAINT `lesson_progress_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`),
+  ADD CONSTRAINT `lesson_progress_ibfk_2` FOREIGN KEY (`lesson_id`) REFERENCES `lessons` (`lesson_id`);
+
+--
 -- Constraints for table `materials`
 --
 ALTER TABLE `materials`
-  ADD CONSTRAINT `materials_ibfk_1` FOREIGN KEY (`topic_id`) REFERENCES `topic` (`topic_id`);
+  ADD CONSTRAINT `materials_ibfk_1` FOREIGN KEY (`topic_id`) REFERENCES `topic` (`topic_id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `notifications`

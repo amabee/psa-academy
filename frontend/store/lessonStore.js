@@ -69,13 +69,46 @@ const createActions = (set) => ({
       },
     })),
 
-  addLesson: (lesson) => {
+  openDeletionModal: ({ lessonIndex }) =>
     set((state) => ({
       courseEditor: {
         ...state.courseEditor,
-        lessons: [...state.courseEditor.lessons, lesson],
+        isDeletionModalOpen: true,
+        selectedLessonIndex: lessonIndex,
       },
-    }));
+    })),
+
+  closeDeletionModal: () =>
+    set((state) => ({
+      courseEditor: {
+        ...state.courseEditor,
+        isDeletionModalOpen: false,
+        selectedLessonIndex: null,
+      },
+    })),
+
+  setGeneratedLessonID: (lessonID) =>
+    set((state) => ({
+      courseEditor: {
+        ...state.courseEditor,
+        generatedLessonID: lessonID,
+      },
+    })),
+
+  addLesson: (lesson) => {
+    set((state) => {
+      const finalLesson = lesson.lesson_id
+        ? lesson
+        : { ...lesson, lesson_id: state.courseEditor.generatedLessonID };
+
+      return {
+        courseEditor: {
+          ...state.courseEditor,
+          lessons: [...state.courseEditor.lessons, finalLesson],
+          generatedLessonID: null,
+        },
+      };
+    });
   },
 
   editLesson: ({ index, lesson }) =>
@@ -88,29 +121,53 @@ const createActions = (set) => ({
       },
     })),
 
-  deleteLesson: (index) =>
+  deleteLesson: () =>
+    set((state) => {
+      const { selectedLessonIndex, lessons } = state.courseEditor;
+
+      if (selectedLessonIndex === null) return state;
+
+      return {
+        courseEditor: {
+          ...state.courseEditor,
+          lessons: lessons.filter((_, i) => i !== selectedLessonIndex),
+          isDeletionModalOpen: false,
+          selectedLessonIndex: null,
+          isDeleting: false,
+        },
+      };
+    }),
+
+  setGeneratedTopicID: (topicID) =>
     set((state) => ({
       courseEditor: {
         ...state.courseEditor,
-        lessons: state.courseEditor.lessons.filter((_, i) => i !== index),
+        generatedTopicID: topicID,
       },
     })),
 
   addTopic: ({ lessonIndex, topic }) =>
-    set((state) => ({
-      courseEditor: {
-        ...state.courseEditor,
-        lessons: state.courseEditor.lessons.map((lesson, index) => {
-          if (index === lessonIndex) {
-            return {
-              ...lesson,
-              topics: [...lesson.topics, topic],
-            };
-          }
-          return lesson;
-        }),
-      },
-    })),
+    set((state) => {
+      const finalTopic = topic.topic_id
+        ? topic
+        : { ...topic, topic_id: state.courseEditor.generatedTopicID };
+
+      return {
+        courseEditor: {
+          ...state.courseEditor,
+          lessons: state.courseEditor.lessons.map((lesson, index) => {
+            if (index === lessonIndex) {
+              return {
+                ...lesson,
+                topics: [...lesson.topics, finalTopic],
+              };
+            }
+            return lesson;
+          }),
+          generatedTopicID: null,
+        },
+      };
+    }),
 
   editTopic: ({ lessonIndex, topicIndex, topic }) =>
     set((state) => ({
@@ -219,6 +276,14 @@ const createActions = (set) => ({
         }),
       },
     })),
+
+  setIsDeleting: (isDeleting) =>
+    set((state) => ({
+      courseEditor: {
+        ...state.courseEditor,
+        isDeleting,
+      },
+    })),
 });
 
 const useLessonStore = create((set) => ({
@@ -227,9 +292,13 @@ const useLessonStore = create((set) => ({
     isTopicModalOpen: false,
     isLessonModalOpen: false,
     isTestModalOpen: false,
+    isDeletionModalOpen: false,
     selectedLessonIndex: null,
     selectedTopicIndex: null,
     selectedTestIndex: null,
+    generatedLessonID: null,
+    generatedTopicID: null,
+    isDeleting: false,
   },
   ...createActions(set),
 }));

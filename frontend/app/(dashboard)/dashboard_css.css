@@ -1055,11 +1055,11 @@ input[type="color"] {
 
 /* Custom Modal */
 .custom-modal__overlay {
-  @apply fixed inset-0 bg-black bg-opacity-50 z-40;
+  @apply fixed inset-0 bg-black bg-opacity-50 z-40 pointer-events-none;
 }
 
 .custom-modal__content {
-  @apply fixed inset-y-0 right-0 w-full max-w-md bg-customgreys-secondarybg shadow-lg z-50 overflow-y-auto;
+  @apply fixed inset-y-0 right-0 w-full max-w-md bg-customgreys-secondarybg shadow-lg z-50 overflow-y-auto pointer-events-auto;
 }
 
 .custom-modal__inner {

@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Loading from "@/components/shared/loading";
+
 import { registerPlugin } from "filepond";
 import { FilePond } from "react-filepond";
 import "filepond/dist/filepond.min.css";
@@ -35,8 +36,7 @@ import FilePondPluginFileValidateType from "filepond-plugin-file-validate-type";
 import { ACCEPTED_IMAGE_TYPES } from "@/lib/utils";
 import useLessonStore from "@/store/lessonStore";
 import { Separator } from "@radix-ui/react-context-menu";
-import { set } from "date-fns";
-import { updateCourse } from "@/lib/actions/speaker/action";
+import { generateLessonID, updateCourse } from "@/lib/actions/speaker/action";
 import { useUser } from "@/app/providers/UserProvider";
 import { toast } from "sonner";
 
@@ -64,7 +64,7 @@ const CourseEditor = () => {
     course?.course_image
       ? [
           {
-            source: process.env.NEXT_PUBLIC_IMAGE_URL + course.course_image,
+            source: process.env.NEXT_PUBLIC_ROOT_URL + course.course_image,
             options: {
               type: "local",
             },
@@ -74,10 +74,14 @@ const CourseEditor = () => {
   );
 
   const setIsCreating = useAppStore((state) => state.setIsCreating);
+  const isCreating = useAppStore((state) => state.isCreating);
   const setIsRedirecting = useAppStore((state) => state.setIsRedirecting);
 
   const [selectedCategoryLabel, setSelectedCategoryLabel] =
     useState("Select a category");
+
+  const [isImageChanged, setIsImageChanged] = useState(false);
+  const [isGeneratingLessonID, setIsGeneratingLessonID] = useState(false);
 
   const lessons = useLessonStore((state) => state.courseEditor.lessons);
 
@@ -91,33 +95,15 @@ const CourseEditor = () => {
 
   useEffect(() => {
     if (course?.course_image) {
-      const fullImageUrl = `${process.env.NEXT_PUBLIC_IMAGE_URL}image_serve.php?image=${course.course_image}`;
-
-      fetch(fullImageUrl, {
-        mode: "cors",
-        headers: {
-          Origin: "http://localhost:3000",
+      const fullImageUrl = `${process.env.NEXT_PUBLIC_ROOT_URL}image_serve.php?image=${course.course_image}`;
+      setFiles([
+        {
+          source: fullImageUrl,
+          options: {
+            type: "local",
+          },
         },
-      })
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error("Image fetch failed");
-          }
-          return response.blob();
-        })
-        .then((blob) => {
-          setFiles([
-            {
-              source: fullImageUrl,
-              options: {
-                type: "local",
-              },
-            },
-          ]);
-        })
-        .catch((error) => {
-          console.error("Image loading error:", error);
-        });
+      ]);
     }
   }, [course?.course_image]);
 
@@ -131,8 +117,13 @@ const CourseEditor = () => {
         ...prev,
         courseTitle: course.title,
         courseDescription: course.description,
-        courseCategory: course.category_id,
+        courseCategory: course?.category_id,
+        courseStatus: course?.course_status,
       }));
+
+      if (course.lessons) {
+        setLessons(course.lessons);
+      }
 
       if (matchingCategory) {
         setSelectedCategoryLabel(matchingCategory.category_name);
@@ -164,7 +155,9 @@ const CourseEditor = () => {
   const onUpdate = async (e) => {
     e.preventDefault();
     try {
-      const courseImage = formData.courseImage?.file || null;
+      setIsCreating(true);
+
+      const courseImage = isImageChanged ? formData.courseImage?.file : null;
 
       const { success, data, message } = await updateCourse(
         id,
@@ -180,16 +173,39 @@ const CourseEditor = () => {
         toast.error(message || "Failed to update course");
         return;
       }
+
+      toast.success("Course updated successfully");
     } catch (error) {
-      console.error("Submission error:", error);
       toast.error("An error occurred while updating the course");
+    } finally {
+      setIsImageChanged(false);
+      setIsCreating(false);
     }
   };
 
-  console.log(formData.courseCategory);
+  const handleGenerateLessonID = async (e) => {
+    e.preventDefault();
+    setIsGeneratingLessonID(true);
+
+    try {
+      const { success, data, message } = await generateLessonID();
+
+      if (!success) {
+        toast.error(message || "Failed to generate lesson ID");
+        return;
+      }
+
+      useLessonStore.getState().setGeneratedLessonID(data);
+
+      openLessonModal({ lessonIndex: null });
+    } catch (error) {
+      toast.error("Failed to generate lesson ID");
+    } finally {
+      setIsGeneratingLessonID(false);
+    }
+  };
 
   if (isError) return <p>Something went wrong</p>;
-
   if (isLoading) return <Loading />;
 
   return (
@@ -214,24 +230,74 @@ const CourseEditor = () => {
           subtitle="Complete all fields and save your course"
           rightElement={
             <div className="flex items-center space-x-4">
-              <CustomFormField
-                name="courseStatus"
-                label="Course Status"
-                type="switch"
-                className="flex items-center space-x-2"
-                inputClassName=" data-[state=checked]:bg-green-500"
-                onChange={() =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    courseStatus: prev.courseStatus === 0 ? 1 : 0,
-                  }))
-                }
-              />
+              {/* CUSTOM SWITCH */}
+              <div className="flex items-center space-x-4">
+                <label className="text-sm text-gray-300">
+                  {formData.courseStatus === "publish" ? "Published" : "Draft"}
+                </label>
+                <div
+                  className={`
+                            w-14 h-8 rounded-full cursor-pointer relative transition-colors duration-300
+                            ${
+                              formData.courseStatus === "publish"
+                                ? "bg-green-500"
+                                : "bg-gray-300"
+                            }
+                          `}
+                  onClick={() =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      courseStatus:
+                        prev.courseStatus === "draft" ? "publish" : "draft",
+                    }))
+                  }
+                >
+                  <div
+                    className={`
+                    absolute top-1 w-6 h-6 bg-white-100 rounded-full shadow-md transition-transform duration-300
+                    ${
+                      formData.courseStatus === "publish"
+                        ? "translate-x-7"
+                        : "translate-x-1"
+                    }
+                  `}
+                  />
+                </div>
+              </div>
               <Button
                 type="submit"
-                className="bg-primary-700 hover:bg-primary-600"
+                className="bg-primary-700 hover:bg-primary-600 flex items-center justify-center"
+                disabled={isCreating}
               >
-                {course ? "Save Changes" : "Create Course"}
+                {isCreating ? (
+                  <>
+                    <svg
+                      className="animate-spin h-5 w-5 mr-2 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C6.48 0 0 6.48 0 12h4zm2 5.291V16a8 8 0 018 8v-4c-2.21 0-4-1.79-4-4h-4z"
+                      ></path>
+                    </svg>
+                    Saving Changes...
+                  </>
+                ) : course ? (
+                  "Save Changes"
+                ) : (
+                  "Create Course"
+                )}
               </Button>
             </div>
           }
@@ -292,7 +358,9 @@ const CourseEditor = () => {
                   onValueChange={(value) => {
                     setFormData((prev) => ({
                       ...prev,
-                      courseCategory: value ? parseInt(value) : null,
+                      courseCategory: value
+                        ? parseInt(value)
+                        : course.category_id,
                     }));
 
                     const selectedCategory = categories.find(
@@ -301,6 +369,16 @@ const CourseEditor = () => {
 
                     if (selectedCategory) {
                       setSelectedCategoryLabel(selectedCategory.category_name);
+                    } else {
+                      const originalCategory = categories.find(
+                        (category) =>
+                          category.category_id === course.category_id
+                      );
+                      setSelectedCategoryLabel(
+                        originalCategory
+                          ? originalCategory.category_name
+                          : "Select a category"
+                      );
                     }
                   }}
                 >
@@ -340,6 +418,7 @@ const CourseEditor = () => {
                   const file = fileItems[0]?.file;
                   const fileName = fileItems[0]?.filename;
                   if (file) {
+                    const isActuallyChanged = course?.course_image !== fileName;
                     setFormData((prev) => ({
                       ...prev,
                       courseImage: {
@@ -347,29 +426,39 @@ const CourseEditor = () => {
                         fileName: fileName,
                       },
                     }));
+
+                    setIsImageChanged(isActuallyChanged);
                   }
                 }}
                 server={{
                   load: (source, load, error, progress, abort, headers) => {
-                    fetch(source, {
+                    progress(true, 0, 1);
+
+                    return fetch(source, {
                       mode: "cors",
                       headers: {
                         Origin: "http://localhost:3000",
                       },
                     })
-                      .then((response) => {
+                      .then(async (response) => {
+                        progress(true, 0.5, 1);
+
                         const imageFileName = source.includes("image_serve.php")
                           ? new URLSearchParams(new URL(source).search).get(
                               "image"
                             )
                           : source.split("/").pop();
 
-                        return response.blob().then((blob) => {
-                          blob.name = imageFileName;
-                          return blob;
-                        });
+                        const blob = await response.blob();
+
+                        progress(true, 0.75, 1);
+                        blob.name = imageFileName;
+                        return blob;
                       })
-                      .then(load)
+                      .then((blob) => {
+                        progress(true, 1, 1);
+                        load(blob);
+                      })
                       .catch(error);
                   },
                 }}
@@ -397,13 +486,29 @@ const CourseEditor = () => {
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => openLessonModal({ sectionIndex: null })}
+                  onClick={(e) => handleGenerateLessonID(e)}
                   className="border-none text-primary-700 group"
+                  disabled={isGeneratingLessonID}
                 >
-                  <Plus className="mr-1 h-4 w-4 text-primary-700 group-hover:white-100" />
-                  <span className="text-primary-700 group-hover:white-100">
-                    Add Lesson
-                  </span>
+                  {isGeneratingLessonID ? (
+                    <>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-4 h-4 border-2 border-t-transparent border-b-blue-500 border-l-green-500 border-r-red-500 rounded-full animate-spin"></div>
+
+                        <span className="text-primary-700 group-hover:text-white">
+                          Generating Lesson ID...
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {" "}
+                      <Plus className="mr-1 h-4 w-4 text-primary-700 group-hover:text-white" />{" "}
+                      <span className="text-primary-700 group-hover:text-white">
+                        Add Lesson
+                      </span>
+                    </>
+                  )}
                 </Button>
                 <Separator
                   orientation="vertical"

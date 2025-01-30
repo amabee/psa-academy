@@ -2,21 +2,42 @@
 
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { Button } from "@/components/ui/button";
-import { Trash2, Edit, Plus, GripVertical } from "lucide-react";
-import { useEffect } from "react";
+import { Trash2, Edit, Plus, GripVertical, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import useLessonStore from "@/store/lessonStore";
+import {
+  generateTopicID,
+  updateLessonSequence,
+} from "@/lib/actions/speaker/action";
+import { toast } from "sonner";
+import { useAppStore } from "@/store/stateStore";
 
 const LessonHeader = ({ lesson, lessonIndex, dragHandleProps }) => {
   const openLessonModal = useLessonStore((state) => state.openLessonModal);
-  const deleteLesson = useLessonStore((state) => state.deleteLesson);
+  const openDeletionModal = useLessonStore((state) => state.openDeletionModal);
+
+  const isDeleting = useLessonStore((state) => state.courseEditor.isDeleting);
 
   return (
-    <div className="droppable-section__header" {...dragHandleProps}>
+    <div
+      className={`droppable-section__header relative ${
+        isDeleting ? "opacity-50 pointer-events-none" : ""
+      }`}
+      {...dragHandleProps}
+    >
+      {isDeleting && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/20">
+          <div className="bg-white px-4 py-2 rounded-md shadow-md flex items-center">
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <span className="text-sm text-gray-700">Deleting...</span>
+          </div>
+        </div>
+      )}
       <div className="droppable-section__title-wrapper">
         <div className="droppable-section__title-container">
           <div className="droppable-section__title">
             <GripVertical className="h-6 w-6 mb-1" />
-            <h3 className="text-lg font-medium">{lesson.title}</h3>
+            <h3 className="text-lg font-medium">{lesson.lesson_title}</h3>
           </div>
           <div className="droppable-chapter__actions">
             <Button
@@ -24,6 +45,7 @@ const LessonHeader = ({ lesson, lessonIndex, dragHandleProps }) => {
               variant="ghost"
               size="sm"
               className="p-0"
+              disabled={isDeleting}
               onClick={() => openLessonModal({ lessonIndex })}
             >
               <Edit className="h-5 w-5" />
@@ -33,14 +55,17 @@ const LessonHeader = ({ lesson, lessonIndex, dragHandleProps }) => {
               variant="ghost"
               size="sm"
               className="p-0"
-              onClick={() => deleteLesson(lessonIndex)}
+              onClick={() => openDeletionModal({ lessonIndex })}
+              disabled={isDeleting}
             >
               <Trash2 className="h-5 w-5" />
             </Button>
           </div>
         </div>
-        {lesson.description && (
-          <p className="droppable-section__description">{lesson.description}</p>
+        {lesson.lesson_description && (
+          <p className="droppable-section__description">
+            {lesson.lesson_description}
+          </p>
         )}
       </div>
     </div>
@@ -64,7 +89,7 @@ const TopicItem = ({ topic, topicIndex, lessonIndex, draggableProvider }) => {
     >
       <div className="droppable-chapter__title">
         <GripVertical className="h-4 w-4 mb-[2px]" />
-        <p className="text-sm">{`${topicIndex + 1}. ${topic.title}`}</p>
+        <p className="text-sm">{`${topicIndex + 1}. ${topic.topic_title}`}</p>
       </div>
       <div className="droppable-chapter__actions">
         <Button
@@ -73,10 +98,6 @@ const TopicItem = ({ topic, topicIndex, lessonIndex, draggableProvider }) => {
           size="sm"
           className="droppable-chapter__button"
           onClick={() => {
-            // console.log("Opening topic modal for edit:", {
-            //   lessonIndex,
-            //   topicIndex,
-            // });
             openTopicModal({ lessonIndex, topicIndex });
           }}
         >
@@ -101,12 +122,31 @@ export default function DroppableComponent() {
   const setLessons = useLessonStore((state) => state.setLessons);
   const openTopicModal = useLessonStore((state) => state.openTopicModal);
 
-  // Debug lessons changes
-  useEffect(() => {
-    // console.log("Lessons updated:", lessons);
-  }, [lessons]);
+  const [isCreating, setIsCreating] = useState(false);
 
-  const handleLessonDragEnd = (result) => {
+  const createTopicID = async (lessonIndex) => {
+    try {
+      setIsCreating(true);
+      const { success, data, message } = await generateTopicID();
+
+      if (!success) {
+        return console.log(message);
+      }
+
+      console.log("Droppable Data", data);
+
+      useLessonStore.getState().setGeneratedTopicID(data);
+
+      openTopicModal({ lessonIndex, topicIndex: null });
+    } catch (error) {
+      toast.error("Exception Error occured while generating topic id");
+      return;
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const handleLessonDragEnd = async (result) => {
     if (!result.destination) return;
 
     const startIndex = result.source.index;
@@ -115,7 +155,29 @@ export default function DroppableComponent() {
     const updatedLessons = [...lessons];
     const [reorderedLesson] = updatedLessons.splice(startIndex, 1);
     updatedLessons.splice(endIndex, 0, reorderedLesson);
+
     setLessons(updatedLessons);
+
+    const lessonUpdates = updatedLessons.map((lesson, index) => ({
+      lesson_id: lesson.lesson_id,
+      sequence_number: index + 1,
+    }));
+
+    try {
+      const { success, data, message } = await updateLessonSequence(
+        lessonUpdates
+      );
+
+      if (!success) {
+        setLessons(lessons);
+        toast.error(message || "Failed to update lesson sequence");
+      } else {
+        toast.success("Lesson sequence updated successfully!");
+      }
+    } catch (error) {
+      setLessons(lessons);
+      toast.error(error.message || "An error occurred while updating sequence");
+    }
   };
 
   const handleTopicDragEnd = (result, lessonIndex) => {
@@ -132,7 +194,6 @@ export default function DroppableComponent() {
     setLessons(updatedLessons);
   };
 
-  // Make sure lessons exists and has topics array
   const ensureTopicsArray = (lessons) => {
     return lessons.map((lesson) => ({
       ...lesson,
@@ -142,7 +203,6 @@ export default function DroppableComponent() {
 
   if (!lessons) return null;
 
-  // Ensure all lessons have a topics array
   const lessonsWithTopics = ensureTopicsArray(lessons);
 
   return (
@@ -152,8 +212,8 @@ export default function DroppableComponent() {
           <div ref={provided.innerRef} {...provided.droppableProps}>
             {lessonsWithTopics.map((lesson, lessonIndex) => (
               <Draggable
-                key={lesson.id}
-                draggableId={lesson.id}
+                key={lesson.lesson_id}
+                draggableId={lesson.lesson_id}
                 index={lessonIndex}
               >
                 {(draggableProvider) => (
@@ -186,8 +246,8 @@ export default function DroppableComponent() {
                           >
                             {lesson.topics?.map((topic, topicIndex) => (
                               <Draggable
-                                key={topic.id}
-                                draggableId={topic.id}
+                                key={topic.topic_id}
+                                draggableId={topic.topic_id}
                                 index={topicIndex}
                               >
                                 {(draggableProvider) => (
@@ -210,19 +270,41 @@ export default function DroppableComponent() {
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => {
-                        // console.log("Opening topic modal for new topic:", {
-                        //   lessonIndex,
-                        //   topicIndex: null,
-                        // });
-                        openTopicModal({ lessonIndex, topicIndex: null });
-                      }}
+                      onClick={() => createTopicID(lessonIndex)}
                       className="add-chapter-button group mt-4"
                     >
-                      <Plus className="add-chapter-button__icon" />
-                      <span className="add-chapter-button__text">
-                        Add Topic
-                      </span>
+                      {isCreating ? (
+                        <>
+                          <svg
+                            className="animate-spin h-5 w-5 mr-2 text-white"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            ></circle>
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C6.48 0 0 6.48 0 12h4zm2 5.291V16a8 8 0 018 8v-4c-2.21 0-4-1.79-4-4h-4z"
+                            ></path>
+                          </svg>
+                          Generating Topic ID...
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="add-chapter-button__icon" />
+                          <span className="add-chapter-button__text">
+                            Add Topic
+                          </span>
+                        </>
+                      )}
                     </Button>
                   </div>
                 )}

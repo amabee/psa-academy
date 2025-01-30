@@ -103,10 +103,11 @@ class Courses
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if ($result) {
+                // Fetch lessons
                 $sql = "SELECT 
                     lesson_id,
                     lesson_title,
-                    content,
+                    lesson_description,
                     resources,
                     sequence_number
                 FROM lessons 
@@ -116,7 +117,27 @@ class Courses
                 $stmt = $this->conn->prepare($sql);
                 $stmt->bindValue(':course_id', $result['course_id'], PDO::PARAM_STR);
                 $stmt->execute();
-                $result['lessons'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                $lessons = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+                // Fetch topics for each lesson
+                foreach ($lessons as &$lesson) {
+                    $topicSql = "SELECT 
+                        topic_id,
+                        lesson_id,
+                        topic_title,
+                        topic_description,
+                        sequence_number
+                    FROM topic 
+                    WHERE lesson_id = :lesson_id 
+                    ORDER BY sequence_number";
+
+                    $topicStmt = $this->conn->prepare($topicSql);
+                    $topicStmt->bindValue(':lesson_id', $lesson['lesson_id'], PDO::PARAM_STR);
+                    $topicStmt->execute();
+                    $lesson['topics'] = $topicStmt->fetchAll(PDO::FETCH_ASSOC);
+                }
+
+                $result['lessons'] = $lessons;
             } else {
                 http_response_code(404);
                 return json_encode([
@@ -244,13 +265,10 @@ class Courses
     public function updateCourse($json)
     {
         try {
-
-            //$data = is_string($json) ? json_decode($json, true) : $json;
-
+            // Decode JSON data
             $data = json_decode($json, true);
 
-            error_log("Data: " . json_encode($data));
-
+            // Check required fields
             $isDataSet = InputHelper::requiredFields($data, ['course_id', 'user_id', 'category_id', 'title', 'description', 'course_status']);
             if ($isDataSet !== true) {
                 return $isDataSet;
@@ -258,6 +276,7 @@ class Courses
 
             $course_id = InputHelper::sanitizeString($data['course_id']);
 
+            // Check if course exists (same as before)
             $checkCourseSql = "SELECT COUNT(*) FROM `courses` WHERE `course_id` = :course_id";
             $stmt = $this->conn->prepare($checkCourseSql);
             $stmt->bindParam(":course_id", $course_id);
@@ -276,18 +295,65 @@ class Courses
 
             $this->conn->beginTransaction();
 
+            // Sanitize input data
             $user_id = (int) InputHelper::sanitizeInt($data['user_id']);
             $category_id = (int) InputHelper::sanitizeInt($data['category_id']);
             $title = InputHelper::sanitizeString($data['title']);
             $description = InputHelper::sanitizeString($data['description']);
             $course_status = InputHelper::sanitizeString($data['course_status']);
 
+            // Handle file upload
+            $course_image = null;
+            if (isset($_FILES['course_image'])) {
+                $file = $_FILES['course_image'];
+
+                // Validate file
+                $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+                if (!in_array($file['type'], $allowedTypes)) {
+                    throw new Exception("Invalid file type");
+                }
+
+                // Generate unique filename
+                $fileExtension = pathinfo($file['name'], PATHINFO_EXTENSION);
+                $uniqueFileName = uniqid('course_') . '.' . $fileExtension;
+                $uploadDir = '../../../MEDIA/course_images/';
+
+
+                $uploadPath = $uploadDir . $uniqueFileName;
+
+                if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
+                    $course_image = $uniqueFileName;
+                } else {
+                    // throw new Exception("File upload failed");
+                    http_response_code(500);
+                    return json_encode([
+                        "status" => 500,
+                        "success" => false,
+                        "data" => [],
+                        "message" => "File upload failed"
+                    ]);
+                }
+            }
+
+            // Prepare SQL update
             $sql = "
                 UPDATE `courses` 
-                SET `user_id` = :user_id, `category_id` = :category_id, `title` = :title, `description` = :description, 
-                    `course_status` = :course_status, `updated_at` = NOW() 
-                WHERE `course_id` = :course_id";
+                SET `user_id` = :user_id, 
+                    `category_id` = :category_id, 
+                    `title` = :title, 
+                    `description` = :description, 
+                    `course_status` = :course_status, 
+                    `updated_at` = NOW()
+            ";
 
+            // Add image update to SQL if new image was uploaded
+            if ($course_image) {
+                $sql .= ", `course_image` = :course_image ";
+            }
+
+            $sql .= "WHERE `course_id` = :course_id";
+
+            // Prepare and execute statement
             $stmt = $this->conn->prepare($sql);
 
             $stmt->bindParam(":course_id", $course_id);
@@ -297,6 +363,10 @@ class Courses
             $stmt->bindParam(":description", $description);
             $stmt->bindParam(":course_status", $course_status);
 
+            if ($course_image) {
+                $stmt->bindParam(":course_image", $course_image);
+            }
+
             if (!$stmt->execute()) {
                 $errorInfo = $stmt->errorInfo();
                 http_response_code(500);
@@ -304,7 +374,7 @@ class Courses
                     "status" => 500,
                     "success" => false,
                     "data" => [],
-                    "message" => "SQL error: " . $errorInfo[2]
+                    "message" => `SQL error: $errorInfo[2]`
                 ]);
             }
 
@@ -317,7 +387,7 @@ class Courses
                 "data" => [],
                 "message" => "Course updated successfully."
             ]);
-        } catch (PDOException $ex) {
+        } catch (Exception $ex) {
             $this->conn->rollBack();
             http_response_code(500);
             return json_encode([
@@ -493,7 +563,7 @@ if (isset($headers['authorization']) && $headers['authorization'] === $validApiK
                 break;
 
             case "updateCourse":
-                if ($requestMethod === "PUT") {
+                if ($requestMethod === "POST") {
                     echo $course->updateCourse($json);
                 } else {
                     http_response_code(405);
@@ -501,7 +571,7 @@ if (isset($headers['authorization']) && $headers['authorization'] === $validApiK
                         "status" => 405,
                         "success" => false,
                         "data" => [],
-                        "message" => "Invalid request method for login. Use PUT."
+                        "message" => "Invalid request method for login. Use POST."
                     ]);
                 }
                 break;
