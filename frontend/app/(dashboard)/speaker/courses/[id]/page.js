@@ -40,7 +40,6 @@ import { generateLessonID, updateCourse } from "@/lib/actions/speaker/action";
 import { useUser } from "@/app/providers/UserProvider";
 import { toast } from "sonner";
 
-
 registerPlugin(
   FilePondPluginImageExifOrientation,
   FilePondPluginImagePreview,
@@ -97,34 +96,14 @@ const CourseEditor = () => {
   useEffect(() => {
     if (course?.course_image) {
       const fullImageUrl = `${process.env.NEXT_PUBLIC_ROOT_URL}image_serve.php?image=${course.course_image}`;
-
-      fetch(fullImageUrl, {
-        mode: "cors",
-        headers: {
-          Origin: "http://localhost:3000",
+      setFiles([
+        {
+          source: fullImageUrl,
+          options: {
+            type: "local",
+          },
         },
-      })
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error("Image fetch failed");
-          }
-          return response.blob();
-        })
-        .then((blob) => {
-          setFiles([
-            {
-              source: fullImageUrl,
-              options: {
-                type: "local",
-              },
-            },
-          ]);
-
-          setIsImageChanged(false);
-        })
-        .catch((error) => {
-          console.error("Image loading error:", error);
-        });
+      ]);
     }
   }, [course?.course_image]);
 
@@ -453,25 +432,33 @@ const CourseEditor = () => {
                 }}
                 server={{
                   load: (source, load, error, progress, abort, headers) => {
-                    fetch(source, {
+                    progress(true, 0, 1);
+
+                    return fetch(source, {
                       mode: "cors",
                       headers: {
                         Origin: "http://localhost:3000",
                       },
                     })
-                      .then((response) => {
+                      .then(async (response) => {
+                        progress(true, 0.5, 1);
+
                         const imageFileName = source.includes("image_serve.php")
                           ? new URLSearchParams(new URL(source).search).get(
                               "image"
                             )
                           : source.split("/").pop();
 
-                        return response.blob().then((blob) => {
-                          blob.name = imageFileName;
-                          return blob;
-                        });
+                        const blob = await response.blob();
+
+                        progress(true, 0.75, 1);
+                        blob.name = imageFileName;
+                        return blob;
                       })
-                      .then(load)
+                      .then((blob) => {
+                        progress(true, 1, 1);
+                        load(blob);
+                      })
                       .catch(error);
                   },
                 }}

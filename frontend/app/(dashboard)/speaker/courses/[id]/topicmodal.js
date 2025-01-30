@@ -213,34 +213,15 @@ const TopicModal = () => {
   useEffect(() => {
     if (formData?.file) {
       const fullFileUrl = `${process.env.NEXT_PUBLIC_ROOT_URL}file_serve.php?file=${formData.file}`;
-
-      fetch(fullFileUrl, {
-        mode: "cors",
-        headers: {
-          Origin: "http://localhost:3000",
+      setFiles([
+        {
+          source: fullFileUrl,
+          options: {
+            type: "local",
+          },
         },
-      })
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error("File fetch failed");
-          }
-          return response.blob();
-        })
-        .then((blob) => {
-          setFiles([
-            {
-              source: fullFileUrl,
-              options: {
-                type: "local",
-              },
-            },
-          ]);
-          setIsExistingFile(true);
-        })
-        .catch((error) => {
-          setIsExistingFile(false);
-          console.error("File loading error:", error);
-        });
+      ]);
+      setIsExistingFile(true);
     }
   }, [formData?.file]);
 
@@ -410,15 +391,6 @@ const TopicModal = () => {
                   }
 
                   setIsExistingFile(false);
-                  try {
-                    const fileName = await uploadFile(fileItem.file);
-
-                    setUploadedFileName(fileName);
-                    toast.success("File uploaded successfully");
-                  } catch (error) {
-                    console.error("Upload failed:", error);
-                    toast.error("Failed to upload file");
-                  }
                 }}
                 onremovefile={() => {
                   setUploadedFileName(null);
@@ -427,6 +399,7 @@ const TopicModal = () => {
                 server={{
                   load: (source, load, error, progress, abort, headers) => {
                     const controller = new AbortController();
+                    progress(true, 0, 1);
                     fetch(source, {
                       mode: "cors",
                       headers: {
@@ -439,6 +412,8 @@ const TopicModal = () => {
                     })
                       .then(async (response) => {
                         const blob = await response.blob();
+
+                        progress(true, 0.75, 1);
                         const fileName = source.includes("file_serve.php")
                           ? new URLSearchParams(new URL(source).search).get(
                               "file"
@@ -451,7 +426,7 @@ const TopicModal = () => {
                             : "video/*",
                         });
                         newBlob.name = fileName;
-
+                        progress(true, 1, 1);
                         load(newBlob);
                       })
                       .catch(error);
@@ -484,12 +459,17 @@ const TopicModal = () => {
                     }
                   },
                 }}
+                onprocessfile={(error, file) => {
+                  if (error) {
+                    console.error("Upload failed:", error);
+                    toast.error("Failed to upload file");
+                    return;
+                  }
+
+                  setUploadedFileName(file.serverId);
+                  toast.success("File uploaded successfully");
+                }}
               />
-              {uploadedFileName && (
-                <div className="my-2 text-sm text-gray-600">
-                  File uploaded: {uploadedFileName}
-                </div>
-              )}
               {formData?.file && !files.length && (
                 <div className="my-2 text-sm text-gray-600">
                   Current file: {formData.file.split("/").pop()}
