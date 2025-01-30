@@ -169,6 +169,8 @@ const LessonModal = () => {
       showCancelButton: true,
       confirmButtonColor: "#3085d6",
       cancelButtonColor: "#d33",
+      allowOutsideClick: false,
+      allowEscapeKey: false,
       confirmButtonText: "Yes, delete it!",
     }).then(async (result) => {
       try {
