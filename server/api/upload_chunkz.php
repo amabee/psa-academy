@@ -25,20 +25,12 @@ class ChunkUploadHandler
             $created = @mkdir($this->chunkDir, 0777, true);
             error_log("Chunk directory creation " . ($created ? "successful" : "failed") . ": " . $this->chunkDir);
         }
-
-        // Log directory permissions
-        error_log("Upload directory permissions: " . substr(sprintf('%o', fileperms($this->uploadDir)), -4));
-        error_log("Chunk directory permissions: " . substr(sprintf('%o', fileperms($this->chunkDir)), -4));
-        error_log("Upload directory writable: " . (is_writable($this->uploadDir) ? 'yes' : 'no'));
-        error_log("Chunk directory writable: " . (is_writable($this->chunkDir) ? 'yes' : 'no'));
     }
 
     public function handleUpload()
     {
         try {
 
-            error_log("FILES array: " . print_r($_FILES, true));
-            error_log("POST array: " . print_r($_POST, true));
 
             if (!isset($_FILES['chunk']) || !isset($_POST['chunkIndex']) || !isset($_POST['totalChunks']) || !isset($_POST['fileId'])) {
                 error_log("Missing parameters. Required fields check failed.");
@@ -52,12 +44,6 @@ class ChunkUploadHandler
             $originalFileName = $_POST['fileName'] ?? '';
             $originalFileType = $_POST['fileType'] ?? '';
 
-            // Log file details
-            error_log("Processing chunk: {$chunkIndex} of {$totalChunks}");
-            error_log("Original file name: {$originalFileName}");
-            error_log("File type: {$originalFileType}");
-            error_log("Temporary file exists: " . (file_exists($chunk['tmp_name']) ? 'yes' : 'no'));
-            error_log("Temporary file path: " . $chunk['tmp_name']);
 
             if ($chunkIndex === 0) {
                 $allowedTypes = ['video/mp4', 'application/pdf'];

@@ -8,9 +8,11 @@ import useLessonStore from "@/store/lessonStore";
 import {
   generateTopicID,
   updateLessonSequence,
+  deleteTopicAct,
+  updateTopicSequence,
 } from "@/lib/actions/speaker/action";
 import { toast } from "sonner";
-import { useAppStore } from "@/store/stateStore";
+import Swal from "sweetalert2";
 
 const LessonHeader = ({ lesson, lessonIndex, dragHandleProps }) => {
   const openLessonModal = useLessonStore((state) => state.openLessonModal);
@@ -75,6 +77,44 @@ const LessonHeader = ({ lesson, lessonIndex, dragHandleProps }) => {
 const TopicItem = ({ topic, topicIndex, lessonIndex, draggableProvider }) => {
   const openTopicModal = useLessonStore((state) => state.openTopicModal);
   const deleteTopic = useLessonStore((state) => state.deleteTopic);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeleteTopic = async (topicId, lessonIndex, topicIndex) => {
+    Swal.fire({
+      title:
+        '<div style="font-size:18px;">Are you sure you want to delete this topic?</div>',
+      text: "You won't be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      confirmButtonText: "Yes, delete it!",
+    }).then(async (result) => {
+      try {
+        setIsDeleting(true);
+        if (result.isConfirmed) {
+          const { success, message, data } = await deleteTopicAct(topicId);
+
+          if (!success) {
+            return toast.error(message);
+          }
+        }
+        toast.success("Topic deleted successfully");
+        deleteTopic({ lessonIndex, topicIndex });
+      } catch (error) {
+        Swal.fire({
+          title: "Error",
+          text: error.message || "Failed to delete lesson",
+          icon: "error",
+          confirmButtonText: "Ok",
+        });
+      } finally {
+        setIsDeleting(false);
+      }
+    });
+  };
 
   return (
     <div
@@ -108,7 +148,9 @@ const TopicItem = ({ topic, topicIndex, lessonIndex, draggableProvider }) => {
           variant="ghost"
           size="sm"
           className="droppable-chapter__button"
-          onClick={() => deleteTopic({ lessonIndex, topicIndex })}
+          onClick={() =>
+            handleDeleteTopic(topic.topic_id, lessonIndex, topicIndex)
+          }
         >
           <Trash2 className="h-4 w-4" />
         </Button>
@@ -180,7 +222,7 @@ export default function DroppableComponent() {
     }
   };
 
-  const handleTopicDragEnd = (result, lessonIndex) => {
+  const handleTopicDragEnd = async (result, lessonIndex) => {
     if (!result.destination) return;
 
     const startIndex = result.source.index;
@@ -191,7 +233,30 @@ export default function DroppableComponent() {
     const [reorderedTopic] = updatedTopics.splice(startIndex, 1);
     updatedTopics.splice(endIndex, 0, reorderedTopic);
     updatedLessons[lessonIndex].topics = updatedTopics;
-    setLessons(updatedLessons);
+
+    const topicUpdates = updatedTopics.map((topic, index) => ({
+      topic_id: topic.topic_id,
+      sequence_number: index + 1,
+    }));
+
+    try {
+      setLessons(updatedLessons);
+
+      const { success, message, data } = await updateTopicSequence(
+        topicUpdates
+      );
+
+      if (!success) {
+        console.error("Failed to update topic sequence:", message);
+        setLessons([...lessons]);
+        return;
+      }
+
+      toast.success("Topic sequence updated!");
+    } catch (error) {
+      console.error("Error updating topic sequence:", error);
+      setLessons([...lessons]);
+    }
   };
 
   const ensureTopicsArray = (lessons) => {

@@ -578,8 +578,6 @@ export const getTopicDetails = async (topic_id) => {
 
 // TOPIC CUD OPERATIONS
 
-
-
 export const createTopic = async (
   topic_id,
   lesson_id,
@@ -625,6 +623,121 @@ export const createTopic = async (
       error.response?.data?.message ||
       error.message ||
       "An error occurred while creating the topic";
+    return { success: false, data: [], message: errorMessage };
+  }
+};
+
+export const updateTopic = async (
+  topic_id,
+  topic_title,
+  topic_description,
+  fileName
+) => {
+  try {
+    const formData = new FormData();
+    formData.append("operation", "updateTopic");
+
+    const jsonData = {
+      topic_id: topic_id,
+      topic_title: topic_title,
+      topic_description: topic_description,
+      fileName: fileName,
+    };
+
+    formData.append("json", JSON.stringify(jsonData));
+
+    const res = await axios(`${BASE_URL}speaker/process/topics.php`, {
+      method: "POST",
+      data: formData,
+      headers: {
+        Authorization: SECRET_KEY,
+      },
+    });
+
+    return {
+      success: true,
+      data: res.data,
+      message: "Lesson updated successfully",
+    };
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message ||
+      error.message ||
+      "An error occurred updating the lesson";
+    return {
+      success: false,
+      data: [],
+      message: errorMessage,
+    };
+  }
+};
+
+export const updateTopicSequence = async (topicUpdates) => {
+  const formData = new FormData();
+  formData.append("operation", "updateTopicSequence");
+  formData.append("json", JSON.stringify(topicUpdates));
+
+  try {
+    const res = await axios(`${BASE_URL}speaker/process/topics.php`, {
+      method: "POST",
+      data: formData,
+      headers: {
+        Authorization: SECRET_KEY,
+      },
+    });
+
+    if (res.status !== 200) {
+      return { success: false, data: [], message: "Status Error" };
+    }
+
+    if (res.data.success === false) {
+      return {
+        success: false,
+        data: [],
+        message:
+          res.data.message || "Something went wrong updating topic sequence",
+      };
+    }
+
+    return { success: true, data: res.data.data, message: res.data.message };
+  } catch (error) {
+    const errorMessage = error.response?.data?.message || error.message;
+    return { success: false, data: [], message: errorMessage };
+  }
+};
+
+export const deleteTopicAct = async (topic_id) => {
+  try {
+    const res = await axios.delete(`${BASE_URL}speaker/process/topics.php`, {
+      headers: {
+        Authorization: SECRET_KEY,
+      },
+      data: {
+        operation: "deleteTopic",
+        json: JSON.stringify({
+          topic_id: topic_id,
+        }),
+      },
+    });
+
+    if (res.status !== 200) {
+      return { success: false, data: [], message: "Status Error" };
+    }
+
+    if (res.success == false) {
+      return {
+        success: false,
+        data: [],
+        message: "Something went wrong deleting topic",
+      };
+    }
+
+    return { success: true, data: res.data.message, message: "" };
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message ||
+      error.message ||
+      "An error occurred while removing the course";
     return { success: false, data: [], message: errorMessage };
   }
 };

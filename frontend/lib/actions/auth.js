@@ -36,7 +36,9 @@ export const login = async (user, password) => {
       return { success: false, message: "Something went wrong", data: [] };
     }
 
-    await cookies().set("session_id", response.data.data.session_id, {
+    const cookieStore = cookies();
+
+    await cookieStore.set("session_id", response.data.data.session_id, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
@@ -44,7 +46,7 @@ export const login = async (user, password) => {
       maxAge: 7200,
     });
 
-    await cookies().set("session_token", response.data.data.token, {
+    await cookieStore.set("session_token", response.data.data.token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
@@ -67,4 +69,3 @@ export const login = async (user, password) => {
     };
   }
 };
-

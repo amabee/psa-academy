@@ -176,7 +176,7 @@ class Topics
         try {
             $this->conn->beginTransaction();
             $data = json_decode($json, true);
-            $isDataSet = InputHelper::requiredFields($data, ['topic_id', "topic_title", "topic_description", "sequence_number"]);
+            $isDataSet = InputHelper::requiredFields($data, ['topic_id', "topic_title", "topic_description"]);
 
             if ($isDataSet !== true) {
                 return $isDataSet;
@@ -185,12 +185,48 @@ class Topics
             $topic_id = InputHelper::sanitizeString($data['topic_id']);
             $topic_title = InputHelper::sanitizeString($data['topic_title']);
             $topic_description = InputHelper::sanitizeString($data['topic_description']);
-            $sequence_number = InputHelper::sanitizeString($data['sequence_number']);
+            $fileName = isset($data['fileName']) ? InputHelper::sanitizeString($data['fileName']) : null;
+
+            if ($fileName) {
+                $sql = "SELECT `file_name` FROM `materials` WHERE `topic_id` = :topic_id";
+                $stmt = $this->conn->prepare($sql);
+                $stmt->bindParam(":topic_id", $topic_id, PDO::PARAM_STR);
+                $stmt->execute();
+                $oldFile = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                if ($oldFile) {
+                    $sql = "DELETE FROM `materials` WHERE `topic_id` = :topic_id";
+                    $stmt = $this->conn->prepare($sql);
+                    $stmt->bindParam(":topic_id", $topic_id, PDO::PARAM_STR);
+                    $stmt->execute();
+
+                    $baseDir = realpath(__DIR__ . '/../../../MEDIA');
+                    $oldFilePath = $baseDir . '/course_files/' . $oldFile['file_name'];
+
+                    error_log("Attempting to delete file: " . $oldFilePath);
+                    error_log("File exists: " . (file_exists($oldFilePath) ? 'true' : 'false'));
+
+                    if (file_exists($oldFilePath)) {
+                        try {
+                            if (!unlink($oldFilePath)) {
+                                error_log("Failed to delete file: " . $oldFilePath);
+                            }
+                        } catch (Exception $e) {
+                            error_log("Exception while deleting file: " . $e->getMessage());
+                        }
+                    }
+                }
+
+                $sql = "INSERT INTO `materials` (`topic_id`, `file_name`) VALUES (:topic_id, :file_name)";
+                $stmt = $this->conn->prepare($sql);
+                $stmt->bindParam(":topic_id", $topic_id, PDO::PARAM_STR);
+                $stmt->bindParam(":file_name", $fileName, PDO::PARAM_STR);
+                $stmt->execute();
+            }
 
             $sql = "UPDATE `topic` 
                 SET `topic_title` = :topic_title, 
                     `topic_description` = :topic_description, 
-                    `sequence_number` = :sequence_number, 
                     `updated_at` = NOW()
                 WHERE `topic_id` = :topic_id";
 
@@ -198,7 +234,6 @@ class Topics
             $stmt->bindParam(":topic_id", $topic_id, PDO::PARAM_STR);
             $stmt->bindParam(":topic_title", $topic_title, PDO::PARAM_STR);
             $stmt->bindParam(":topic_description", $topic_description, PDO::PARAM_STR);
-            $stmt->bindParam(":sequence_number", $sequence_number, PDO::PARAM_INT);
 
             if ($stmt->execute()) {
                 $this->conn->commit();
@@ -226,85 +261,85 @@ class Topics
                 "status" => 500,
                 "success" => false,
                 "data" => [],
-                "message" => "Exception Error"
+                "message" => "Exception Error: " . $ex->getMessage()
             ]);
         }
     }
 
 
-    // public function updateLessonSequence($json)
-    // {
-    //     try {
-    //         $data = json_decode($json, true);
+    public function updateTopicSequence($json)
+    {
+        try {
+            $data = json_decode($json, true);
 
-    //         if (!is_array($data) || empty($data)) {
-    //             return json_encode([
-    //                 "status" => 422,
-    //                 "success" => false,
-    //                 "data" => [],
-    //                 "message" => "Invalid data provided."
-    //             ]);
-    //         }
+            if (!is_array($data) || empty($data)) {
+                return json_encode([
+                    "status" => 422,
+                    "success" => false,
+                    "data" => [],
+                    "message" => "Invalid data provided."
+                ]);
+            }
 
-    //         $this->conn->beginTransaction();
+            $this->conn->beginTransaction();
 
-    //         foreach ($data as $item) {
-    //             $isDataSet = InputHelper::requiredFields(
-    //                 $item,
-    //                 ['lesson_id', 'sequence_number']
-    //             );
+            foreach ($data as $item) {
+                $isDataSet = InputHelper::requiredFields(
+                    $item,
+                    ['topic_id', 'sequence_number']
+                );
 
-    //             if ($isDataSet !== true) {
-    //                 $this->conn->rollBack();
-    //                 return json_encode([
-    //                     "status" => 422,
-    //                     "success" => false,
-    //                     "data" => [],
-    //                     "message" => "Missing Parameter. $isDataSet"
-    //                 ]);
-    //             }
+                if ($isDataSet !== true) {
+                    $this->conn->rollBack();
+                    return json_encode([
+                        "status" => 422,
+                        "success" => false,
+                        "data" => [],
+                        "message" => "Missing Parameter. $isDataSet"
+                    ]);
+                }
 
-    //             $lesson_id = InputHelper::sanitizeString($item['lesson_id']);
-    //             $sequence_number = InputHelper::sanitizeInt($item['sequence_number']);
+                $topic_id = InputHelper::sanitizeString($item['topic_id']);
+                $sequence_number = InputHelper::sanitizeInt($item['sequence_number']);
 
-    //             $sql = "UPDATE `lessons` 
-    //                 SET `sequence_number` = :sequence_number,
-    //                     `updated_at` = NOW() 
-    //                 WHERE `lesson_id` = :lesson_id";
+                $sql = "UPDATE `topic` 
+                    SET `sequence_number` = :sequence_number,
+                        `updated_at` = NOW() 
+                    WHERE `topic_id` = :topic_id";
 
-    //             $stmt = $this->conn->prepare($sql);
-    //             $stmt->bindParam(":lesson_id", $lesson_id);
-    //             $stmt->bindParam(":sequence_number", $sequence_number);
+                $stmt = $this->conn->prepare($sql);
+                $stmt->bindParam(":topic_id", var: $topic_id);
+                $stmt->bindParam(":sequence_number", $sequence_number);
 
-    //             if (!$stmt->execute()) {
-    //                 $this->conn->rollBack();
-    //                 return json_encode([
-    //                     "status" => 500,
-    //                     "success" => false,
-    //                     "data" => [],
-    //                     "message" => "Failed to update lesson with ID $lesson_id."
-    //                 ]);
-    //             }
-    //         }
+                if (!$stmt->execute()) {
+                    $this->conn->rollBack();
+                    return json_encode([
+                        "status" => 500,
+                        "success" => false,
+                        "data" => [],
+                        "message" => "Failed to update lesson with ID $topic_id."
+                    ]);
+                }
+            }
 
-    //         $this->conn->commit();
+            $this->conn->commit();
 
-    //         return json_encode([
-    //             "status" => 200,
-    //             "success" => true,
-    //             "data" => [],
-    //             "message" => "Lesson sequences updated successfully."
-    //         ]);
-    //     } catch (PDOException $ex) {
-    //         $this->conn->rollBack();
-    //         return json_encode([
-    //             "status" => 500,
-    //             "success" => false,
-    //             "data" => [],
-    //             "message" => $ex->getMessage()
-    //         ]);
-    //     }
-    // }
+            return json_encode([
+                "status" => 200,
+                "success" => true,
+                "data" => [],
+                "message" => "Topic sequences updated successfully."
+            ]);
+        } catch (PDOException $ex) {
+            $this->conn->rollBack();
+            return json_encode([
+                "status" => 500,
+                "success" => false,
+                "data" => [],
+                "message" => $ex->getMessage()
+            ]);
+        }
+    }
 
     public function deleteTopic($json)
     {
@@ -465,6 +500,19 @@ if (isset($headers['authorization']) && $headers['authorization'] === $validApiK
                 }
                 break;
 
+            case "updateTopicSequence":
+                if ($requestMethod === "POST") {
+                    echo $topic->updateTopicSequence($json);
+                } else {
+                    http_response_code(405);
+                    echo json_encode([
+                        "status" => 405,
+                        "success" => false,
+                        "data" => [],
+                        "message" => "Invalid request method for login. Use POST."
+                    ]);
+                }
+                break;
 
             case "deleteTopic":
                 if ($requestMethod === "DELETE") {
@@ -479,9 +527,6 @@ if (isset($headers['authorization']) && $headers['authorization'] === $validApiK
                     ]);
                 }
                 break;
-
-
-
 
             default:
                 http_response_code(400);

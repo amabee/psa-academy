@@ -16,7 +16,11 @@ import FilePondPluginFileValidateSize from "filepond-plugin-file-validate-size";
 import "filepond-plugin-pdf-preview/dist/filepond-plugin-pdf-preview.min.css";
 import "filepond-plugin-media-preview/dist/filepond-plugin-media-preview.min.css";
 
-import { createTopic, getTopicDetails } from "@/lib/actions/speaker/action";
+import {
+  createTopic,
+  getTopicDetails,
+  updateTopic,
+} from "@/lib/actions/speaker/action";
 import { AnimeLoading } from "@/components/shared/animeloading";
 import { useFileUpload } from "@/client/uploadProgress";
 
@@ -86,84 +90,6 @@ const TopicModal = () => {
       setUploadedFileName(null);
     }
   }, [isTopicModalOpen]);
-
-  const isFileFromDatabase = (fileName) => {
-    return fileName === formData.file;
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
-      if (selectedLessonIndex === null) {
-        throw new Error("No lesson selected");
-      }
-
-      const title = formData.topic_title;
-      const content = formData.topic_description;
-
-      const finalFileName = isExistingFile ? formData.file : uploadedFileName;
-
-      if (!title || !content) {
-        toast.error("Please fill in all required fields");
-        return;
-      }
-
-      const sequence_number =
-        selectedTopicIndex === null
-          ? lessons[selectedLessonIndex].topics.length + 1
-          : lessons[selectedLessonIndex].topics[selectedTopicIndex]
-              .sequence_number;
-
-      const { success, data, message } = await createTopic(
-        generatedTopicID,
-        lessons[selectedLessonIndex].lesson_id,
-        title,
-        content,
-        sequence_number,
-        finalFileName
-      );
-
-      if (!success) {
-        throw new Error(message);
-      }
-
-      if (selectedTopicIndex === null) {
-        addTopic({
-          lessonIndex: selectedLessonIndex,
-          topic: {
-            topic_id: generatedTopicID,
-            lesson_id: lessons[selectedLessonIndex].lesson_id,
-            topic_title: title,
-            topic_description: content,
-            sequence_number,
-            file_name: uploadedFileName,
-          },
-        });
-        toast.success(data);
-      } else {
-        editTopic({
-          lessonIndex: selectedLessonIndex,
-          topicIndex: selectedTopicIndex,
-          topic: {
-            ...topicDetails,
-            topic_title: title,
-            topic_description: content,
-            file_name: uploadedFileName,
-          },
-        });
-        toast.success("Topic updated successfully");
-      }
-
-      closeTopicModal();
-    } catch (error) {
-      console.error("Error in handleSubmit:", error);
-      toast.error(error.message || "Failed to save topic");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   useEffect(() => {
     const fetchTopicDetail = async () => {
@@ -240,6 +166,102 @@ const TopicModal = () => {
     });
 
     closeTopicModal();
+  };
+
+  const isFileFromDatabase = (fileName) => {
+    return fileName === formData.file;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      if (selectedLessonIndex === null) {
+        throw new Error("No lesson selected");
+      }
+
+      const title = formData.topic_title.trim();
+      const content = formData.topic_description.trim();
+      const finalFileName = isExistingFile ? formData.file : uploadedFileName;
+
+      // Validation
+      if (!title || !content) {
+        toast.error("Please fill in all required fields");
+        return;
+      }
+
+      const lessonId = lessons[selectedLessonIndex].lesson_id;
+      const sequence_number =
+        selectedTopicIndex === null
+          ? lessons[selectedLessonIndex].topics.length + 1
+          : lessons[selectedLessonIndex].topics[selectedTopicIndex]
+              .sequence_number;
+
+      // Create new topic
+      if (selectedTopicIndex === null) {
+        const { success, data, message } = await createTopic(
+          generatedTopicID,
+          lessonId,
+          title,
+          content,
+          sequence_number,
+          finalFileName
+        );
+
+        if (!success) {
+          throw new Error(message);
+        }
+
+        addTopic({
+          lessonIndex: selectedLessonIndex,
+          topic: {
+            topic_id: generatedTopicID,
+            lesson_id: lessonId,
+            topic_title: title,
+            topic_description: content,
+            sequence_number,
+            file_name: uploadedFileName,
+          },
+        });
+
+        toast.success(data);
+      } else {
+        const topicId =
+          lessons[selectedLessonIndex].topics[selectedTopicIndex].topic_id;
+
+        const { success, message, data } = await updateTopic(
+          topicId,
+          title,
+          content,
+          isExistingFile ? "" : finalFileName
+        );
+
+        if (!success) {
+          throw new Error(message);
+        }
+
+        editTopic({
+          lessonIndex: selectedLessonIndex,
+          topicIndex: selectedTopicIndex,
+          topic: {
+            ...topicDetails,
+            topic_title: title,
+            topic_description: content,
+            file_name: uploadedFileName,
+          },
+        });
+
+        toast.success(message || "Topic updated successfully");
+      }
+
+      closeTopicModal();
+    } catch (error) {
+      console.error("Error in handleSubmit:", error);
+      toast.error(error.message || "Failed to save topic");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
