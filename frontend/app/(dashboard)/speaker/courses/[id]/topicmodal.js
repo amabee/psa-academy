@@ -425,7 +425,9 @@ const TopicModal = () => {
                     fetch(source, {
                       mode: "cors",
                       headers: {
-                        Origin: "http://localhost:3000",
+                        Origin:
+                          "http://localhost:3000" ||
+                          "http://192.168.20.33:3000",
                         "X-Requested-With": "XMLHttpRequest",
                         Accept: "application/pdf,video/*",
                       },
@@ -477,13 +479,13 @@ const TopicModal = () => {
 
                       load(fileName);
                     } catch (err) {
-                      error("Upload failed");
+                      error(err);
                     }
                   },
                 }}
                 onprocessfile={(error, file) => {
                   if (error) {
-                    console.error("Upload failed:", error);
+                    console.error("Upload failed:", JSON.stringify(error));
                     toast.error("Failed to upload file");
                     return;
                   }

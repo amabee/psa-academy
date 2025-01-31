@@ -36,7 +36,7 @@ export const login = async (user, password) => {
       return { success: false, message: "Something went wrong", data: [] };
     }
 
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
 
     await cookieStore.set("session_id", response.data.data.session_id, {
       httpOnly: true,

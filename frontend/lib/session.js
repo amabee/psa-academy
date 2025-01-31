@@ -24,8 +24,8 @@ export const getSession = async () => {
       },
       headers: {
         Authorization: SECRET_KEY,
-        SESSION_ID: session_id,
-        SESSION_TOKEN: session_token,
+        session_id: session_id,
+        session_token: session_token,
       },
     });
 
