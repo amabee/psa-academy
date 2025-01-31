@@ -67,7 +67,9 @@ const Navbar = ({ isCoursePage }) => {
     }
   };
 
-  console.log(`${BASE_URL}profile_image_serve.php?image=${userDetails?.profile_image}`)
+  console.log(
+    `${BASE_URL}profile_image_serve.php?image=${userDetails?.profile_image}`
+  );
   return (
     <nav className="dashboard-navbar">
       <div className="dashboard-navbar__container">
@@ -107,7 +109,10 @@ const Navbar = ({ isCoursePage }) => {
             >
               <Link href={getProfilePath(userType)}>
                 <Avatar className="w-12 h-12">
-                  <AvatarImage src={`${BASE_URL}profile_image_serve.php?image=${userDetails?.profile_image}`} alt="Profile Image" />
+                  <AvatarImage
+                    src={`${BASE_URL}profile_image_serve.php?image=${userDetails?.profile_image}`}
+                    alt="Profile Image"
+                  />
 
                   <AvatarFallback>
                     {userDetails?.first_name.charAt(0)}{" "}
