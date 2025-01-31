@@ -75,7 +75,7 @@ const TeacherCourseCard = ({
             <>
               <div>
                 <Button
-                  className="course-card-teacher__edit-button"
+                  className="course-card-teacher__edit-button hover:bg-[rgb(152,152,253)] hover:text-white-100"
                   onClick={() => onEdit(course)}
                 >
                   <Pencil className="w-4 h-4 mr-2" />
@@ -84,7 +84,7 @@ const TeacherCourseCard = ({
               </div>
               <div>
                 <Button
-                  className="course-card-teacher__delete-button"
+                  className="course-card-teacher__delete-button hover:bg-red-700 hover:text-white-100"
                   onClick={() => onDelete(course)}
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
