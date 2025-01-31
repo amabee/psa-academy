@@ -10,29 +10,35 @@ export function MagicCard({
   gradientColor = "#262626",
   gradientOpacity = 0.8,
   gradientFrom = "#9E7AFF",
-  gradientTo = "#FE8BBB"
+  gradientTo = "#FE8BBB",
 }) {
   const cardRef = useRef(null);
   const mouseX = useMotionValue(-gradientSize);
   const mouseY = useMotionValue(-gradientSize);
 
-  const handleMouseMove = useCallback((e) => {
-    if (cardRef.current) {
-      const { left, top } = cardRef.current.getBoundingClientRect();
-      const clientX = e.clientX;
-      const clientY = e.clientY;
-      mouseX.set(clientX - left);
-      mouseY.set(clientY - top);
-    }
-  }, [mouseX, mouseY]);
+  const handleMouseMove = useCallback(
+    (e) => {
+      if (cardRef.current) {
+        const { left, top } = cardRef.current.getBoundingClientRect();
+        const clientX = e.clientX;
+        const clientY = e.clientY;
+        mouseX.set(clientX - left);
+        mouseY.set(clientY - top);
+      }
+    },
+    [mouseX, mouseY]
+  );
 
-  const handleMouseOut = useCallback((e) => {
-    if (!e.relatedTarget) {
-      document.removeEventListener("mousemove", handleMouseMove);
-      mouseX.set(-gradientSize);
-      mouseY.set(-gradientSize);
-    }
-  }, [handleMouseMove, mouseX, gradientSize, mouseY]);
+  const handleMouseOut = useCallback(
+    (e) => {
+      if (!e.relatedTarget) {
+        document.removeEventListener("mousemove", handleMouseMove);
+        mouseX.set(-gradientSize);
+        mouseY.set(-gradientSize);
+      }
+    },
+    [handleMouseMove, mouseX, gradientSize, mouseY]
+  );
 
   const handleMouseEnter = useCallback(() => {
     document.addEventListener("mousemove", handleMouseMove);
@@ -68,10 +74,10 @@ export function MagicCard({
     >
       {/* Original background */}
       <div className="absolute inset-px z-10 rounded-xl bg-background" />
-      
+
       {/* Content */}
-      <div className="relative z-30">{children}</div>
-      
+      <div className={`!${className} relative z-30 `}>{children}</div>
+
       {/* Original gradient effect */}
       <motion.div
         className="pointer-events-none absolute inset-px z-10 rounded-xl opacity-0 transition-opacity duration-300 group-hover:opacity-100"
@@ -82,7 +88,7 @@ export function MagicCard({
           opacity: gradientOpacity,
         }}
       />
-      
+
       {/* New gradient border */}
       <motion.div
         className="pointer-events-none absolute inset-0 z-20 rounded-xl opacity-0 transition-opacity duration-300 group-hover:opacity-100"
@@ -95,10 +101,11 @@ export function MagicCard({
               transparent 100%
             )
           `,
-          WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-          WebkitMaskComposite: 'xor',
-          maskComposite: 'exclude',
-          padding: '1px',
+          WebkitMask:
+            "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
+          WebkitMaskComposite: "xor",
+          maskComposite: "exclude",
+          padding: "1px",
         }}
       />
     </div>

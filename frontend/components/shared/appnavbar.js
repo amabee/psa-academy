@@ -67,9 +67,7 @@ const Navbar = ({ isCoursePage }) => {
     }
   };
 
-  console.log(
-    `${BASE_URL}profile_image_serve.php?image=${userDetails?.profile_image}`
-  );
+
   return (
     <nav className="dashboard-navbar">
       <div className="dashboard-navbar__container">

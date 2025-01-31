@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Camera,
   Mail,
@@ -17,27 +17,66 @@ import { MagicCard } from "@/components/ui/magic-card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { AvatarImage } from "@radix-ui/react-avatar";
-import { Label } from "@/components/ui/label";
+import AccountContent from "./account_content";
+import PrivacyContent from "./privacy";
+import NotificationsContent from "./notifications";
+import SecurityContent from "./security_content";
+import { useUser } from "@/app/providers/UserProvider";
+import { formatDate } from "@/lib/utils";
+import { Separator } from "@/components/ui/separator";
 
 const SpeakerProfilePage = () => {
   const [activeSection, setActiveSection] = useState("About");
   const gradientColor = "#93a9ad";
+  const userDetail = useUser();
+  const [isLoading, setIsLoading] = useState(true);
 
-  const userProfile = {
-    name: "Sarah Anderson",
-    role: "Senior Product Designer",
-    location: "Zone 1 Bulua, Cagayan De Oro City",
-    email: "sarah.anderson@example.com",
-    joinDate: "January 2024",
-    bio: "Passionate about creating beautiful and intuitive user experiences. With over 8 years of experience in product design, I specialize in creating seamless user experiences that bridge the gap between complex functionality and elegant simplicity.",
-    avatarUrl: "https://github.com/shadcn.png",
+  useEffect(() => {
+    if (userDetail) {
+      setIsLoading(false);
+    }
+  }, [userDetail]);
+
+  const mapUserType = (userType) => {
+    switch (userType) {
+      case 1:
+        return "Admin";
+      case 2:
+        return "Program Manager";
+      case 3:
+        return "Speaker";
+      case 4:
+        return "Student";
+      default:
+        return "Guest";
+    }
   };
+
+  const userProfile = useMemo(() => ({
+    name: userDetail
+      ? `${userDetail.user.first_name} ${userDetail?.user.middle_name} ${userDetail.user.last_name}`.trim()
+      : "No Name",
+    username: userDetail?.user.username,
+    role: mapUserType(userDetail.user.userType_id),
+    address: userDetail?.user.address,
+    email: userDetail?.user.email || "sarah.anderson@example.com",
+    joinDate: formatDate(userDetail?.user.date_created),
+    bio: userDetail?.user.user_about,
+    avatarUrl: `${process.env.NEXT_PUBLIC_ROOT_URL}profile_image_serve.php?image=${userDetail?.user.profile_image}`,
+    birthDay: formatDate(userDetail?.user.date_of_birth),
+    gender: userDetail?.user.gender,
+    isPwd: userDetail?.user.is_Pwd === 0 ? "No" : "Yes",
+    isSoloParent: userDetail?.user.is_SoloParent === 0 ? "No" : "Yes",
+    isPregnant: userDetail?.user.is_Pregnant === 0 ? "No" : "Yes",
+    position: userDetail?.user.position,
+  }));
 
   const InputField = ({
     label,
     type = "text",
     defaultValue = "",
     className = "",
+    disabled = false,
   }) => (
     <div className="space-y-2">
       <label className="text-sm font-medium text-white/90">{label}</label>
@@ -46,8 +85,9 @@ const SpeakerProfilePage = () => {
         defaultValue={defaultValue}
         className={`w-full p-4 rounded-lg bg-white/5 text-gray-700 border border-white/10 
         focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none
-        transition-all duration-200 placeholder-white/30 hover:bg-white/10 ${className}`}
+        transition-all duration-200 placeholder-white/30 hover:bg-white/10 ${className} disabled:bg-gray-200 disabled:text-gray-400`}
         placeholder={`Enter your ${label.toLowerCase()}`}
+        disabled={disabled}
       />
     </div>
   );
@@ -77,7 +117,7 @@ const SpeakerProfilePage = () => {
           <p className="text-sm text-white/60 mt-1">{description}</p>
         </div>
         <select
-          className="bg-white/10 text-white border border-white/20 rounded-lg p-2 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 hover:bg-white/[0.15] transition-colors"
+          className="bg-gray-800 text-white-100 border border-white/20 rounded-lg p-2 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 hover:bg-white/[0.15] transition-colors"
           defaultValue={defaultValue}
         >
           {options.map((option) => (
@@ -90,136 +130,29 @@ const SpeakerProfilePage = () => {
     </div>
   );
 
-  const AccountContent = () => (
-    <div className="space-y-6">
-      <InputField label="Full Name" defaultValue={userProfile.name} />
-      <InputField label="Email" type="email" defaultValue={userProfile.email} />
-      <InputField label="Role" defaultValue={userProfile.role} />
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-white/90">Bio</label>
-        <textarea
-          defaultValue={userProfile.bio}
-          rows={4}
-          className="w-full p-3 rounded-lg bg-white/5 text-white border border-white/10 
-          focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none
-          transition-all duration-200 placeholder-white/30 hover:bg-white/10"
-        />
-      </div>
-      <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/25 hover:-translate-y-1">
-        Save Changes
-      </Button>
-    </div>
-  );
-
-  const PrivacyContent = () => (
-    <div className="space-y-4">
-      <SelectField
-        label="Profile Visibility"
-        description="Control who can see your profile"
-        options={["Public", "Private", "Connections Only"]}
-        defaultValue="Public"
-      />
-      <CustomSwitch
-        label="Activity Status"
-        description="Show when you're online"
-        defaultChecked={true}
-      />
-      <CustomSwitch
-        label="Search Visibility"
-        description="Allow others to find your profile"
-        defaultChecked={true}
-      />
-    </div>
-  );
-
-  const NotificationsContent = () => (
-    <div className="space-y-4">
-      <CustomSwitch
-        label="Email Notifications"
-        description="Receive important updates and announcements via email"
-        defaultChecked={true}
-      />
-      <CustomSwitch
-        label="Push Notifications"
-        description="Get instant notifications for messages and mentions"
-        defaultChecked={true}
-      />
-      <CustomSwitch
-        label="Event Reminders"
-        description="Receive reminders about upcoming events and sessions"
-        defaultChecked={true}
-      />
-      <CustomSwitch
-        label="Marketing Communications"
-        description="Stay updated with our latest features and offerings"
-        defaultChecked={false}
-      />
-    </div>
-  );
-
-  const SecurityContent = () => (
-    <div className="space-y-6">
-      <InputField label="Current Password" type="password" />
-      <InputField label="New Password" type="password" />
-      <InputField label="Confirm New Password" type="password" />
-      <div className="flex flex-col space-y-4">
-        <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/25 hover:-translate-y-1">
-          Update Password
-        </Button>
-        <Button className="w-full bg-red-600/10 hover:bg-red-600/20 text-red-500 py-3 rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-red-500/10 hover:-translate-y-1">
-          Enable Two-Factor Authentication
-        </Button>
-      </div>
-    </div>
-  );
-
   const renderContent = () => {
     switch (activeSection) {
       case "Account":
-        return <AccountContent />;
+        return (
+          <AccountContent userProfile={userProfile} InputField={InputField} />
+        );
       case "Privacy":
-        return <PrivacyContent />;
+        return (
+          <PrivacyContent
+            SelectField={SelectField}
+            CustomSwitch={CustomSwitch}
+          />
+        );
       case "Notifications":
-        return <NotificationsContent />;
+        return <NotificationsContent CustomSwitch={CustomSwitch} />;
       case "Security":
-        return <SecurityContent />;
+        return <SecurityContent InputField={InputField} />;
       default:
         return (
           <div className="space-y-6">
-            <p className="text-white/80 leading-relaxed">{userProfile.bio}</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 rounded-lg bg-white/5 border border-white/10">
-                <h4 className="text-white font-medium mb-2">Expertise</h4>
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    "UI Design",
-                    "UX Research",
-                    "Prototyping",
-                    "Design Systems",
-                  ].map((skill) => (
-                    <span
-                      key={skill}
-                      className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 text-sm"
-                    >
-                      {skill}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <div className="p-4 rounded-lg bg-white/5 border border-white/10">
-                <h4 className="text-white font-medium mb-2">Languages</h4>
-                <div className="flex flex-wrap gap-2">
-                  {["English", "Spanish", "French"].map((language) => (
-                    <span
-                      key={language}
-                      className="px-3 py-1 rounded-full bg-purple-500/20 text-purple-400 text-sm"
-                    >
-                      {language}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
+            <p className="text-white/80 text-md leading-relaxed">
+              {userProfile.bio}
+            </p>
           </div>
         );
     }
@@ -258,7 +191,9 @@ const SpeakerProfilePage = () => {
                     alt="Profile"
                     className="object-cover"
                   />
-                  <AvatarFallback>SA</AvatarFallback>
+                  <AvatarFallback>{`${userDetail.user.first_name.charAt(
+                    0
+                  )} ${userDetail.user.last_name.charAt(0)}`}</AvatarFallback>
                 </Avatar>
                 <button className="absolute bottom-0 right-0 bg-blue-600 p-2 rounded-full shadow-lg hover:bg-blue-700 transition-all hover:shadow-xl hover:-translate-y-1 duration-300 group-hover:scale-110">
                   <Camera className="w-4 h-4 text-white" />
@@ -267,16 +202,20 @@ const SpeakerProfilePage = () => {
 
               <div className="flex-grow">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-3xl font-bold text-white mb-1">
+                  <div className="flex items-center space-x-3">
+                    <h2 className="text-3xl font-bold text-white">
                       {userProfile.name}
                     </h2>
-                    <p className="text-white/80 text-lg">{userProfile.role}</p>
+
+                    <Separator
+                      orientation="vertical"
+                      className="h-6 w-[2px] bg-gray-400"
+                    />
+
+                    <p className="text-white/80 text-lg">
+                      @{userProfile.username}
+                    </p>
                   </div>
-                  <Button className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg transition-all duration-300 hover:bg-blue-700 hover:shadow-lg hover:-translate-y-1 hover:shadow-blue-500/25">
-                    <Edit className="w-4 h-4" />
-                    <span>Edit Profile</span>
-                  </Button>
                 </div>
                 <div className="mt-6 flex flex-wrap gap-6">
                   <div className="flex items-center text-white/80 hover:text-white transition-colors">
@@ -300,12 +239,12 @@ const SpeakerProfilePage = () => {
         <div className="grid md:grid-cols-3 gap-6">
           <div className="md:col-span-2">
             <MagicCard
-              className="cursor-default hover:shadow-xl transition-shadow duration-300"
+              className="cursor-default hover:shadow-xl transition-shadow duration-300 w-full"
               gradientColor={gradientColor}
               gradientOpacity={0.1}
               gradientSize={500}
             >
-              <div className="p-8">
+              <div className="p-8 w-full">
                 <h3 className="text-2xl font-semibold text-white mb-8">
                   {activeSection}
                 </h3>
@@ -316,7 +255,7 @@ const SpeakerProfilePage = () => {
 
           <div className="md:col-span-1">
             <MagicCard
-              className="cursor-default hover:shadow-xl transition-shadow duration-300"
+              className="cursor-default hover:shadow-xl transition-shadow duration-300 max-h-[450]"
               gradientColor={gradientColor}
               gradientOpacity={0.1}
               gradientSize={500}
@@ -374,10 +313,10 @@ const SpeakerProfilePage = () => {
                   </div>
                 </div>
 
-                <Button className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-3 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition-all duration-300">
+                {/* <Button className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-3 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition-all duration-300">
                   <Lock className="w-4 h-4" />
                   <span>Logout</span>
-                </Button>
+                </Button> */}
               </div>
             </MagicCard>
           </div>
