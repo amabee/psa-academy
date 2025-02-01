@@ -5,6 +5,8 @@ const PrivacyContent = ({ SelectField, CustomSwitch }) => (
       description="Control who can see your profile"
       options={["Public", "Private", "Connections Only"]}
       defaultValue="Public"
+      className="bg-inherit"
+      optionBGcolor="bg-[rgb(37,38,47)] text-white"
     />
     <CustomSwitch
       label="Activity Status"

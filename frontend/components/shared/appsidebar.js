@@ -1,5 +1,5 @@
 import { usePathname } from "next/navigation";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -24,16 +24,39 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { GoPeople } from "react-icons/go";
 import { Button } from "../ui/button";
-
+import { logout } from "@/lib/actions/auth";
+import { useUser } from "@/app/providers/UserProvider";
+import { toast } from "sonner";
 
 const AppSidebar = () => {
-  //   const { user, isLoaded } = useUser();
-  //   const { signOut } = useClerk();
-
-  const user = "teacher";
-  const isLoaded = true;
   const pathname = usePathname();
   const { toggleSidebar } = useSidebar();
+  const { user, loading: userLoading } = useUser();
+
+  const handleLogout = async () => {
+    const { success, data, message } = await logout();
+    if (!success) {
+      toast.error("Failed to logout");
+      return;
+    }
+
+    window.location.href = "/auth/signin";
+  };
+
+  const getUserRole = (userType) => {
+    switch (userType) {
+      case 1:
+        return "admin";
+      case 2:
+        return "manager";
+      case 3:
+        return "teacher";
+      case 4:
+        return "student";
+      default:
+        return "guest";
+    }
+  };
 
   const navLinks = {
     student: [
@@ -43,15 +66,38 @@ const AppSidebar = () => {
     teacher: [
       { icon: BookOpen, label: "Courses", href: "/speaker/courses" },
       { icon: User, label: "Profile", href: "/speaker/profile" },
-      { icon: GoPeople, label: "Enrolled Students", href: "/speaker/course-list/" },
+      {
+        icon: GoPeople,
+        label: "Enrolled Students",
+        href: "/speaker/course-list",
+      },
+    ],
+    admin: [
+      { icon: BookOpen, label: "Courses", href: "/admin/courses" },
+      { icon: User, label: "Profile", href: "/admin/profile" },
+    ],
+    manager: [
+      { icon: BookOpen, label: "Courses", href: "/manager/courses" },
+      { icon: User, label: "Profile", href: "/manager/profile" },
+    ],
+    guest: [
+      { icon: BookOpen, label: "Courses", href: "/courses" },
+      { icon: User, label: "Profile", href: "/profile" },
     ],
   };
 
-  if (!isLoaded) return <div>Loading</div>;
-  //   if (!user) return <div>User not found</div>;
+  if (userLoading) {
+    return (
+      <div className="flex h-screen w-16 items-center justify-center bg-customgreys-primarybg">
+        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+      </div>
+    );
+  }
 
-  //   const userType = user.publicMetadata.userType || "student";
-  const currentNavLinks = navLinks["teacher"];
+  if (!user) return null;
+
+  const userRole = getUserRole(user.userType_id);
+  const currentNavLinks = navLinks[userRole] || navLinks.guest;
 
   return (
     <Sidebar
@@ -134,7 +180,7 @@ const AppSidebar = () => {
             <SidebarMenuButton asChild>
               <Button
                 variant="outline"
-                onClick={() => signOut()}
+                onClick={() => handleLogout()}
                 className="group border-2 hover:border-red-500 hover:bg-red-500/10 hover:text-red-500 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-red-500/20"
               >
                 <LogOut className="mr-2 h-6 w-6 transition-transform group-hover:rotate-12" />

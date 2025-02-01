@@ -69,3 +69,31 @@ export const login = async (user, password) => {
     };
   }
 };
+
+export const logout = async () => {
+  const cookieStore = await cookies();
+
+  await cookieStore.set("session_id", "", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    path: "/",
+    maxAge: 0,
+  });
+
+  await cookieStore.set("session_token", "", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    path: "/",
+    maxAge: 0,
+  });
+
+  await cookieStore.set("clear-user-data", "true", {
+    httpOnly: false,
+    path: "/",
+    maxAge: 10,
+  });
+
+  return { success: true, data: [], message: "Logged out successfully" };
+};

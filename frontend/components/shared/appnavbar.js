@@ -11,6 +11,7 @@ import { useUser } from "@/app/providers/UserProvider";
 
 const BASE_URL = process.env.NEXT_PUBLIC_ROOT_URL;
 const Navbar = ({ isCoursePage }) => {
+  
   const [userType, setUserType] = useState(null);
   const [loading, setLoading] = useState(true);
   const [userDetails, setUserDetails] = useState(null);
@@ -37,21 +38,6 @@ const Navbar = ({ isCoursePage }) => {
     fetchSessionAndUser();
   }, [user]);
 
-  const getUserRole = (userTypeId) => {
-    switch (userTypeId) {
-      case 1:
-        return "Admin";
-      case 2:
-        return "Manager";
-      case 3:
-        console.log(userTypeId);
-        return "Speaker";
-      case 4:
-        return "Student";
-      default:
-        return "Guest";
-    }
-  };
 
   const getProfilePath = (userTypeId) => {
     switch (userTypeId) {

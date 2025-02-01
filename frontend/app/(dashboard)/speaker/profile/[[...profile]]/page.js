@@ -15,8 +15,7 @@ import {
 } from "lucide-react";
 import { MagicCard } from "@/components/ui/magic-card";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { AvatarImage } from "@radix-ui/react-avatar";
+
 import AccountContent from "./account_content";
 import PrivacyContent from "./privacy";
 import NotificationsContent from "./notifications";
@@ -24,12 +23,19 @@ import SecurityContent from "./security_content";
 import { useUser } from "@/app/providers/UserProvider";
 import { formatDate } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
+import {
+  updateProfileDetails,
+  updateProfileImage,
+} from "@/lib/actions/speaker/profile";
+import { toast } from "sonner";
+import ProfileImageSection from "./profile_image";
 
 const SpeakerProfilePage = () => {
   const [activeSection, setActiveSection] = useState("About");
   const gradientColor = "#93a9ad";
   const userDetail = useUser();
   const [isLoading, setIsLoading] = useState(true);
+  const [isDisabled, setIsDisabled] = useState(false);
 
   useEffect(() => {
     if (userDetail) {
@@ -65,16 +71,17 @@ const SpeakerProfilePage = () => {
     avatarUrl: `${process.env.NEXT_PUBLIC_ROOT_URL}profile_image_serve.php?image=${userDetail?.user.profile_image}`,
     birthDay: formatDate(userDetail?.user.date_of_birth),
     gender: userDetail?.user.gender,
-    isPwd: userDetail?.user.is_Pwd === 0 ? "No" : "Yes",
-    isSoloParent: userDetail?.user.is_SoloParent === 0 ? "No" : "Yes",
-    isPregnant: userDetail?.user.is_Pregnant === 0 ? "No" : "Yes",
+    isPwd: userDetail?.user.is_Pwd,
+    isSoloParent: userDetail?.user.is_SoloParent,
+    isPregnant: userDetail?.user.is_Pregnant,
     position: userDetail?.user.position,
   }));
 
   const InputField = ({
     label,
     type = "text",
-    defaultValue = "",
+    value = "",
+    onChange = {},
     className = "",
     disabled = false,
   }) => (
@@ -82,10 +89,11 @@ const SpeakerProfilePage = () => {
       <label className="text-sm font-medium text-white/90">{label}</label>
       <input
         type={type}
-        defaultValue={defaultValue}
-        className={`w-full p-4 rounded-lg bg-white/5 text-gray-700 border border-white/10 
+        value={value}
+        onChange={onChange}
+        className={`w-full p-4 rounded-lg bg-inherit text-white-100 border border-white/10 
         focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none
-        transition-all duration-200 placeholder-white/30 hover:bg-white/10 ${className} disabled:bg-gray-200 disabled:text-gray-400`}
+        transition-all duration-200 placeholder-white/30 hover:bg-white/10 ${className}  disabled:text-gray-400`}
         placeholder={`Enter your ${label.toLowerCase()}`}
         disabled={disabled}
       />
@@ -109,7 +117,15 @@ const SpeakerProfilePage = () => {
     </div>
   );
 
-  const SelectField = ({ label, description, options, defaultValue }) => (
+  const SelectField = ({
+    label,
+    description,
+    options,
+    value,
+    onChange,
+    className = "",
+    isBooleanValue = false,
+  }) => (
     <div className="p-4 rounded-lg bg-white/5 border border-white/10 hover:bg-white/[0.08] transition-colors">
       <div className="flex items-center justify-between">
         <div className="flex-1">
@@ -117,8 +133,17 @@ const SpeakerProfilePage = () => {
           <p className="text-sm text-white/60 mt-1">{description}</p>
         </div>
         <select
-          className="bg-gray-800 text-white-100 border border-white/20 rounded-lg p-2 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 hover:bg-white/[0.15] transition-colors"
-          defaultValue={defaultValue}
+          className={`${className} bg-gray-800 text-white border border-white/20 rounded-lg p-2 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 hover:bg-white/[0.15] transition-colors`}
+          value={isBooleanValue ? (value === 1 ? "Yes" : "No") : value}
+          onChange={(e) => {
+            if (isBooleanValue) {
+              onChange({
+                target: { value: e.target.value === "Yes" ? 1 : 0 },
+              });
+            } else {
+              onChange(e);
+            }
+          }}
         >
           {options.map((option) => (
             <option key={option} value={option} className="bg-gray-800">
@@ -130,11 +155,84 @@ const SpeakerProfilePage = () => {
     </div>
   );
 
+  const handleUpdateProfile = async (user) => {
+    try {
+      setIsDisabled(true);
+      const { success, data, message } = await updateProfileDetails(
+        userDetail.user.user_id,
+        user.email,
+        user.bio,
+        user.address,
+        user.isPregnant,
+        user.isPwd,
+        user.isSoloParent
+      );
+
+      if (!success) {
+        toast.error(message);
+        return;
+      }
+
+      const currentUser = JSON.parse(localStorage.getItem("user"));
+
+      const updatedUser = {
+        ...currentUser,
+        email: user.email,
+        user_about: user.bio,
+        address: user.address,
+        is_Pregnant: user.isPregnant,
+        is_Pwd: user.isPwd,
+        is_SoloParent: user.isSoloParent,
+        date_updated: new Date().toISOString().slice(0, 19).replace("T", " "), // Update the timestamp
+      };
+
+      // Save back to localStorage
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+
+      toast.success("Successfully updated profile");
+    } catch (error) {
+      toast.error("Failed to update user profile");
+    } finally {
+      setIsDisabled(false);
+    }
+  };
+
+  const handleUpdateProfileImage = async (file) => {
+    try {
+      const { success, data, message } = await updateProfileImage(
+        userDetail.user.user_id,
+        file
+      );
+
+      if (!success) {
+        toast.error(message);
+        return;
+      }
+
+      toast.success("Profile image updated successfully");
+
+      const currentUser = JSON.parse(localStorage.getItem("user"));
+      const updatedUser = {
+        ...currentUser,
+        profile_image: data,
+      };
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+    } catch (error) {
+      toast.error(error.message || "Failed to update profile image");
+    }
+  };
+
   const renderContent = () => {
     switch (activeSection) {
       case "Account":
         return (
-          <AccountContent userProfile={userProfile} InputField={InputField} />
+          <AccountContent
+            onSave={handleUpdateProfile}
+            userProfile={userProfile}
+            InputField={InputField}
+            SelectField={SelectField}
+            isDisabled={isDisabled}
+          />
         );
       case "Privacy":
         return (
@@ -185,19 +283,11 @@ const SpeakerProfilePage = () => {
           <div className="p-8">
             <div className="flex flex-col md:flex-row items-start md:items-center gap-8">
               <div className="relative group">
-                <Avatar className="h-24 w-24 ring-2 ring-white/20 group-hover:ring-blue-500/50 transition-all duration-300">
-                  <AvatarImage
-                    src={userProfile.avatarUrl}
-                    alt="Profile"
-                    className="object-cover"
-                  />
-                  <AvatarFallback>{`${userDetail.user.first_name.charAt(
-                    0
-                  )} ${userDetail.user.last_name.charAt(0)}`}</AvatarFallback>
-                </Avatar>
-                <button className="absolute bottom-0 right-0 bg-blue-600 p-2 rounded-full shadow-lg hover:bg-blue-700 transition-all hover:shadow-xl hover:-translate-y-1 duration-300 group-hover:scale-110">
-                  <Camera className="w-4 h-4 text-white" />
-                </button>
+                <ProfileImageSection
+                  userProfile={userProfile}
+                  userDetail={userDetail}
+                  onImageUpdate={handleUpdateProfileImage}
+                />
               </div>
 
               <div className="flex-grow">
@@ -220,7 +310,7 @@ const SpeakerProfilePage = () => {
                 <div className="mt-6 flex flex-wrap gap-6">
                   <div className="flex items-center text-white/80 hover:text-white transition-colors">
                     <MapPin className="w-5 h-5 mr-2 text-blue-400" />
-                    <span>{userProfile.location}</span>
+                    <span>{userProfile.address}</span>
                   </div>
                   <div className="flex items-center text-white/80 hover:text-white transition-colors">
                     <Mail className="w-5 h-5 mr-2 text-blue-400" />
@@ -255,7 +345,7 @@ const SpeakerProfilePage = () => {
 
           <div className="md:col-span-1">
             <MagicCard
-              className="cursor-default hover:shadow-xl transition-shadow duration-300 max-h-[450]"
+              className="cursor-default hover:shadow-xl transition-shadow duration-300 h-[450]"
               gradientColor={gradientColor}
               gradientOpacity={0.1}
               gradientSize={500}
