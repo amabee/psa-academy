@@ -141,20 +141,19 @@ class Course
         }
 
         $user_id = InputHelper::sanitizeInt($data['user_id']);
-        $course_id = InputHelper::sanitizeInt($data['course_id']);
+        $course_id = InputHelper::sanitizeString($data['course_id']);
 
-        if (!InputHelper::validateInt($user_id) || !InputHelper::validateInt($course_id)) {
+        if (!InputHelper::validateInt($user_id)) {
             http_response_code(422);
             return json_encode([
                 "status" => 422,
                 "success" => false,
                 "data" => "",
-                "message" => "Invalid user id or course id"
+                "message" => "Invalid user id"
             ]);
         }
 
         try {
-            // Get course and teacher details
             $sql = "SELECT 
                         c.course_id,
                         c.title,
@@ -168,6 +167,7 @@ class Course
                         u.middle_name AS teacher_middlename,
                         u.last_name AS teacher_lastname,
                         u.profile_image AS teacher_image,
+                        u.user_about AS teacher_about,
                         CASE 
                             WHEN e.user_id IS NOT NULL THEN 1 
                             ELSE 0 
@@ -185,7 +185,7 @@ class Course
 
             $stmt = $this->conn->prepare($sql);
             $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
-            $stmt->bindParam(':course_id', $course_id, PDO::PARAM_INT);
+            $stmt->bindParam(':course_id', $course_id, PDO::PARAM_STR);
             $stmt->execute();
 
             $courseDetails = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -203,8 +203,8 @@ class Course
             // Get lessons with progress
             $lessonSql = "SELECT 
                             l.lesson_id,
-                            l.title AS lesson_title,
-                            l.description AS lesson_description,
+                            l.lesson_title AS lesson_title,
+                            l.lesson_description AS lesson_description,
                             l.sequence_number,
                             COALESCE(lp.is_completed, 0) AS is_completed,
                             lp.completion_date,
@@ -215,66 +215,83 @@ class Course
                             lesson_progress lp ON l.lesson_id = lp.lesson_id AND lp.user_id = :user_id
                         WHERE 
                             l.course_id = :course_id
+                        GROUP BY 
+                            l.lesson_id
                         ORDER BY 
                             l.sequence_number ASC";
 
             $lessonStmt = $this->conn->prepare($lessonSql);
             $lessonStmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
-            $lessonStmt->bindParam(':course_id', $course_id, PDO::PARAM_INT);
+            $lessonStmt->bindParam(':course_id', $course_id, PDO::PARAM_STR);
             $lessonStmt->execute();
             $lessons = $lessonStmt->fetchAll(PDO::FETCH_ASSOC);
 
             // Get topics with progress for each lesson
-            foreach ($lessons as &$lesson) {
+            // Get topics with progress for each lesson
+            foreach ($lessons as $key => $lesson) {  // Remove the & reference
                 $topicSql = "SELECT 
-                                t.topic_id,
-                                t.title AS topic_title,
-                                t.description AS topic_description,
-                                t.sequence_number,
-                                COALESCE(tp.is_completed, 0) AS is_completed,
-                                tp.completion_date,
-                                tp.last_accessed
-                            FROM 
-                                topic t
-                            LEFT JOIN 
-                                topic_progress tp ON t.topic_id = tp.topic_id AND tp.user_id = :user_id
-                            WHERE 
-                                t.lesson_id = :lesson_id
-                            ORDER BY 
-                                t.sequence_number ASC";
+                    t.topic_id,
+                    t.topic_title AS topic_title,
+                    t.topic_description AS topic_description,
+                    t.sequence_number,
+                    COALESCE(tp.is_completed, 0) AS is_completed,
+                    tp.completion_date,
+                    tp.last_accessed
+                FROM 
+                    topic t
+                LEFT JOIN 
+                    topic_progress tp ON t.topic_id = tp.topic_id AND tp.user_id = :user_id
+                WHERE 
+                    t.lesson_id = :lesson_id
+                ORDER BY 
+                    t.sequence_number ASC";
 
                 $topicStmt = $this->conn->prepare($topicSql);
                 $topicStmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
                 $topicStmt->bindParam(':lesson_id', $lesson['lesson_id'], PDO::PARAM_INT);
                 $topicStmt->execute();
-                $lesson['topics'] = $topicStmt->fetchAll(PDO::FETCH_ASSOC);
+                $topics = $topicStmt->fetchAll(PDO::FETCH_ASSOC);
+
+                // Add topics and progress to the lessons array using the key
+                $lessons[$key]['topics'] = $topics;
+
+                // Add topic progress counts for each lesson
+                $lessonTopicsTotal = count($topics);
+                $lessonTopicsCompleted = 0;
+                foreach ($topics as $topic) {
+                    if ($topic['is_completed']) {
+                        $lessonTopicsCompleted++;
+                    }
+                }
+                $lessons[$key]['topic_progress'] = [
+                    'total' => $lessonTopicsTotal,
+                    'completed' => $lessonTopicsCompleted
+                ];
             }
 
             $courseDetails['lessons'] = $lessons;
 
-            // Calculate progress statistics
+            // Calculate overall progress statistics
             $totalLessons = count($lessons);
-            $completedLessons = array_reduce($lessons, function ($carry, $lesson) {
-                return $carry + ($lesson['is_completed'] ? 1 : 0);
-            }, 0);
+            $completedLessons = 0;
+            $totalTopics = 0;
+            $completedTopics = 0;
 
-            $totalTopics = array_reduce($lessons, function ($carry, $lesson) {
-                return $carry + count($lesson['topics']);
-            }, 0);
-
-            $completedTopics = array_reduce($lessons, function ($carry, $lesson) {
-                return $carry + array_reduce($lesson['topics'], function ($c, $topic) {
-                    return $c + ($topic['is_completed'] ? 1 : 0);
-                }, 0);
-            }, 0);
+            foreach ($lessons as $lesson) {
+                if ($lesson['is_completed']) {
+                    $completedLessons++;
+                }
+                $totalTopics += $lesson['topic_progress']['total'];
+                $completedTopics += $lesson['topic_progress']['completed'];
+            }
 
             $courseDetails['progress'] = [
                 'total_lessons' => $totalLessons,
                 'completed_lessons' => $completedLessons,
                 'total_topics' => $totalTopics,
                 'completed_topics' => $completedTopics,
-                'lesson_progress' => $totalLessons > 0 ? round(($completedLessons / $totalLessons) * 100, 2) : 0,
-                'topic_progress' => $totalTopics > 0 ? round(($completedTopics / $totalTopics) * 100, 2) : 0
+                'lesson_progress' => $completedLessons,
+                'topic_progress' => $completedTopics
             ];
 
             http_response_code(200);
@@ -361,7 +378,21 @@ if (isset($headers['authorization']) && $headers['authorization'] === $validApiK
                         "status" => 405,
                         "success" => false,
                         "data" => [],
-                        "message" => "Invalid request method for login. Use GET."
+                        "message" => "Invalid request method for getCourses. Use GET."
+                    ]);
+                }
+                break;
+
+            case "getUserCourseDetails":
+                if ($requestMethod === "GET") {
+                    echo $course->getUserCourseDetails($json);
+                } else {
+                    http_response_code(405);
+                    echo json_encode([
+                        "status" => 405,
+                        "success" => false,
+                        "data" => [],
+                        "message" => "Invalid request method for getUserCourseDetails. Use GET."
                     ]);
                 }
                 break;

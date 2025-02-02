@@ -20,8 +20,10 @@ export default function DashboardLayout(props) {
   const [courseId, setCourseId] = useState(null);
   const { user, loading } = useUser();
 
+
+
   const isCoursePage =
-    /^\/student\/courses\/[^\/]+(?:\/chapters\/[^\/]+)?$/.test(pathname);
+    /^\/student\/courses\/[^\/]+(?:\/lessons\/[^\/]+)?$/.test(pathname);
 
   useEffect(() => {
     if (isCoursePage) {

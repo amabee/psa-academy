@@ -36,6 +36,33 @@ export const getCourses = async (user_id) => {
   }
 };
 
-export const getCourseLessonsAndTopics = async() => {
+export const getUserCourseDetails = async (user_id, course_id) => {
+  try {
+    const res = await axios(`${BASE_URL}student/process/course.php`, {
+      method: "GET",
+      params: {
+        operation: "getUserCourseDetails",
+        json: JSON.stringify({
+          user_id: user_id,
+          course_id: course_id,
+        }),
+      },
 
-}
+      headers: {
+        Authorization: SECRET_KEY,
+      },
+    });
+
+    if (res.status !== 200) {
+      return { success: false, data: [], message: "Status error" };
+    }
+
+    return { success: true, data: res.data.data, message: "" };
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message ||
+      error.message ||
+      "An error occurred while fetching courses";
+    return { success: false, data: [], message: errorMessage };
+  }
+};

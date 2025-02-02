@@ -10,6 +10,7 @@ import { useCourseProgressData } from "@/hooks/useCourProgressData";
 import dynamic from "next/dynamic";
 import { current } from "@reduxjs/toolkit";
 import { useUser } from "@/app/providers/UserProvider";
+import { getCourseLessonContents } from "@/queries/student/student_course";
 
 const ReactPlayer = dynamic(() => import("react-player"), {
   ssr: false,
@@ -18,28 +19,17 @@ const ReactPlayer = dynamic(() => import("react-player"), {
 const Course = () => {
   const params = useParams();
   const courseId = params.courseId;
-  const chapterId = params.lessonId;
+  const lessonId = params.lessonId;
 
   const user = useUser();
 
-  console.log(chapterId);
-
-  // const {
-  //   user,
-  //   course,
-  //   userProgress,
-  //   currentSection,
-  //   currentChapter,
-  //   isLoading,
-  //   isChapterCompleted,
-  //   updateChapterProgress,
-  //   hasMarkedComplete,
-  //   setHasMarkedComplete,
-  // } = useCourseProgressData(courseId, chapterId);
-
-  const isLoading = false;
-
-  const course = [];
+  const {
+    data: course,
+    isLoading,
+    isError,
+    error,
+  } = getCourseLessonContents(user?.user.user_id, courseId);
+  
 
   const playerRef = useRef(null);
 
@@ -70,7 +60,7 @@ const Course = () => {
       <div className="course__container">
         <div className="course__breadcrumb">
           <div className="course__path">
-            {/* {course.title} / {currentSection?.sectionTitle} /{" "} */}{" "}
+            {course.title} / {course?.lessons?.lesson_title} /{" "}{" "}
             Course Title
             <span className="course__current-chapter">
               {/* {currentChapter?.title} */}
