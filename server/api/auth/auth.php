@@ -104,6 +104,132 @@ class AUTH
         }
     }
 
+    public function signup($json)
+    {
+        $json = json_decode($json, true);
+
+        $isDataSet = InputHelper::requiredFields($json, [
+            'firstname',
+            'lastname',
+            'email',
+            'username',
+            'phoneNumber',
+            'bday',
+            'gender',
+            'password'
+        ]);
+
+        if ($isDataSet !== true) {
+            return $isDataSet;
+        }
+
+        // Validate email
+        if (!InputHelper::validateEmail($json['email'])) {
+            http_response_code(422);
+            return json_encode([
+                "success" => false,
+                "data" => [],
+                "message" => "Invalid email"
+            ]);
+        }
+
+        // Calculate age based on birthday
+        $bday = new DateTime($json['bday']);
+        $today = new DateTime();
+        $age = $today->diff($bday)->y;
+
+        // Set Variables
+        $firstname = InputHelper::sanitizeString($json['firstname']);
+        $middlename = isset($json['middlename']) ? InputHelper::sanitizeString($json['middlename']) : "";
+        $lastname = InputHelper::sanitizeString($json['lastname']);
+        $email = $json['email'];
+        $username = InputHelper::sanitizeString($json['username']);
+        $phoneNumber = InputHelper::sanitizeString($json['phoneNumber']);
+        $bdayFormatted = $bday->format('Y-m-d'); // Ensure the date is properly formatted
+        $gender = $json['gender'];
+        $password = password_hash($json['password'], PASSWORD_BCRYPT);
+        $userTypeID = 4;
+        $isActive = 1;
+
+        // Check if email already exists
+        $stmt = $this->conn->prepare("SELECT user_id FROM userinfo WHERE email = :email");
+        $stmt->bindParam(':email', $email);
+        $stmt->execute();
+
+        if ($stmt->rowCount() > 0) {
+            http_response_code(409);
+            return json_encode([
+                "success" => false,
+                "data" => [],
+                "message" => "Email is already in use"
+            ]);
+        }
+
+        // Check if username already exists
+        $stmt = $this->conn->prepare("SELECT user_id FROM user WHERE username = :username");
+        $stmt->bindParam(':username', $username);
+        $stmt->execute();
+
+        if ($stmt->rowCount() > 0) {
+            http_response_code(409);
+            return json_encode([
+                "success" => false,
+                "data" => [],
+                "message" => "Username is already taken"
+            ]);
+        }
+
+        try {
+            // Begin Transaction
+            $this->conn->beginTransaction();
+
+            // Insert into `user` table
+            $stmt = $this->conn->prepare("INSERT INTO user (userType_id, username, password, is_Active) 
+                                          VALUES (:typeID, :username, :password, :isActive)");
+            $stmt->bindParam(':typeID', $userTypeID);
+            $stmt->bindParam(':username', $username);
+            $stmt->bindParam(':password', $password);
+            $stmt->bindParam(':isActive', $isActive);
+            $stmt->execute();
+
+            // Get last inserted user_id
+            $userID = $this->conn->lastInsertId();
+
+            // Insert into `userinfo` table
+            $stmt = $this->conn->prepare("INSERT INTO userinfo (user_id, first_name, middle_name, last_name, age, email, phone, date_of_birth, gender) 
+                                          VALUES (:userID, :firstname, :middlename, :lastname, :age, :email, :phone, :bday, :gender)");
+            $stmt->bindParam(':userID', $userID);
+            $stmt->bindParam(':firstname', $firstname);
+            $stmt->bindParam(':middlename', $middlename);
+            $stmt->bindParam(':lastname', $lastname);
+            $stmt->bindParam(':age', $age);
+            $stmt->bindParam(':email', $email);
+            $stmt->bindParam(':phone', $phoneNumber);
+            $stmt->bindParam(':bday', $bdayFormatted);
+            $stmt->bindParam(':gender', $gender);
+            $stmt->execute();
+
+            // Commit transaction
+            $this->conn->commit();
+
+            http_response_code(201);
+            return json_encode([
+                "success" => true,
+                "data" => ["user_id" => $userID],
+                "message" => "User registered successfully"
+            ]);
+        } catch (Exception $e) {
+            $this->conn->rollBack();
+            http_response_code(500);
+            return json_encode([
+                "success" => false,
+                "data" => [],
+                "message" => "Registration failed: " . $e->getMessage()
+            ]);
+        }
+    }
+
+
     private function generateJwt($user)
     {
         $key = $_ENV['JWT_SECRET'];
@@ -229,6 +355,15 @@ if (isset($headers['authorization']) && $headers['authorization'] === $validApiK
             case "login":
                 if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     echo $auth->login($json);
+                } else {
+                    http_response_code(400);
+                    echo json_encode(array("success" => false, "data" => [], "message" => "Invalid request method for login. Use POST."));
+                }
+                break;
+
+            case "signup":
+                if ($_SERVER["REQUEST_METHOD"] === "POST") {
+                    echo $auth->signup($json);
                 } else {
                     http_response_code(400);
                     echo json_encode(array("success" => false, "data" => [], "message" => "Invalid request method for login. Use POST."));

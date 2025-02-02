@@ -1,7 +1,13 @@
 "use client";
+import { useState } from "react";
 import { motion } from "framer-motion";
+import { signup } from "@/lib/actions/auth";
+import Swal from "sweetalert2";
+import { Loader2 } from "lucide-react";
 
 export default function RegisterPage() {
+  const [signingUp, setSigningUp] = useState(false);
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -28,6 +34,192 @@ export default function RegisterPage() {
     },
   };
 
+  const buttonVariants = {
+    initial: { scale: 1 },
+    hover: { scale: 1.02 },
+    tap: { scale: 0.98 },
+  };
+
+  const validatePhilippinePhone = (phone) => {
+    const cleanPhone = phone.replace(/[\s\-()]/g, "");
+
+    const mobilePattern = /^(\+63|0)9\d{9}$/;
+
+    if (mobilePattern.test(cleanPhone)) {
+      return true;
+    }
+
+    return false;
+  };
+
+  const [formData, setFormData] = useState({
+    firstName: "",
+    middleName: "",
+    lastName: "",
+    email: "",
+    phoneNumber: "",
+    username: "",
+    birthday: "",
+    gender: "",
+    password: "",
+    confirmPassword: "",
+    terms: false,
+  });
+
+  const [errors, setErrors] = useState({});
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    const requiredFields = [
+      "firstName",
+      "lastName",
+      "email",
+      "phoneNumber",
+      "username",
+      "birthday",
+      "gender",
+      "password",
+      "confirmPassword",
+    ];
+    requiredFields.forEach((field) => {
+      if (!formData[field]) {
+        newErrors[field] = "This field is required";
+      }
+    });
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (formData.email && !emailRegex.test(formData.email)) {
+      newErrors.email = "Please enter a valid email address";
+    }
+
+    // Phone number validation
+    const phoneRegex = /^\+?[\d\s-]{10,}$/;
+    if (formData.phoneNumber && !phoneRegex.test(formData.phoneNumber)) {
+      newErrors.phoneNumber = "Please enter a valid phone number";
+    }
+
+    if (formData.phoneNumber) {
+      if (!validatePhilippinePhone(formData.phoneNumber)) {
+        newErrors.phoneNumber =
+          "Please enter a valid Philippine phone number (e.g., +63 917 123 4567 or 0917 123 4567)";
+      }
+    }
+
+    // Password validation
+    if (formData.password) {
+      if (formData.password.length < 8) {
+        newErrors.password = "Password must be at least 8 characters long";
+      } else if (!/(?=.*[A-Z])/.test(formData.password)) {
+        newErrors.password =
+          "Password must contain at least one uppercase letter";
+      } else if (!/(?=.*[0-9])/.test(formData.password)) {
+        newErrors.password = "Password must contain at least one number";
+      }
+    }
+
+    // Confirm password validation
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+    }
+
+    // Terms validation
+    if (!formData.terms) {
+      newErrors.terms = "You must accept the Terms & Conditions";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (validateForm()) {
+      try {
+        setSigningUp(true);
+
+        const { success, data, message } = await signup(
+          formData.firstName,
+          formData.middleName,
+          formData.lastName,
+          formData.email,
+          formData.username,
+          formData.phoneNumber,
+          formData.birthday,
+          formData.gender,
+          formData.confirmPassword
+        );
+
+        if (!success) {
+          Swal.fire({
+            title: "Uh oh",
+            text: message,
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            allowEnterKey: false,
+            backdrop: true,
+            confirmButtonText: "OK",
+            icon: "error",
+          });
+        } else {
+          let timerInterval;
+          Swal.fire({
+            title: "Yahoo!",
+            html: `${message}<br><br><b>Redirecting to login page in <span class="countdown">5</span> seconds...</b>`,
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            allowEnterKey: false,
+            backdrop: true,
+            confirmButtonText: "OK",
+            icon: "success",
+            timer: 5000, // 5 seconds
+            timerProgressBar: true,
+            didOpen: () => {
+              const countdown = Swal.getPopup().querySelector(".countdown");
+              timerInterval = setInterval(() => {
+                countdown.textContent = Math.ceil(Swal.getTimerLeft() / 1000);
+              }, 100);
+            },
+            willClose: () => {
+              clearInterval(timerInterval);
+              window.location.href = "/auth/signin";
+            },
+          });
+        }
+      } catch (error) {
+        setErrors((prev) => ({
+          ...prev,
+          submit: "Registration failed. Please try again.",
+        }));
+      } finally {
+        setSigningUp(false);
+        setFormData({
+          firstName: "",
+          middleName: "",
+          lastName: "",
+          email: "",
+          phoneNumber: "",
+          username: "",
+          birthday: "",
+          gender: "",
+          password: "",
+          confirmPassword: "",
+          terms: false,
+        });
+      }
+    }
+  };
+
   return (
     <div className="font-[sans-serif]">
       <div className="grid lg:grid-cols-2 md:grid-cols-2 items-center gap-4">
@@ -48,6 +240,7 @@ export default function RegisterPage() {
           variants={containerVariants}
           initial="hidden"
           animate="visible"
+          onSubmit={handleSubmit}
           className="max-w-xl w-full p-6 mx-auto"
         >
           <motion.div variants={itemVariants} className="mb-12">
@@ -76,10 +269,15 @@ export default function RegisterPage() {
                 name="firstName"
                 type="text"
                 required
+                value={formData.firstName}
+                onChange={handleInputChange}
                 className="w-full text-sm text-gray-800 border-b border-gray-300 focus:border-blue-600 px-2 py-3 outline-none"
                 placeholder="Enter your first name"
               />
             </div>
+            {errors.firstName && (
+              <p className="text-red-500 text-xs mt-1">{errors.firstName}</p>
+            )}
           </motion.div>
 
           {/* Middle Name */}
@@ -91,6 +289,8 @@ export default function RegisterPage() {
               <input
                 name="middleName"
                 type="text"
+                value={formData.middleName}
+                onChange={handleInputChange}
                 className="w-full text-sm text-gray-800 border-b border-gray-300 focus:border-blue-600 px-2 py-3 outline-none"
                 placeholder="Enter your middle name"
               />
@@ -107,10 +307,15 @@ export default function RegisterPage() {
                 name="lastName"
                 type="text"
                 required
+                value={formData.lastName}
+                onChange={handleInputChange}
                 className="w-full text-sm text-gray-800 border-b border-gray-300 focus:border-blue-600 px-2 py-3 outline-none"
                 placeholder="Enter your last name"
               />
             </div>
+            {errors.lastName && (
+              <p className="text-red-500 text-xs mt-1">{errors.lastName}</p>
+            )}
           </motion.div>
 
           {/* Email */}
@@ -121,10 +326,15 @@ export default function RegisterPage() {
                 name="email"
                 type="email"
                 required
+                value={formData.email}
+                onChange={handleInputChange}
                 className="w-full text-sm text-gray-800 border-b border-gray-300 focus:border-blue-600 px-2 py-3 outline-none"
                 placeholder="Enter email address"
               />
             </div>
+            {errors.email && (
+              <p className="text-red-500 text-xs mt-1">{errors.email}</p>
+            )}
           </motion.div>
 
           {/* Phone Number */}
@@ -137,10 +347,16 @@ export default function RegisterPage() {
                 name="phoneNumber"
                 type="tel"
                 required
+                value={formData.phoneNumber}
+                onChange={handleInputChange}
                 className="w-full text-sm text-gray-800 border-b border-gray-300 focus:border-blue-600 px-2 py-3 outline-none"
-                placeholder="Enter phone number"
+                placeholder="0917 123 4567 or +63 917 123 4567"
+                pattern="^(\+63|0)9\d{9}$"
               />
             </div>
+            {errors.phoneNumber && (
+              <p className="text-red-500 text-xs mt-1">{errors.phoneNumber}</p>
+            )}
           </motion.div>
 
           {/* Username */}
@@ -151,10 +367,15 @@ export default function RegisterPage() {
                 name="username"
                 type="text"
                 required
+                value={formData.username}
+                onChange={handleInputChange}
                 className="w-full text-sm text-gray-800 border-b border-gray-300 focus:border-blue-600 px-2 py-3 outline-none"
                 placeholder="Choose a username"
               />
             </div>
+            {errors.username && (
+              <p className="text-red-500 text-xs mt-1">{errors.username}</p>
+            )}
           </motion.div>
 
           {/* Birthday */}
@@ -165,9 +386,14 @@ export default function RegisterPage() {
                 name="birthday"
                 type="date"
                 required
+                value={formData.birthday}
+                onChange={handleInputChange}
                 className="w-full text-sm text-gray-800 border-b border-gray-300 focus:border-blue-600 px-2 py-3 outline-none"
               />
             </div>
+            {errors.birthday && (
+              <p className="text-red-500 text-xs mt-1">{errors.birthday}</p>
+            )}
           </motion.div>
 
           {/* Gender */}
@@ -177,6 +403,8 @@ export default function RegisterPage() {
               <select
                 name="gender"
                 required
+                value={formData.gender}
+                onChange={handleInputChange}
                 className="w-full text-sm text-gray-800 border-b border-gray-300 focus:border-blue-600 px-2 py-3 outline-none bg-transparent"
               >
                 <option value="">Select gender</option>
@@ -186,6 +414,9 @@ export default function RegisterPage() {
                 <option value="prefer-not-say">Prefer not to say</option>
               </select>
             </div>
+            {errors.gender && (
+              <p className="text-red-500 text-xs mt-1">{errors.gender}</p>
+            )}
           </motion.div>
 
           {/* Password */}
@@ -196,10 +427,15 @@ export default function RegisterPage() {
                 name="password"
                 type="password"
                 required
+                value={formData.password}
+                onChange={handleInputChange}
                 className="w-full text-sm text-gray-800 border-b border-gray-300 focus:border-blue-600 px-2 py-3 outline-none"
                 placeholder="Create password"
               />
             </div>
+            {errors.password && (
+              <p className="text-red-500 text-xs mt-1">{errors.password}</p>
+            )}
           </motion.div>
 
           {/* Confirm Password */}
@@ -212,10 +448,17 @@ export default function RegisterPage() {
                 name="confirmPassword"
                 type="password"
                 required
+                value={formData.confirmPassword}
+                onChange={handleInputChange}
                 className="w-full text-sm text-gray-800 border-b border-gray-300 focus:border-blue-600 px-2 py-3 outline-none"
                 placeholder="Confirm password"
               />
             </div>
+            {errors.confirmPassword && (
+              <p className="text-red-500 text-xs mt-1">
+                {errors.confirmPassword}
+              </p>
+            )}
           </motion.div>
 
           <motion.div
@@ -227,6 +470,8 @@ export default function RegisterPage() {
               name="terms"
               type="checkbox"
               required
+              checked={formData.terms}
+              onChange={handleInputChange}
               className="h-4 w-4 shrink-0 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
             <label htmlFor="terms" className="ml-3 block text-sm text-gray-800">
@@ -240,15 +485,28 @@ export default function RegisterPage() {
               </motion.a>
             </label>
           </motion.div>
+          {errors.terms && (
+            <p className="text-red-500 text-xs mt-1">{errors.terms}</p>
+          )}
+
+          {errors.submit && (
+            <p className="text-red-500 text-sm mt-4 text-center">
+              {errors.submit}
+            </p>
+          )}
 
           <motion.div variants={itemVariants} className="mt-12">
             <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              variants={buttonVariants}
+              initial="initial"
+              whileHover="hover"
+              whileTap="tap"
               type="submit"
-              className="w-full py-2.5 px-4 text-sm tracking-wide rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none"
+              disabled={signingUp}
+              className="relative w-full flex items-center justify-center gap-2 py-3 px-4 text-sm font-medium tracking-wide rounded-md text-white-100 bg-blue-600 hover:bg-blue-700 disabled:opacity-70 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
             >
-              Create Account
+              {signingUp && <Loader2 className="w-4 h-4 animate-spin" />}
+              <span>{signingUp ? "Signing Up..." : "Create Account"}</span>
             </motion.button>
           </motion.div>
         </motion.form>
