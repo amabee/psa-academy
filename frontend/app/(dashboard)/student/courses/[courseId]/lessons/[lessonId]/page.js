@@ -9,6 +9,7 @@ import Loading from "@/components/shared/loading";
 import { useCourseProgressData } from "@/hooks/useCourProgressData";
 import dynamic from "next/dynamic";
 import { current } from "@reduxjs/toolkit";
+import { useUser } from "@/app/providers/UserProvider";
 
 const ReactPlayer = dynamic(() => import("react-player"), {
   ssr: false,
@@ -17,77 +18,88 @@ const ReactPlayer = dynamic(() => import("react-player"), {
 const Course = () => {
   const params = useParams();
   const courseId = params.courseId;
-  const chapterId = params.chapterId;
+  const chapterId = params.lessonId;
 
-  const {
-    user,
-    course,
-    userProgress,
-    currentSection,
-    currentChapter,
-    isLoading,
-    isChapterCompleted,
-    updateChapterProgress,
-    hasMarkedComplete,
-    setHasMarkedComplete,
-  } = useCourseProgressData(courseId, chapterId);
+  const user = useUser();
+
+  console.log(chapterId);
+
+  // const {
+  //   user,
+  //   course,
+  //   userProgress,
+  //   currentSection,
+  //   currentChapter,
+  //   isLoading,
+  //   isChapterCompleted,
+  //   updateChapterProgress,
+  //   hasMarkedComplete,
+  //   setHasMarkedComplete,
+  // } = useCourseProgressData(courseId, chapterId);
+
+  const isLoading = false;
+
+  const course = [];
 
   const playerRef = useRef(null);
 
   const handleProgress = ({ played }) => {
-    if (
-      played >= 0.8 &&
-      !hasMarkedComplete &&
-      currentChapter &&
-      currentSection &&
-      userProgress?.sections &&
-      !isChapterCompleted()
-    ) {
-      setHasMarkedComplete(true);
-      updateChapterProgress(
-        currentSection.sectionId,
-        currentChapter.chapterId,
-        true
-      );
-    }
+    // if (
+    //   played >= 0.8 &&
+    //   !hasMarkedComplete &&
+    //   currentChapter &&
+    //   currentSection &&
+    //   userProgress?.sections &&
+    //   !isChapterCompleted()
+    // ) {
+    //   setHasMarkedComplete(true);
+    //   updateChapterProgress(
+    //     currentSection.sectionId,
+    //     currentChapter.chapterId,
+    //     true
+    //   );
+    // }
   };
 
   if (isLoading) return <Loading />;
   if (!user) return <div>Please sign in to view this course.</div>;
-  if (!course || !userProgress) return <div>Error loading course</div>;
+  if (!course) return <div>Error loading course</div>;
 
   return (
     <div className="course">
       <div className="course__container">
         <div className="course__breadcrumb">
           <div className="course__path">
-            {course.title} / {currentSection?.sectionTitle} /{" "}
+            {/* {course.title} / {currentSection?.sectionTitle} /{" "} */}{" "}
+            Course Title
             <span className="course__current-chapter">
-              {currentChapter?.title}
+              {/* {currentChapter?.title} */}
             </span>
           </div>
           <h2 className="course__title">
-            {currentChapter?.title} - {currentChapter?.type}
+            {/* {currentChapter?.title} - {currentChapter?.type} */} current
+            chapter
           </h2>
           <div className="course__header">
             <div className="course__instructor">
               <Avatar className="course__avatar">
                 <AvatarImage alt={course.teacherName} />
                 <AvatarFallback className="course__avatar-fallback">
-                  {course.teacherName[0]}
+                  {/* {course.teacherName[0]} */} Teacher Name
                 </AvatarFallback>
               </Avatar>
               <span className="course__instructor-name">
-                {course.teacherName}
+                {/* {course.teacherName} */}
               </span>
             </div>
           </div>
         </div>
 
         <Card className="course__video">
-          <h1>{currentChapter.type}</h1>
+          {/* <h1> {currentChapter.type} </h1> */}
+          <h1>Current Chapter Type</h1>
           <CardContent className="course__video-container">
-            {currentChapter.type.toLowerCase() === "video" &&
+            {/* {currentChapter.type.toLowerCase() === "video" &&
             currentChapter?.video ? (
               <ReactPlayer
                 ref={playerRef}
@@ -116,7 +128,7 @@ const Course = () => {
               <div className="course__no-video">
                 No content available for this chapter.
               </div>
-            )}
+            )} */}
           </CardContent>
         </Card>
 
@@ -140,7 +152,7 @@ const Course = () => {
                   <CardTitle>Notes Content</CardTitle>
                 </CardHeader>
                 <CardContent className="course__tab-body">
-                  {currentChapter?.content}
+                  {/* {currentChapter?.content} */}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -162,7 +174,7 @@ const Course = () => {
                   <CardTitle>Quiz Content</CardTitle>
                 </CardHeader>
                 <CardContent className="course__tab-body">
-                  {currentChapter?.quiz}
+                  {/* {currentChapter?.quiz} */}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -174,7 +186,7 @@ const Course = () => {
                 <Avatar className="course__instructor-avatar">
                   <AvatarImage alt={course.teacherName} />
                   <AvatarFallback className="course__instructor-avatar-fallback">
-                    {course.teacherName[0]}
+                    {/* {course.teacherName[0]} */}
                   </AvatarFallback>
                 </Avatar>
                 <div className="course__instructor-details">

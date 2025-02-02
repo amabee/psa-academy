@@ -68,6 +68,15 @@ const TeacherCourseCard = ({
                 : course.course_status}
             </span>
           </p>
+          <div className="flex items-center">
+            <GoPeople className="w-4 h-4 mr-2" />
+            <span className="font-semibold px-2 py-1 rounded">
+              {course.enrollment_count}{" "}
+              {course.enrollment_count > 1
+                ? "Enrolled Students"
+                : "Enrolled Student"}
+            </span>
+          </div>
         </div>
 
         <div className="w-full xl:flex space-y-2 xl:space-y-0 gap-2 mt-3">
