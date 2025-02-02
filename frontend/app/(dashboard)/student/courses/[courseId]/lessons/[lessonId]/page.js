@@ -29,7 +29,6 @@ const Course = () => {
     isError,
     error,
   } = getCourseLessonContents(user?.user.user_id, courseId);
-  
 
   const playerRef = useRef(null);
 
@@ -60,8 +59,7 @@ const Course = () => {
       <div className="course__container">
         <div className="course__breadcrumb">
           <div className="course__path">
-            {course.title} / {course?.lessons?.lesson_title} /{" "}{" "}
-            Course Title
+            {course.title} / {course?.lessons?.lesson_title} / Course Title
             <span className="course__current-chapter">
               {/* {currentChapter?.title} */}
             </span>

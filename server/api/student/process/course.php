@@ -226,14 +226,16 @@ class Course
             $lessonStmt->execute();
             $lessons = $lessonStmt->fetchAll(PDO::FETCH_ASSOC);
 
-            // Get topics with progress for each lesson
-            // Get topics with progress for each lesson
-            foreach ($lessons as $key => $lesson) {  // Remove the & reference
+            foreach ($lessons as $key => $lesson) {
+
+                error_log("Fetching topics for lesson_id: " . $lesson['lesson_id']);
+
                 $topicSql = "SELECT 
                     t.topic_id,
                     t.topic_title AS topic_title,
                     t.topic_description AS topic_description,
                     t.sequence_number,
+                    t.lesson_id,
                     COALESCE(tp.is_completed, 0) AS is_completed,
                     tp.completion_date,
                     tp.last_accessed
@@ -248,7 +250,7 @@ class Course
 
                 $topicStmt = $this->conn->prepare($topicSql);
                 $topicStmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
-                $topicStmt->bindParam(':lesson_id', $lesson['lesson_id'], PDO::PARAM_INT);
+                $topicStmt->bindParam(':lesson_id', $lesson['lesson_id'], PDO::PARAM_STR);
                 $topicStmt->execute();
                 $topics = $topicStmt->fetchAll(PDO::FETCH_ASSOC);
 

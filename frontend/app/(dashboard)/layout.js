@@ -21,7 +21,6 @@ export default function DashboardLayout(props) {
   const { user, loading } = useUser();
 
 
-
   const isCoursePage =
     /^\/student\/courses\/[^\/]+(?:\/lessons\/[^\/]+)?$/.test(pathname);
 
