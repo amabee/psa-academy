@@ -22,7 +22,7 @@ export default function DashboardLayout(props) {
 
 
   const isCoursePage =
-    /^\/student\/courses\/[^\/]+(?:\/lessons\/[^\/]+)?$/.test(pathname);
+    /^\/student\/courses\/[^\/]+(?:\/topic\/[^\/]+)?$/.test(pathname);
 
   useEffect(() => {
     if (isCoursePage) {

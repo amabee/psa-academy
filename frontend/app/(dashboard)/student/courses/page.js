@@ -50,7 +50,7 @@ const Courses = () => {
       setIsRedirecting(true);
       const firstChapter = course.lessons[0].topics[0];
       router.push(
-        `/student/courses/${course.course_id}/lessons/${firstChapter}`,
+        `/student/courses/${course.course_id}/topic/${firstChapter}`,
         {
           scroll: false,
         }

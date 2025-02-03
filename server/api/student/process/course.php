@@ -231,22 +231,33 @@ class Course
                 error_log("Fetching topics for lesson_id: " . $lesson['lesson_id']);
 
                 $topicSql = "SELECT 
-                    t.topic_id,
-                    t.topic_title AS topic_title,
-                    t.topic_description AS topic_description,
-                    t.sequence_number,
-                    t.lesson_id,
-                    COALESCE(tp.is_completed, 0) AS is_completed,
-                    tp.completion_date,
-                    tp.last_accessed
-                FROM 
-                    topic t
-                LEFT JOIN 
-                    topic_progress tp ON t.topic_id = tp.topic_id AND tp.user_id = :user_id
-                WHERE 
-                    t.lesson_id = :lesson_id
-                ORDER BY 
-                    t.sequence_number ASC";
+                t.topic_id,
+                t.topic_title AS topic_title,
+                t.topic_description AS topic_description,
+                t.sequence_number,
+                t.lesson_id,
+                COALESCE(tp.is_completed, 0) AS is_completed,
+                tp.completion_date,
+                tp.last_accessed,
+                GROUP_CONCAT(
+                    DISTINCT CONCAT_WS('::',
+                        m.material_id,
+                        m.file_name
+                    )
+                    SEPARATOR '||'
+                ) as materials
+            FROM 
+                topic t
+            LEFT JOIN 
+                topic_progress tp ON t.topic_id = tp.topic_id AND tp.user_id = :user_id
+            LEFT JOIN
+                materials m ON t.topic_id = m.topic_id
+            WHERE 
+                t.lesson_id = :lesson_id
+            GROUP BY 
+               t.topic_id, t.topic_title
+            ORDER BY 
+                t.sequence_number ASC";
 
                 $topicStmt = $this->conn->prepare($topicSql);
                 $topicStmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
@@ -254,10 +265,35 @@ class Course
                 $topicStmt->execute();
                 $topics = $topicStmt->fetchAll(PDO::FETCH_ASSOC);
 
-                // Add topics and progress to the lessons array using the key
-                $lessons[$key]['topics'] = $topics;
+                $uniqueTopics = [];
+                foreach ($topics as $topic) {
+                    $processedMaterials = [];
+                    if (!empty($topic['materials'])) {
+                        $materialsList = explode('||', $topic['materials']);
+                        foreach ($materialsList as $material) {
+                            list($materialId, $fileName) = explode('::', $material);
+                            $processedMaterials[] = [
+                                'material_id' => $materialId,
+                                'file_name' => $fileName
+                            ];
+                        }
+                    }
+                    $topic['materials'] = $processedMaterials;
 
-                // Add topic progress counts for each lesson
+                    $existingTopicKey = array_search($topic['topic_id'], array_column($uniqueTopics, 'topic_id'));
+
+                    if ($existingTopicKey === false) {
+                        $uniqueTopics[] = $topic;
+                    } else {
+                        $uniqueTopics[$existingTopicKey]['materials'] = array_merge(
+                            $uniqueTopics[$existingTopicKey]['materials'],
+                            $topic['materials']
+                        );
+                    }
+                }
+
+                $lessons[$key]['topics'] = $uniqueTopics;
+
                 $lessonTopicsTotal = count($topics);
                 $lessonTopicsCompleted = 0;
                 foreach ($topics as $topic) {

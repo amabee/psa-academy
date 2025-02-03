@@ -27,3 +27,22 @@ export const formatDate = (dateString) => {
     day: "numeric",
   }).format(date);
 };
+
+export const getFileType = (fileName) => {
+  if (!fileName) return "unknown";
+
+  const extension = fileName.split(".").pop()?.toLowerCase();
+
+  if (extension === "pdf") {
+    return "pdf";
+  }
+
+  if (["mp4", "mov", "avi", "webm", "mkv"].includes(extension)) {
+    return "video";
+  }
+
+  return "other";
+};
+
+export const isVideo = (fileName) => getFileType(fileName) === "video";
+export const isPDF = (fileName) => getFileType(fileName) === "pdf";

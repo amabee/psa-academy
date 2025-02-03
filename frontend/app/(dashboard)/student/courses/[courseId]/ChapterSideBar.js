@@ -64,7 +64,7 @@ const ChaptersSidebar = () => {
   return (
     <div ref={sidebarRef} className="chapters-sidebar">
       <div className="chapters-sidebar__header">
-        <h2 className="chapters-sidebar__title">{currentCourse.title}</h2>
+        <h2 className="chapters-sidebar__title">{course?.title}</h2>
         <hr className="chapters-sidebar__divider" />
       </div>
       {course.lessons.map((lesson, index) => (
@@ -230,7 +230,6 @@ const Topics = ({
   const isCurrentTopic = topicId === topic.topic_id;
 
   const handleToggleComplete = (e) => {
-    // e.stopPropagation();
     // updateChapterProgress(sectionId, chapter.chapterId, !isCompleted);
   };
 
