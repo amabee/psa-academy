@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Feb 02, 2025 at 02:05 PM
+-- Generation Time: Feb 03, 2025 at 03:18 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -184,8 +184,7 @@ CREATE TABLE `courses` (
 --
 
 INSERT INTO `courses` (`index_id`, `course_id`, `user_id`, `category_id`, `title`, `description`, `course_image`, `course_status`, `created_at`, `updated_at`) VALUES
-(15, '47d2d511-a3f2-4292-a338-03269c3c58f4', 1, 39, 'Intro to Java Programming', 'Intro to Java Programming', 'course_6796df0d0aa55.png', 'publish', '2025-01-27 09:11:47', '2025-01-27 09:19:09'),
-(16, 'bbf25daa-56f7-4038-a389-b0647e072e00', 1, 5, 'Introduction to Python', 'Learn about the origins of Python, its versatility, and why it&rsquo;s one of the most popular programming languages today. This lesson will also introduce you to Python&#039;s syntax and basic structure.', 'course_679c252c5a87e.png', 'publish', '2025-01-31 09:00:56', '2025-01-31 09:19:40');
+(17, '3feed044-fccf-405a-9ec0-e7ea0125a141', 1, 5, 'Introduction to Programming', 'Introduction to Programming', 'course_67a0c044bd850.png', 'publish', '2025-02-03 21:09:51', '2025-02-03 21:10:28');
 
 -- --------------------------------------------------------
 
@@ -205,7 +204,7 @@ CREATE TABLE `enrollments` (
 --
 
 INSERT INTO `enrollments` (`enrollment_id`, `user_id`, `course_id`, `enrollment_date`) VALUES
-(1, 4, '47d2d511-a3f2-4292-a338-03269c3c58f4', '2025-01-31 10:00:59');
+(2, 4, '3feed044-fccf-405a-9ec0-e7ea0125a141', '2025-02-14 21:11:06');
 
 -- --------------------------------------------------------
 
@@ -256,10 +255,8 @@ CREATE TABLE `lessons` (
 --
 
 INSERT INTO `lessons` (`lesson_id`, `course_id`, `lesson_title`, `lesson_description`, `resources`, `sequence_number`, `created_at`, `updated_at`) VALUES
-('0a1bd08d-a1d4-4497-8112-48845d2a2f93', '47d2d511-a3f2-4292-a338-03269c3c58f4', 'Setting up the environment', 'Installing Node.js, VS Code, and dependencies', 'Resources not available', 2, '2025-01-31 09:52:27', NULL),
-('24713fc0-a64d-45d5-a4f2-d90d32e938cd', 'bbf25daa-56f7-4038-a389-b0647e072e00', 'gege', 'egg', 'g', 1, '2025-01-31 09:50:29', '2025-01-31 09:51:47'),
-('8d538766-59fa-4ff4-8340-4ddcdae0f2d9', 'bbf25daa-56f7-4038-a389-b0647e072e00', 'lesson 1', 'description 1', 'resources 1', 2, '2025-01-31 09:02:07', '2025-01-31 09:51:47'),
-('ac74657b-1ad1-4a34-81cc-3bf5662eda9f', '47d2d511-a3f2-4292-a338-03269c3c58f4', 'Introduction to Next.js', 'Learn what Next.js is, its benefits over React, and when to use it.', 'Resources not available', 1, '2025-01-28 15:38:47', '2025-01-31 08:45:40');
+('52253436-5423-45ee-8e22-239535a87894', '3feed044-fccf-405a-9ec0-e7ea0125a141', 'Lesson 2', 'Lesson 2', 'Resources not available', 2, '2025-02-03 21:12:48', NULL),
+('859be07e-9b24-4f08-80c2-647ff631bab4', '3feed044-fccf-405a-9ec0-e7ea0125a141', 'Lesson 1', 'Lesson 1', 'Resources not available', 1, '2025-02-03 21:10:36', NULL);
 
 -- --------------------------------------------------------
 
@@ -293,10 +290,10 @@ CREATE TABLE `materials` (
 --
 
 INSERT INTO `materials` (`material_id`, `topic_id`, `file_name`) VALUES
-(9, 'c00c71f5-ac79-40a5-8f07-7d9ec8a95f78', 'topic_679c1d7318653.pdf'),
-(10, 'c66bc4ec-7046-4577-b3e3-5b7e587a6310', 'topic_679c26af11247.pdf'),
-(11, '96a5a457-951d-43cb-ae7b-c3c6280107df', 'topic_679c2c3590061.pdf'),
-(13, '401495cb-3b93-4283-bfdb-367dbbc1a73a', 'topic_679c2cf3278e9.pdf');
+(14, '2f1ba96f-eed7-4d6a-b5d4-a78eb897dcd5', 'topic_67a0c05b1e0ff.pdf'),
+(15, '763496f1-bdc0-4068-8267-9561e64391a9', 'topic_67a0c0a69ba81.pdf'),
+(16, '9d187c67-e8f7-4c25-9504-e9e639f1ab1f', 'topic_67a0c0dfb900c.pdf'),
+(17, '14ec4282-f333-41c5-b547-e9aca4032b5a', 'topic_67a0c0fe1ea51.mp4');
 
 -- --------------------------------------------------------
 
@@ -387,14 +384,18 @@ INSERT INTO `sessions` (`session_id`, `user_id`, `session_token`, `ip_address`, 
 ('022b560d63f42ef20017fab40b6a577e002d2462a1566e576702aab74efba6e5', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczNzk1NDY4MSwiZXhwIjoxNzM3OTYxODgxLCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.t90DoaPTpXYiTgQmYn-kt5DuMSHZ7GCW4SssCvvdRBU', '::1', 'axios/1.7.9', '2025-01-27 13:11:21', '2025-01-27 13:11:21', '2025-01-27 15:11:21', 1),
 ('025ec10ff6801d6972674033cd57ec7cb3fb309af788697da5c851f152934938', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczNzk2MzQxNywiZXhwIjoxNzM3OTcwNjE3LCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.msnbkdDhgASMXEV7mv7tOny1Ngw1wyfy1WCAR4SBUP4', '::1', 'axios/1.7.9', '2025-01-27 15:36:57', '2025-01-27 15:36:57', '2025-01-27 17:36:57', 1),
 ('09341872060da1caafd849f532963c3c18b2ea056df44d526ca4873e3d9ddbad', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczODMwNDM5OCwiZXhwIjoxNzM4MzExNTk4LCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.PxVAEdSCLurvRRvx2ZZ4HQyP4SEZ6MbuYsYSkVYB8Mk', '::1', 'axios/1.7.9', '2025-01-31 14:19:58', '2025-01-31 14:19:58', '2025-01-31 16:19:58', 1),
+('0b925d39892858b27efabd74142f8e3abc9673dc434b91cbc02cf40be68a0924', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczODU4NjQ0MiwiZXhwIjoxNzM4NTkzNjQyLCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.X3s6cSs5yL--w82JjWdffnbMe-clMSOsHC57jmdaryg', '::1', 'axios/1.7.9', '2025-02-03 20:40:42', '2025-02-03 20:40:42', '2025-02-03 22:40:42', 1),
 ('0beccf6b710e75eb333f236d5717400680f57717309d92a8e125d4d7c1f6b295', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczODI4MzcwNywiZXhwIjoxNzM4MjkwOTA3LCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.giqkHZTgWhQ_8Z0d46UYyyfTTlM3l06nSGp-JsUGr6I', '::1', 'axios/1.7.9', '2025-01-31 08:35:07', '2025-01-31 08:35:07', '2025-01-31 10:35:07', 1),
 ('0e1e2c9ea44c72feb633b7d2af144031c75c0c452a093d174543dc4518385d7b', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczNzI4NDUwMiwiZXhwIjoxNzM3MjkxNzAyLCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.v1RPJnaYqUl3Drkc7ERByPcnyVOYL8ttYxm_uUs9Rio', '::1', 'axios/1.7.9', '2025-01-19 19:01:42', '2025-01-19 19:01:42', '2025-01-19 21:01:42', 1),
 ('0e786bafccfa4b0f3a1e08b840a49bb763be2f4115941d2006b0e476a77c9159', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczODAzMjUxOSwiZXhwIjoxNzM4MDM5NzE5LCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.HzxafTUkDRTFnNV-k0Ww6K7osKkpVtHVe_d9OoperXY', '::1', 'axios/1.7.9', '2025-01-28 10:48:39', '2025-01-28 10:48:39', '2025-01-28 12:48:39', 1),
 ('100a29bb0f52529210b43f19851312a99a409eb92f1097d79cc976027bee2b98', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczODI5MDkyNywiZXhwIjoxNzM4Mjk4MTI3LCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.fOXD_ciNmZrmhHKYnP_bdkDk2IAS6dz1_7s28A4lGeQ', '::1', 'axios/1.7.9', '2025-01-31 10:35:27', '2025-01-31 10:35:27', '2025-01-31 12:35:27', 1),
 ('1370c5f49949ab38045008aec20612c7a1eac0f2d0c7bd24a2d96667a079fbfb', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczODI5MDU5OSwiZXhwIjoxNzM4Mjk3Nzk5LCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.aqeRYo0EXp9Yx5_BByVaixGkpPNRubROmmdPVceYyVU', '::1', 'axios/1.7.9', '2025-01-31 10:29:59', '2025-01-31 10:29:59', '2025-01-31 12:29:59', 1),
 ('183d3fce6c85012e6c9344e151ba162549adb7b36846146c6830bb44d80a9392', 4, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczODQ3MjAwMSwiZXhwIjoxNzM4NDc5MjAxLCJzdWIiOjQsInVzZXIiOnsiaWQiOjQsInVzZXJuYW1lIjoiYW5nZWx6bSIsImZ1bGxfbmFtZSI6IkppbGxpYW5TYW50b3NPcmVuY2lvIiwiZW1haWwiOiJkYW5jZXRoZW5pZ2h0YXdheS5rckBnbWFpbC5jb20iLCJ1c2VyX3R5cGVfaWQiOjR9fQ.GDTOQEYbnTHoDywon1_TFoWWGaJjOBuXU_ogsNUWYsM', '::1', 'axios/1.7.9', '2025-02-02 12:53:21', '2025-02-02 12:53:21', '2025-02-02 14:53:21', 1),
+('1da4910aec5973183d5cd76192be3d96557c6f143a6561297862e1ff2174dacd', 4, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczODU4OTIzMiwiZXhwIjoxNzM4NTk2NDMyLCJzdWIiOjQsInVzZXIiOnsiaWQiOjQsInVzZXJuYW1lIjoiYW5nZWx6bSIsImZ1bGxfbmFtZSI6IkppbGxpYW5TYW50b3NPcmVuY2lvIiwiZW1haWwiOiJkYW5jZXRoZW5pZ2h0YXdheS5rckBnbWFpbC5jb20iLCJ1c2VyX3R5cGVfaWQiOjR9fQ.u7vyYZ9o32_9Q8cETD-wQLTS-aIkhIdb58oL82hy_RA', '::1', 'axios/1.7.9', '2025-02-03 21:27:12', '2025-02-03 21:27:12', '2025-02-03 23:27:12', 1),
 ('1da49cf6646606185382c9d4d0941b8b371cf33f658c7908fa207d9c35d1e5ad', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczODMxMjQzNywiZXhwIjoxNzM4MzE5NjM3LCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.c1S56S-KPyYtYHllNxD-KsUv18gPx_9ULvTaHMbn_pk', '::1', 'axios/1.7.9', '2025-01-31 16:33:57', '2025-01-31 16:33:57', '2025-01-31 18:33:57', 1),
 ('24f074bfe400cf9a02a02b7ef7cc2b4cb5dc49e5faf946c54df61b46f1a409f7', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczNzcwMjY4MCwiZXhwIjoxNzM3NzA5ODgwLCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.uMyfSbL_UBM7b5yy3oSiYdZSZ6BHjjp40mxyXiGKX4s', '::1', 'axios/1.7.9', '2025-01-24 15:11:20', '2025-01-24 15:11:20', '2025-01-24 17:11:20', 1),
+('252cd642799f712add4c2c1e883f4b2d3e6353cb6f330d3f6861b37c7954bbd4', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczODU4NzE1MiwiZXhwIjoxNzM4NTk0MzUyLCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.fLDVyg5K4OFuE_qKb34tvmMHiJo7Nri6UeWIllpJDiA', '::1', 'axios/1.7.9', '2025-02-03 20:52:32', '2025-02-03 20:52:32', '2025-02-03 22:52:32', 1),
+('359cd86b76cc3683e1111e11c20822ac188f80ea5b7a85e2967902d29b24d27f', 4, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczODU4MTk2NywiZXhwIjoxNzM4NTg5MTY3LCJzdWIiOjQsInVzZXIiOnsiaWQiOjQsInVzZXJuYW1lIjoiYW5nZWx6bSIsImZ1bGxfbmFtZSI6IkppbGxpYW5TYW50b3NPcmVuY2lvIiwiZW1haWwiOiJkYW5jZXRoZW5pZ2h0YXdheS5rckBnbWFpbC5jb20iLCJ1c2VyX3R5cGVfaWQiOjR9fQ.0NRbWG0vMPDy1wIvoydwK9TfkyK3XQxTSGjFP5V4DCA', '::1', 'axios/1.7.9', '2025-02-03 19:26:07', '2025-02-03 19:26:07', '2025-02-03 21:26:07', 1),
 ('37136b8f578d7b0bb91d45d12c90f3b4d8fa3b31471a97f17ac9f0ec2c98ab19', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczODQxNzAwOCwiZXhwIjoxNzM4NDI0MjA4LCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.bIPHIHNRl7TOd6BSW3CynMmuGPfc5LN7ymsyDifFDk0', '::1', 'axios/1.7.9', '2025-02-01 21:36:48', '2025-02-01 21:36:48', '2025-02-01 23:36:48', 1),
 ('3ce1a66900b65e8d5d99d28cb21abf1b35e1ff73fde4cff9c4f579f5c070fae1', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczODQ3MjcxOCwiZXhwIjoxNzM4NDc5OTE4LCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.Gh_Zu0_673UcZDwq0afhx_22SOq91-bDbz23RNYLTQ8', '::1', 'axios/1.7.9', '2025-02-02 13:05:18', '2025-02-02 13:05:18', '2025-02-02 15:05:18', 1),
 ('3dea0e9dccd998c01501082272ef5d9677ebccdff5fe5a1ba2c92e9ac82e1df7', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczNzY4NzYwMCwiZXhwIjoxNzM3Njk0ODAwLCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.TliLyKk8eK6Xpa5A5gS_eEpchuQM7VOqBy14K54nFX8', '::1', 'axios/1.7.9', '2025-01-24 11:00:00', '2025-01-24 11:00:00', '2025-01-24 13:00:00', 1),
@@ -425,6 +426,7 @@ INSERT INTO `sessions` (`session_id`, `user_id`, `session_token`, `ip_address`, 
 ('c10cf259b59ef350fe7c665a44244face8319468a527aba28a49f0ecff3cf7ff', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczNzM3MTU2OCwiZXhwIjoxNzM3Mzc4NzY4LCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.rvLoBzUPUfzTbL9M9Z_Ao_1uLnGGupEoy2ZdxhjtcGA', '::1', 'axios/1.7.9', '2025-01-20 19:12:48', '2025-01-20 19:12:48', '2025-01-20 21:12:48', 1),
 ('c6e49ebc41a6f7e892886877a8c803b6df0eda5ab9b88408ff889faad0dbf9de', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczODM5NzUyNCwiZXhwIjoxNzM4NDA0NzI0LCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.VdMvLmQr1j7vU1306FaZxQ28l36Dr_lVStQ1i0RhsZ0', '::1', 'axios/1.7.9', '2025-02-01 16:12:04', '2025-02-01 16:12:04', '2025-02-01 18:12:04', 1),
 ('d0df322bb3989864787b0f6b9c9aa615f05bc780624d1a6e51737f5ae9db8bed', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczODQxNjg4OSwiZXhwIjoxNzM4NDI0MDg5LCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.hitp-dYiIxDGSqJEWfYtUdORa9Pf4Mmmkg9-JzlmNvk', '::1', 'axios/1.7.9', '2025-02-01 21:34:49', '2025-02-01 21:34:49', '2025-02-01 23:34:49', 1),
+('d0f20ad555181f803ea7581d5cb4c09706b74d4ee1cee1f9501f3709c356ac55', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczODU4NzI1MSwiZXhwIjoxNzM4NTk0NDUxLCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.ELk-Dg1_ToRH4LUi5j064O5MleWWtJZQhErIIUd9shg', '::1', 'axios/1.7.9', '2025-02-03 20:54:11', '2025-02-03 20:54:11', '2025-02-03 22:54:11', 1),
 ('d1c9e0c050b22dfa9645ec87683d1949d86b7be8ac1475b34dbd5c0989abd5ae', 4, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczODQ2NDI2MSwiZXhwIjoxNzM4NDcxNDYxLCJzdWIiOjQsInVzZXIiOnsiaWQiOjQsInVzZXJuYW1lIjoiYW5nZWx6bSIsImZ1bGxfbmFtZSI6IkppbGxpYW5TYW50b3NPcmVuY2lvIiwiZW1haWwiOiJkYW5jZXRoZW5pZ2h0YXdheS5rckBnbWFpbC5jb20iLCJ1c2VyX3R5cGVfaWQiOjR9fQ.VOqdp0puSizYJIRSH21BaW6pszoy_FLb193VSfi8vGE', '::1', 'axios/1.7.9', '2025-02-02 10:44:21', '2025-02-02 10:44:21', '2025-02-02 12:44:21', 1),
 ('d3d7d5a4b7e043afbbaea7aee2d78d441522b200c906d5348ab5287e7039f252', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczNzkzOTkwOCwiZXhwIjoxNzM3OTQ3MTA4LCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.JYGDx2-ZtNlCruWq5ejZ1hQfb1XfmvvUTemk-w2AIIE', '::1', 'axios/1.7.9', '2025-01-27 09:05:08', '2025-01-27 09:05:08', '2025-01-27 11:05:08', 1),
 ('dbe4e2523759fb079ffa1d97dd43da8a0a7db6d008a88c02b95466706aa79350', 1, 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwc2EtYWNhZGVteSIsImlhdCI6MTczODQxNjA5NiwiZXhwIjoxNzM4NDIzMjk2LCJzdWIiOjEsInVzZXIiOnsiaWQiOjEsInVzZXJuYW1lIjoiam9obmRvZSIsImZ1bGxfbmFtZSI6IkpvaG5NZWFEb2UiLCJlbWFpbCI6ImpvaG5kb2VAZ21haWwuY29tIiwidXNlcl90eXBlX2lkIjozfX0.RG_JM4ccKt8Vh0DrGiBx1xpR6u4ujOPjQixChSy2MUE', '::1', 'axios/1.7.9', '2025-02-01 21:21:36', '2025-02-01 21:21:36', '2025-02-01 23:21:36', 1),
@@ -488,42 +490,10 @@ CREATE TABLE `topic` (
 --
 
 INSERT INTO `topic` (`topic_id`, `lesson_id`, `topic_title`, `topic_description`, `sequence_number`, `created_at`, `updated_at`) VALUES
-('092e9001-c7e1-4ec8-9a66-2b7c4ea36555', 'd6f480c6-af0b-421b-82a9-fbdd8710b55c', 'BBB', 'ADADSADAd', 7, '2025-01-28 13:45:16', NULL),
-('0c773c0c-4895-4f98-9a2f-2348d2cf5692', 'd6f480c6-af0b-421b-82a9-fbdd8710b55c', 'BB', 'B', 1, '2025-01-28 08:56:19', NULL),
-('12b93c51-8a15-4dec-b14c-0e9e8a552c54', '1cb2d8c5-9a0a-4cc6-8fa1-9e94673c80c1', 'ddsad', 'dsssa', 3, '2025-01-28 13:49:44', NULL),
-('1c4a9364-e525-462b-82d0-361f4dbefd6c', 'd6f480c6-af0b-421b-82a9-fbdd8710b55c', 'SDADSA', 'ASDADADASd', 4, '2025-01-28 11:40:38', NULL),
-('2ad46d44-6b95-468d-b430-2c614e7044ce', '1cb2d8c5-9a0a-4cc6-8fa1-9e94673c80c1', 'gaga', 'gagag', 4, '2025-01-28 14:06:19', NULL),
-('2c679562-5bc5-4189-ab59-692c0f2ca7a1', '5f63da2d-bff1-49fe-ad54-be705598b279', 'ggaqwe', 'qweqwewqe', 10, '2025-01-28 15:36:33', NULL),
-('2e4191ef-4b85-4ee0-a85f-f7913f3d1073', '1cb2d8c5-9a0a-4cc6-8fa1-9e94673c80c1', 'GGSSSSS', 'GGSSSSS', 5, '2025-01-28 14:07:45', NULL),
-('350ed4a5-8054-403c-9d19-c4f821772100', '5f63da2d-bff1-49fe-ad54-be705598b279', 'Kaltok 101', 'Kaltok Basics', 9, '2025-01-28 15:35:40', NULL),
-('401495cb-3b93-4283-bfdb-367dbbc1a73a', '0a1bd08d-a1d4-4497-8112-48845d2a2f93', 'Creating a Next.js App', 'Using npx create-next-app', 1, '2025-01-31 09:52:54', NULL),
-('4c59a31a-035d-44db-b702-77894c7a0d1c', 'd6f480c6-af0b-421b-82a9-fbdd8710b55c', 'BSS', 'BSS', 2, '2025-01-28 09:13:14', NULL),
-('5530f750-ad57-4573-b7d3-843409b9996e', '1cb2d8c5-9a0a-4cc6-8fa1-9e94673c80c1', 'Aso', 'Winston Lee', 2, '2025-01-28 13:48:34', NULL),
-('5a0408db-30bb-4634-949a-d0c99915dd0e', '5f63da2d-bff1-49fe-ad54-be705598b279', 'Bucky', 'Bucky', 11, '2025-01-28 15:37:11', NULL),
-('62dcebec-4c44-4470-a3ce-a322f30bb1eb', '1cb2d8c5-9a0a-4cc6-8fa1-9e94673c80c1', 'dd', 'ddd', 7, '2025-01-28 14:10:41', NULL),
-('659cb079-d927-438d-a0d8-b8921d9d5d30', '5f63da2d-bff1-49fe-ad54-be705598b279', 'Video 1', 'Video 2', 7, '2025-01-28 15:32:28', NULL),
-('74db3b77-ff93-4c77-8cc8-c809ca8a473e', '1cb2d8c5-9a0a-4cc6-8fa1-9e94673c80c1', 'gg', 'gsasd', 9, '2025-01-28 14:12:03', NULL),
-('7eec2e46-9fd7-4c6a-b547-14ee32cb7924', '5f63da2d-bff1-49fe-ad54-be705598b279', 'gg', 'ggs', 8, '2025-01-28 15:34:12', NULL),
-('874a0440-9d05-4bd5-91ce-68f21ca3e3c1', '1cb2d8c5-9a0a-4cc6-8fa1-9e94673c80c1', 'SDASDA', 'ASDASDA', 1, '2025-01-28 13:46:27', NULL),
-('8c0a31ca-0555-4631-8034-4f9e78bf854f', '1cb2d8c5-9a0a-4cc6-8fa1-9e94673c80c1', 'rrq', 'rqr', 6, '2025-01-28 14:08:47', NULL),
-('96a5a457-951d-43cb-ae7b-c3c6280107df', '8d538766-59fa-4ff4-8340-4ddcdae0f2d9', 'GGSS', 'Yaena', 1, '2025-01-31 09:49:49', NULL),
-('99bd7060-9fb7-4ff8-af72-6067e5815743', 'd6f480c6-af0b-421b-82a9-fbdd8710b55c', 'SBG', 'SBG', 5, '2025-01-28 13:16:07', NULL),
-('9fd683e2-53a8-4bc0-8e2f-d06d09f0084a', '5f63da2d-bff1-49fe-ad54-be705598b279', 'BBBBBB', 'BBBBB', 1, '2025-01-28 14:14:27', NULL),
-('ae58f725-5eb2-447e-a701-d44737275e92', 'd6f480c6-af0b-421b-82a9-fbdd8710b55c', 'Sheesh', 'Sheesh', 3, '2025-01-28 10:45:24', NULL),
-('b5651866-fb8c-4554-bf82-ef0eec2cd856', 'a0cea95a-fc70-4c8f-9a68-4e6f456ed4ff', 'Chapter 1: Web Design Principles', 'Learn the essentials of web development, including creating static web pages with HTML and CSS. You\'ll understand how websites are structured and styled', 1, '2025-01-27 10:23:15', NULL),
-('b835b5e2-cf3b-4268-a7ae-447d1c75ddfd', '5f63da2d-bff1-49fe-ad54-be705598b279', 'HDHDHD', 'SDASD', 2, '2025-01-28 14:14:44', NULL),
-('ba8e2723-cc5b-4054-a7fd-31cd080cbcb3', '5f63da2d-bff1-49fe-ad54-be705598b279', 'gagaga', 'gagagagagaga', 4, '2025-01-28 14:45:30', NULL),
-('bb10439a-4944-4274-a99f-290c672ac3bb', '1cb2d8c5-9a0a-4cc6-8fa1-9e94673c80c1', 'Nyalibee', 'Nyalibee', 8, '2025-01-28 14:11:22', NULL),
-('c00c71f5-ac79-40a5-8f07-7d9ec8a95f78', 'ac74657b-1ad1-4a34-81cc-3bf5662eda9f', 'What is Next.js?', 'Overview and key features', 1, '2025-01-31 08:46:09', '2025-01-31 08:46:46'),
-('c1f4e135-5538-4d88-b4df-583aeceb4742', '5f63da2d-bff1-49fe-ad54-be705598b279', 'Usok', 'Usok', 3, '2025-01-28 14:19:39', NULL),
-('c66bc4ec-7046-4577-b3e3-5b7e587a6310', 'ac74657b-1ad1-4a34-81cc-3bf5662eda9f', 'Why use Next.js?', 'Comparison with React and other frameworks', 2, '2025-01-31 09:26:11', NULL),
-('d8a62c3b-74fd-48da-a64a-ec346f8c4b4d', 'a0cea95a-fc70-4c8f-9a68-4e6f456ed4ff', 'Chapter 2: HTML,CSS,JS: What are they?', 'Structuring web pages', 2, '2025-01-27 10:27:12', NULL),
-('e3e5dfea-94de-4b83-b81c-6964f2969901', '5f63da2d-bff1-49fe-ad54-be705598b279', 'h', 'q', 6, '2025-01-28 14:53:00', NULL),
-('e58d8693-d00b-4127-9ddd-487b78a9e973', 'd6f480c6-af0b-421b-82a9-fbdd8710b55c', 'topic 1', 'topic 1', 6, '2025-01-28 13:36:42', NULL),
-('f1453dc1-0ab0-45d7-8e35-8db7e996864d', 'a0cea95a-fc70-4c8f-9a68-4e6f456ed4ff', 'Chapter 3: Web Syntaxes and what are they.', 'Web Syntaxes', 3, '2025-01-27 11:10:00', NULL),
-('f2bc47ae-51d6-45d3-92fe-a5386666be8a', '5f63da2d-bff1-49fe-ad54-be705598b279', 'hhhh', 'hwqeqwe', 5, '2025-01-28 14:46:06', NULL),
-('f6b1df6d-4864-4c20-9a76-4e55a268ac55', 'a0cea95a-fc70-4c8f-9a68-4e6f456ed4ff', 'Chapter 4: Into the stylesheet verse', 'Web Stylesheet designing', 4, '2025-01-27 11:20:56', NULL),
-('f6b9df6d-4864-4c20-9a76-4e55a268ac55', 'a0cea95a-fc70-4c8f-9a68-4e6f456ed4ff', 'Chapter 5: Into the stylesheet verse 2', 'Advance Stylesheet configs', 4, '2025-01-27 11:11:25', NULL);
+('14ec4282-f333-41c5-b547-e9aca4032b5a', '52253436-5423-45ee-8e22-239535a87894', 'Lesson 2 Topic 2', 'Lesson 2 Topic 2', 2, '2025-02-03 21:13:38', NULL),
+('2f1ba96f-eed7-4d6a-b5d4-a78eb897dcd5', '859be07e-9b24-4f08-80c2-647ff631bab4', 'Lesson 1 Topic 1', 'Lesson 1 Topic 1', 1, '2025-02-03 21:10:55', '2025-02-03 21:12:17'),
+('763496f1-bdc0-4068-8267-9561e64391a9', '859be07e-9b24-4f08-80c2-647ff631bab4', 'Lesson 1 Topic 2', 'Lesson 1 Topic 2', 2, '2025-02-03 21:12:10', NULL),
+('9d187c67-e8f7-4c25-9504-e9e639f1ab1f', '52253436-5423-45ee-8e22-239535a87894', 'Lesson 2 Topic 1', 'Lesson 2 Topic 1', 1, '2025-02-03 21:13:07', NULL);
 
 -- --------------------------------------------------------
 
@@ -919,13 +889,13 @@ ALTER TABLE `commentsorquestions`
 -- AUTO_INCREMENT for table `courses`
 --
 ALTER TABLE `courses`
-  MODIFY `index_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+  MODIFY `index_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
 
 --
 -- AUTO_INCREMENT for table `enrollments`
 --
 ALTER TABLE `enrollments`
-  MODIFY `enrollment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `enrollment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `essay_answers`
@@ -949,7 +919,7 @@ ALTER TABLE `lesson_progress`
 -- AUTO_INCREMENT for table `materials`
 --
 ALTER TABLE `materials`
-  MODIFY `material_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+  MODIFY `material_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
 
 --
 -- AUTO_INCREMENT for table `notifications`
@@ -1141,6 +1111,12 @@ ALTER TABLE `sessions`
 ALTER TABLE `submissions`
   ADD CONSTRAINT `submissions_ibfk_1` FOREIGN KEY (`test_id`) REFERENCES `tests` (`test_id`),
   ADD CONSTRAINT `submissions_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`);
+
+--
+-- Constraints for table `topic`
+--
+ALTER TABLE `topic`
+  ADD CONSTRAINT `topic_ibfk_1` FOREIGN KEY (`lesson_id`) REFERENCES `lessons` (`lesson_id`);
 
 --
 -- Constraints for table `topic_progress`
