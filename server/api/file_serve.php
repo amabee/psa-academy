@@ -19,7 +19,7 @@ if (!file_exists($fullPath) || !is_file($fullPath)) {
 
 // If we get here, we're sending a file
 // Set CORS headers first
-header('Access-Control-Allow-Origin: http://localhost:3000');
+header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 

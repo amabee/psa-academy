@@ -12,71 +12,37 @@ export const courseCategories = [
   { value: "artificial-intelligence", label: "Artificial Intelligence" },
 ];
 
-export function centsToDollars(cents) {
-  return ((cents || 0) / 100).toString();
-}
-
-export const createCourseFormData = (data, sections) => {
-  const formData = new FormData();
-  formData.append("title", data.courseTitle);
-  formData.append("description", data.courseDescription);
-  formData.append("category", data.courseCategory);
-  formData.append("price", data.coursePrice.toString());
-  formData.append("status", data.courseStatus ? "Published" : "Draft");
-
-  const sectionsWithVideos = sections.map((section) => ({
-    ...section,
-    chapters: section.chapters.map((chapter) => ({
-      ...chapter,
-      video: chapter.video,
-    })),
-  }));
-
-  formData.append("sections", JSON.stringify(sectionsWithVideos));
-
-  return formData;
-};
-
-export const uploadAllVideos = async (
-  localSections,
-  courseId,
-  getUploadVideoUrl
-) => {
-  const updatedSections = localSections.map((section) => ({
-    ...section,
-    chapters: section.chapters.map((chapter) => ({
-      ...chapter,
-    })),
-  }));
-
-  for (let i = 0; i < updatedSections.length; i++) {
-    for (let j = 0; j < updatedSections[i].chapters.length; j++) {
-      const chapter = updatedSections[i].chapters[j];
-      if (chapter.video instanceof File && chapter.video.type === "video/mp4") {
-        try {
-          const updatedChapter = await uploadVideo(
-            chapter,
-            courseId,
-            updatedSections[i].sectionId,
-            getUploadVideoUrl
-          );
-          updatedSections[i].chapters[j] = updatedChapter;
-        } catch (error) {
-          console.error(
-            `Failed to upload video for chapter ${chapter.chapterId}:`,
-            error
-          );
-        }
-      }
-    }
-  }
-
-  return updatedSections;
-};
-
 export const ACCEPTED_IMAGE_TYPES = [
   "image/jpeg",
   "image/png",
   "image/gif",
   "image/webp",
 ];
+
+export const formatDate = (dateString) => {
+  const date = new Date(dateString);
+  return new Intl.DateTimeFormat("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(date);
+};
+
+export const getFileType = (fileName) => {
+  if (!fileName) return "unknown";
+
+  const extension = fileName.split(".").pop()?.toLowerCase();
+
+  if (extension === "pdf") {
+    return "pdf";
+  }
+
+  if (["mp4", "mov", "avi", "webm", "mkv"].includes(extension)) {
+    return "video";
+  }
+
+  return "other";
+};
+
+export const isVideo = (fileName) => getFileType(fileName) === "video";
+export const isPDF = (fileName) => getFileType(fileName) === "pdf";

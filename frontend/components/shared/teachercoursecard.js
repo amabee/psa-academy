@@ -68,6 +68,15 @@ const TeacherCourseCard = ({
                 : course.course_status}
             </span>
           </p>
+          <div className="flex items-center">
+            <GoPeople className="w-4 h-4 mr-2" />
+            <span className="font-semibold px-2 py-1 rounded">
+              {course.enrollment_count}{" "}
+              {course.enrollment_count > 1
+                ? "Enrolled Students"
+                : "Enrolled Student"}
+            </span>
+          </div>
         </div>
 
         <div className="w-full xl:flex space-y-2 xl:space-y-0 gap-2 mt-3">
@@ -75,7 +84,7 @@ const TeacherCourseCard = ({
             <>
               <div>
                 <Button
-                  className="course-card-teacher__edit-button"
+                  className="course-card-teacher__edit-button hover:bg-[rgb(152,152,253)] hover:text-white-100"
                   onClick={() => onEdit(course)}
                 >
                   <Pencil className="w-4 h-4 mr-2" />
@@ -84,7 +93,7 @@ const TeacherCourseCard = ({
               </div>
               <div>
                 <Button
-                  className="course-card-teacher__delete-button"
+                  className="course-card-teacher__delete-button hover:bg-red-700 hover:text-white-100"
                   onClick={() => onDelete(course)}
                 >
                   <Trash2 className="w-4 h-4 mr-2" />

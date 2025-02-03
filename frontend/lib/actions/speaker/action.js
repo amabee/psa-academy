@@ -21,7 +21,7 @@ export const getCourses = async () => {
     });
 
     if (res.status !== 200) {
-      return { success: false, data: [], message: "Stats error" };
+      return { success: false, data: [], message: "Status error" };
     }
 
     return { success: true, data: res.data.data, message: "" };
