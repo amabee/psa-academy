@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +15,7 @@ import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import "react-pdf/dist/esm/Page/TextLayer.css";
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from "lucide-react";
+import { useAppStore, useNavigationStore } from "@/store/stateStore";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
@@ -27,7 +28,11 @@ const Course = () => {
   const courseId = params.courseId;
   const topicId = params.topicId;
 
+  const isNavigating = useNavigationStore((state) => state.isNavigating);
+  const setIsNavigating = useNavigationStore((state) => state.setIsNavigating);
+
   const user = useUser();
+  const [isChangingTopic, setIsChangingTopic] = useState(false);
 
   const {
     data: course,
@@ -53,7 +58,6 @@ const Course = () => {
       }
     });
 
-    // Get the file type and URL from the current topic's first material
     const fileType = getFileType(currentTopic?.materials?.[0]?.file_name);
 
     if (fileType === "video") {
@@ -88,11 +92,15 @@ const Course = () => {
     }
   };
 
-  if (isLoading) return <Loading />;
+  useEffect(() => {
+    if (course) setIsNavigating(false);
+  }, []);
+
+  if (isLoading || isNavigating) return <Loading />;
+
   if (!user) return <div>Please sign in to view this course.</div>;
   if (!course) return <div>Error loading course</div>;
 
-  // Find the current topic and lesson
   let currentTopic = null;
   let currentLesson = null;
 
@@ -238,7 +246,7 @@ const Course = () => {
 
 const PDFViewer = ({ url }) => {
   const [numPages, setNumPages] = useState(null);
-  const [scale, setScale] = useState(0.5);
+  const [scale, setScale] = useState(0.8);
   const [currentPage, setCurrentPage] = useState(1);
 
   const onDocumentLoadSuccess = ({ numPages }) => {
@@ -250,7 +258,7 @@ const PDFViewer = ({ url }) => {
   };
 
   const zoomOut = () => {
-    setScale((prevScale) => Math.max(0.1, prevScale - 0.1)); // Lowered minimum to 0.1
+    setScale((prevScale) => Math.max(0.1, prevScale - 0.1));
   };
 
   const handleScroll = (e) => {

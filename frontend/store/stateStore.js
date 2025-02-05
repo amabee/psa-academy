@@ -24,3 +24,8 @@ export const useAppStore = create((set) => ({
       isCreating: false,
     }),
 }));
+
+export const useNavigationStore = create((set) => ({
+  isNavigating: false,
+  setIsNavigating: (state) => set({ isNavigating: state }),
+}));
