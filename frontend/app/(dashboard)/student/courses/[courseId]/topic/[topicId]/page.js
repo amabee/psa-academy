@@ -228,7 +228,7 @@ const Course = () => {
                   <h4 className="course__instructor-name">
                     {course.teacher_firstname} {course.teacher_lastname}
                   </h4>
-                  <p className="course__instructor-title">Senior UX Designer</p>
+                  <p className="course__instructor-title">{course.teacher_position}</p>
                 </div>
               </div>
               <div className="course__instructor-bio">

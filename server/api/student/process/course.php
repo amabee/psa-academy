@@ -51,6 +51,7 @@ class Course
                         userinfo.middle_name AS speaker_middlename,
                         userinfo.last_name AS speaker_lastname,
                         userinfo.profile_image as speaker_image,
+                        userinfo.position as speaker_position,
                         courses.title, 
                         courses.description,
                         courses.course_image, 
@@ -168,6 +169,7 @@ class Course
                         u.last_name AS teacher_lastname,
                         u.profile_image AS teacher_image,
                         u.user_about AS teacher_about,
+                        u.position as teacher_position,
                         CASE 
                             WHEN e.user_id IS NOT NULL THEN 1 
                             ELSE 0 
