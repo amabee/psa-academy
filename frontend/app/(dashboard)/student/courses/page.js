@@ -40,7 +40,9 @@ const Courses = () => {
   }, [courses, searchTerm, selectedCategory]);
 
   const handleGoToCourse = (course) => {
-    console.log(course);
+    if (course.enrolled !== 1) {
+      return;
+    }
 
     if (
       course.lessons &&
@@ -61,6 +63,10 @@ const Courses = () => {
       });
     }
   };
+
+  const onApplyCourse = (course) => {
+    alert(JSON.stringify(course))
+  }
 
   if (!user) {
     return (
@@ -108,6 +114,7 @@ const Courses = () => {
             key={course.course_id}
             course={course}
             onGoToCourse={handleGoToCourse}
+            onApplyCourse={onApplyCourse}
           />
         ))}
       </div>

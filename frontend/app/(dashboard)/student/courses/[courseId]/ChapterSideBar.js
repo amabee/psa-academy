@@ -13,6 +13,8 @@ import { useSidebar } from "@/components/ui/sidebar";
 import { useUser } from "@/app/providers/UserProvider";
 import { getCourseLessonContents } from "@/queries/student/student_course";
 import { useAppStore, useNavigationStore } from "@/store/stateStore";
+import { toast } from "sonner";
+import { updateTopicProgress } from "@/lib/actions/students/action";
 
 const ChaptersSidebar = () => {
   const router = useRouter();
@@ -29,16 +31,40 @@ const ChaptersSidebar = () => {
     isLoading,
     isError,
     error,
+    refetch,
   } = getCourseLessonContents(user?.user.user_id, courseId);
 
   const setIsNavigating = useNavigationStore((state) => state.setIsNavigating);
 
   const currentCourse = course?.course_id === courseId ? course?.course_id : "";
 
-  const currentUserLessonProgress = course?.progress.lesson_progress;
+  const currentUserLessonProgress = course?.lessons?.reduce((found, lesson) => {
+    if (found) return found;
+    const topic = lesson.topics?.find((topic) => topic.topic_id === topicId);
+    return topic?.progress || null;
+  }, null);
 
-  const updateTopicProgress = () => {
-    alert(1);
+  const handleUpdateTopicProgress = async (topicId) => {
+    try {
+      const currentTopic = course?.lessons
+        ?.flatMap((lesson) => lesson.topics)
+        .find((topic) => topic.topic_id === topicId);
+
+      if (currentTopic?.progress?.is_completed) {
+        return;
+      }
+
+      const { success, message } = await updateTopicProgress(topicId);
+
+      if (!success) {
+        return toast.error(message);
+      }
+
+      refetch();
+      return toast.success("Topic progress updated");
+    } catch (error) {
+      toast.error(error.message || "Failed to update progress");
+    }
   };
 
   const sidebarRef = useRef(null);
@@ -47,7 +73,7 @@ const ChaptersSidebar = () => {
     setOpen(false);
   }, []);
 
-  if (isLoading) return <div>Loading</div>;
+  if (isLoading) return null;
   if (!course) return <div>Error loading course content</div>;
 
   const toggleLesson = (lessonTitle) => {
@@ -84,7 +110,7 @@ const ChaptersSidebar = () => {
           expandedLessons={expandedSections}
           toggleLesson={toggleLesson}
           handleTopicClick={handleTopicClick}
-          updateTopicProgress={updateTopicProgress}
+          updateTopicProgress={handleUpdateTopicProgress}
         />
       ))}
     </div>
@@ -153,19 +179,17 @@ const Lesson = ({
   );
 };
 
-const ProgressVisuals = ({
-  lesson,
-  lessonProgress,
-  completedTopics,
-  totalTopics,
-}) => {
+const ProgressVisuals = ({ lesson, completedTopics, totalTopics }) => {
   return (
     <>
       <div className="chapters-sidebar__progress">
         <div className="chapters-sidebar__progress-bars">
           {lesson.topics.map((topic) => {
             const isCompleted =
-              lesson?.topic_progress?.completed === 1 ? true : false;
+              lesson?.topic_progress?.completed ===
+              lesson?.topic_progress?.total
+                ? true
+                : false;
             return (
               <div
                 key={topic.topic_id}
@@ -218,20 +242,17 @@ const TopicsList = ({
 const Topics = ({
   topic,
   index,
-  lessonId,
-  lessonProgress,
   topicId,
   courseId,
   handleTopicClick,
   updateTopicProgress,
 }) => {
-  const topicProgress = lessonProgress;
-  const isCompleted = topicProgress === 1;
+  const isCompleted = topic.progress.is_completed;
   const isCurrentTopic = topicId === topic.topic_id;
 
   const handleToggleComplete = (e) => {
     e.stopPropagation();
-    alert(1);
+    // alert(1);
   };
 
   return (
@@ -253,7 +274,7 @@ const Topics = ({
           className={cn("chapters-sidebar__chapter-number", {
             "chapters-sidebar__chapter-number--current": isCurrentTopic,
           })}
-          onClick={handleToggleComplete}
+          // onClick={handleToggleComplete}
         >
           {index + 1}
         </div>

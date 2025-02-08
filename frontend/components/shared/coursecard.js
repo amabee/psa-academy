@@ -7,8 +7,9 @@ import {
 } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import Image from "next/image";
+import { Button } from "../ui/button";
 
-const CourseCard = ({ course, onGoToCourse }) => {
+const CourseCard = ({ course, onGoToCourse, onApplyCourse }) => {
   return (
     <Card className="course-card group" onClick={() => onGoToCourse(course)}>
       <CardHeader className="course-card__header">
@@ -52,7 +53,16 @@ const CourseCard = ({ course, onGoToCourse }) => {
                 : "course-card__price"
             } `}
           >
-            {course.enrolled === 1 ? "Enrolled" : "Not Enrolled"}
+            {course.enrolled === 1 ? (
+              "Enrolled"
+            ) : (
+              <Button
+                className="text-white-100 bg-green-600 hover:bg-green-700 shadow-md shadow-gray-800"
+                onClick={() => onApplyCourse(course)}
+              >
+                Apply
+              </Button>
+            )}
           </span>
         </CardFooter>
       </CardContent>

@@ -16,6 +16,8 @@ import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import "react-pdf/dist/esm/Page/TextLayer.css";
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from "lucide-react";
 import { useAppStore, useNavigationStore } from "@/store/stateStore";
+import { toast } from "sonner";
+import { updateTopicProgress } from "@/lib/actions/students/action";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
@@ -31,17 +33,51 @@ const Course = () => {
   const isNavigating = useNavigationStore((state) => state.isNavigating);
   const setIsNavigating = useNavigationStore((state) => state.setIsNavigating);
 
+  const [hasShownToast, setHasShownToast] = useState(false);
+
   const user = useUser();
-  const [isChangingTopic, setIsChangingTopic] = useState(false);
 
   const {
     data: course,
     isLoading,
     isError,
     error,
+    refetch,
   } = getCourseLessonContents(user?.user.user_id, courseId);
 
   const playerRef = useRef(null);
+
+  const hasTopicProgress = course?.lessons?.reduce((found, lesson) => {
+    if (found) return true;
+    const topic = lesson.topics?.find((topic) => topic.topic_id === topicId);
+    return !!topic?.progress;
+  }, false);
+
+  const handleProgress = (played) => {
+    if (played >= 0.8) {
+      markAsComplete();
+    } else if (!hasTopicProgress) {
+      markAsComplete();
+    }
+  };
+
+  const markAsComplete = async () => {
+    if (hasShownToast) return;
+
+    try {
+      const { success, message } = await updateTopicProgress(topicId);
+
+      if (!success) {
+        return toast.error(message);
+      }
+
+      setHasShownToast(true);
+      refetch();
+      return toast.success("Topic Completed");
+    } catch (error) {
+      toast.error(error.message || "Failed to mark as complete");
+    }
+  };
 
   const renderContent = () => {
     let currentTopic = null;
@@ -68,6 +104,7 @@ const Course = () => {
           controls
           width="100%"
           height="100%"
+          onProgress={({ played }) => handleProgress(played)}
           config={{
             file: {
               attributes: {
@@ -81,6 +118,7 @@ const Course = () => {
       return (
         <PDFViewer
           url={`${process.env.NEXT_PUBLIC_ROOT_URL}file_serve.php?file=${currentTopic?.materials?.[0]?.file_name}`}
+          onProgress={handleProgress}
         />
       );
     } else {
@@ -161,8 +199,8 @@ const Course = () => {
               <TabsTrigger className="course__tab" value="Resources">
                 Resources
               </TabsTrigger>
-              <TabsTrigger className="course__tab" value="Quiz">
-                Quiz
+              <TabsTrigger className="course__tab" value="Comments">
+               Comments
               </TabsTrigger>
             </TabsList>
 
@@ -199,10 +237,10 @@ const Course = () => {
               </Card>
             </TabsContent>
 
-            <TabsContent className="course__tab-content" value="Quiz">
+            <TabsContent className="course__tab-content" value="Comments">
               <Card className="course__tab-card">
                 <CardHeader className="course__tab-header">
-                  <CardTitle>Quiz Content</CardTitle>
+                  <CardTitle>Comments</CardTitle>
                 </CardHeader>
                 <CardContent className="course__tab-body">
                   {/* Add quiz content here */}
@@ -228,7 +266,9 @@ const Course = () => {
                   <h4 className="course__instructor-name">
                     {course.teacher_firstname} {course.teacher_lastname}
                   </h4>
-                  <p className="course__instructor-title">{course.teacher_position}</p>
+                  <p className="course__instructor-title">
+                    {course.teacher_position}
+                  </p>
                 </div>
               </div>
               <div className="course__instructor-bio">
@@ -244,10 +284,11 @@ const Course = () => {
   );
 };
 
-const PDFViewer = ({ url }) => {
+const PDFViewer = ({ url, onProgress }) => {
   const [numPages, setNumPages] = useState(null);
   const [scale, setScale] = useState(0.8);
   const [currentPage, setCurrentPage] = useState(1);
+  const [hasReachedEnd, setHasReachedEnd] = useState(false);
 
   const onDocumentLoadSuccess = ({ numPages }) => {
     setNumPages(numPages);
@@ -269,6 +310,12 @@ const PDFViewer = ({ url }) => {
       const scrollProgress = scrollTop / (scrollHeight - clientHeight);
       const estimatedCurrentPage = Math.ceil(scrollProgress * numPages) || 1;
       setCurrentPage(estimatedCurrentPage);
+
+      if (scrollProgress >= 0.8 && !hasReachedEnd) {
+        setHasReachedEnd(true);
+
+        onProgress(0.8);
+      }
     }
   };
 
