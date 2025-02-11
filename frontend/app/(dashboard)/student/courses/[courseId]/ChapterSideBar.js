@@ -185,11 +185,8 @@ const ProgressVisuals = ({ lesson, completedTopics, totalTopics }) => {
       <div className="chapters-sidebar__progress">
         <div className="chapters-sidebar__progress-bars">
           {lesson.topics.map((topic) => {
-            const isCompleted =
-              lesson?.topic_progress?.completed ===
-              lesson?.topic_progress?.total
-                ? true
-                : false;
+            const isCompleted = topic.progress.is_completed;
+
             return (
               <div
                 key={topic.topic_id}
@@ -197,11 +194,17 @@ const ProgressVisuals = ({ lesson, completedTopics, totalTopics }) => {
                   "chapters-sidebar__progress-bar",
                   isCompleted && "chapters-sidebar__progress-bar--completed"
                 )}
-              ></div>
+              />
             );
           })}
         </div>
-        <div className="chapters-sidebar__trophy">
+        <div
+          className={cn(
+            "chapters-sidebar__trophy",
+            completedTopics === totalTopics &&
+              "chapters-sidebar__trophy--completed"
+          )}
+        >
           <Trophy className="chapters-sidebar__trophy-icon" />
         </div>
       </div>
