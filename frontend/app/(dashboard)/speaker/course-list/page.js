@@ -293,30 +293,6 @@ const Courses = () => {
         });
     }, [courses, searchTerm, selectedCategory]);
 
-    const handleEdit = (course) => {
-        router.push(`/teacher/courses/${course.courseId}`, {
-            scroll: false,
-        });
-    };
-
-    const handleDelete = async (course) => {
-        if (window.confirm("Are you sure you want to delete this course?")) {
-            await deleteCourse(course.courseId).unwrap();
-        }
-    };
-
-    const handleCreateCourse = async () => {
-        if (!user) return;
-
-        const result = await createCourse({
-            teacherId: user.id,
-            teacherName: user.fullName || "Unknown Teacher",
-        }).unwrap();
-        router.push(`/speaker/courses/${result.courseId}`, {
-            scroll: false,
-        });
-    };
-
     const routeToStudentList = (course) => {
         router.push(`/speaker/course-list/${course.courseId}`, {
             scroll: false,
