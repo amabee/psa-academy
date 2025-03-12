@@ -9,6 +9,8 @@ import { useUser } from "@/app/providers/UserProvider";
 import { getUserCourse } from "@/queries/student/student_course";
 import Loading from "@/components/shared/loading";
 import LoadingOverlay from "@/components/shared/loadingoverlay";
+import { enrollCourse } from "@/lib/actions/students/action";
+import { toast } from "sonner";
 
 const Courses = () => {
   const router = useRouter();
@@ -16,11 +18,14 @@ const Courses = () => {
 
   const [isRedirecting, setIsRedirecting] = useState(false);
 
+  const [enrolling, setEnrolling] = useState(false);
+
   const {
     data: courses,
     isLoading,
     isError,
     error,
+    refetch,
   } = getUserCourse(user?.user.user_id);
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -40,7 +45,9 @@ const Courses = () => {
   }, [courses, searchTerm, selectedCategory]);
 
   const handleGoToCourse = (course) => {
-    console.log(course);
+    if (course.enrolled !== 1) {
+      return;
+    }
 
     if (
       course.lessons &&
@@ -59,6 +66,28 @@ const Courses = () => {
       router.push(`/student/courses/${course.course_id}`, {
         scroll: false,
       });
+    }
+  };
+
+  const onApplyCourse = async (course) => {
+    try {
+      setEnrolling(true);
+
+      const { success, data, message } = await enrollCourse(
+        user?.user.user_id,
+        course.course_id
+      );
+
+      if (!success) {
+        toast.error(message);
+        return;
+      }
+      toast.success(message);
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setEnrolling(false);
+      refetch();
     }
   };
 
@@ -108,6 +137,8 @@ const Courses = () => {
             key={course.course_id}
             course={course}
             onGoToCourse={handleGoToCourse}
+            onApplyCourse={onApplyCourse}
+            enrolling={enrolling}
           />
         ))}
       </div>

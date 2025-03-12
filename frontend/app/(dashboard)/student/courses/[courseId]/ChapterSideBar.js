@@ -5,20 +5,25 @@ import {
   FileText,
   CheckCircle,
   Trophy,
+  FileVideo,
 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { cn } from "@/lib/utils";
+import { cn, getFileType } from "@/lib/utils";
 import { useSidebar } from "@/components/ui/sidebar";
 import { useUser } from "@/app/providers/UserProvider";
 import { getCourseLessonContents } from "@/queries/student/student_course";
+import { useAppStore, useNavigationStore } from "@/store/stateStore";
+import { toast } from "sonner";
+import { updateTopicProgress } from "@/lib/actions/students/action";
 
 const ChaptersSidebar = () => {
   const router = useRouter();
   const { setOpen } = useSidebar();
   const [expandedSections, setExpandedSections] = useState([]);
+
   const params = useParams();
   const courseId = params.courseId;
-  const lessonId = params.lessonId;
+  const topicId = params.topicId;
   const user = useUser();
 
   const {
@@ -26,16 +31,40 @@ const ChaptersSidebar = () => {
     isLoading,
     isError,
     error,
+    refetch,
   } = getCourseLessonContents(user?.user.user_id, courseId);
 
-  const userProgress = [];
+  const setIsNavigating = useNavigationStore((state) => state.setIsNavigating);
 
   const currentCourse = course?.course_id === courseId ? course?.course_id : "";
 
-  const currentUserLessonProgress = course?.progress.lesson_progress;
+  const currentUserLessonProgress = course?.lessons?.reduce((found, lesson) => {
+    if (found) return found;
+    const topic = lesson.topics?.find((topic) => topic.topic_id === topicId);
+    return topic?.progress || null;
+  }, null);
 
-  const updateChapterProgress = () => {
-    alert(1);
+  const handleUpdateTopicProgress = async (topicId) => {
+    try {
+      const currentTopic = course?.lessons
+        ?.flatMap((lesson) => lesson.topics)
+        .find((topic) => topic.topic_id === topicId);
+
+      if (currentTopic?.progress?.is_completed) {
+        return;
+      }
+
+      const { success, message } = await updateTopicProgress(topicId);
+
+      if (!success) {
+        return toast.error(message);
+      }
+
+      refetch();
+      return toast.success("Topic progress updated");
+    } catch (error) {
+      toast.error(error.message || "Failed to update progress");
+    }
   };
 
   const sidebarRef = useRef(null);
@@ -44,8 +73,8 @@ const ChaptersSidebar = () => {
     setOpen(false);
   }, []);
 
-  if (isLoading) return <div>Loading</div>;
-  if (!course || !userProgress) return <div>Error loading course content</div>;
+  if (isLoading) return null;
+  if (!course) return <div>Error loading course content</div>;
 
   const toggleLesson = (lessonTitle) => {
     setExpandedSections((prevSections) =>
@@ -55,10 +84,13 @@ const ChaptersSidebar = () => {
     );
   };
 
-  const handleChapterClick = (sectionId, chapterId) => {
-    // router.push(`/student/courses/${courseId}/chapters/${chapterId}`, {
-    //   scroll: false,
-    // });
+  const handleTopicClick = (courseId, topicId) => {
+    if (params.topicId !== topicId) {
+      setIsNavigating(true);
+      router.push(`/student/courses/${courseId}/topic/${topicId}`, {
+        scroll: false,
+      });
+    }
   };
 
   return (
@@ -73,12 +105,12 @@ const ChaptersSidebar = () => {
           lesson={lesson}
           index={index}
           lessonProgress={currentUserLessonProgress}
-          topicId={lessonId}
+          topicId={topicId}
           courseId={courseId}
           expandedLessons={expandedSections}
           toggleLesson={toggleLesson}
-          // handleChapterClick={handleChapterClick}
-          // updateChapterProgress={updateChapterProgress}
+          handleTopicClick={handleTopicClick}
+          updateTopicProgress={handleUpdateTopicProgress}
         />
       ))}
     </div>
@@ -93,16 +125,14 @@ const Lesson = ({
   courseId,
   expandedLessons,
   toggleLesson,
-  handleChapterClick,
-  updateChapterProgress,
+  handleTopicClick,
+  updateTopicProgress,
 }) => {
   const completedTopics = lesson?.topic_progress.completed;
 
   const totalTopics = lesson?.topic_progress.total;
 
   const isExpanded = expandedLessons.includes(lesson?.lesson_title);
-
-  console.log("SHT!", lessonProgress);
 
   return (
     <div className="chapters-sidebar__section">
@@ -139,8 +169,8 @@ const Lesson = ({
             lessonProgress={lessonProgress}
             topicId={topicId}
             courseId={courseId}
-            handleTopicClick={handleChapterClick}
-            updateTopicProgress={updateChapterProgress}
+            handleTopicClick={handleTopicClick}
+            updateTopicProgress={updateTopicProgress}
           />
         </div>
       )}
@@ -149,19 +179,14 @@ const Lesson = ({
   );
 };
 
-const ProgressVisuals = ({
-  lesson,
-  lessonProgress,
-  completedTopics,
-  totalTopics,
-}) => {
+const ProgressVisuals = ({ lesson, completedTopics, totalTopics }) => {
   return (
     <>
       <div className="chapters-sidebar__progress">
         <div className="chapters-sidebar__progress-bars">
           {lesson.topics.map((topic) => {
-            const isCompleted =
-              lesson?.topic_progress?.completed === 1 ? true : false;
+            const isCompleted = topic.progress.is_completed;
+
             return (
               <div
                 key={topic.topic_id}
@@ -169,11 +194,17 @@ const ProgressVisuals = ({
                   "chapters-sidebar__progress-bar",
                   isCompleted && "chapters-sidebar__progress-bar--completed"
                 )}
-              ></div>
+              />
             );
           })}
         </div>
-        <div className="chapters-sidebar__trophy">
+        <div
+          className={cn(
+            "chapters-sidebar__trophy",
+            completedTopics === totalTopics &&
+              "chapters-sidebar__trophy--completed"
+          )}
+        >
           <Trophy className="chapters-sidebar__trophy-icon" />
         </div>
       </div>
@@ -203,8 +234,8 @@ const TopicsList = ({
           lessonProgress={lessonProgress}
           chapterId={topic.topic_id}
           courseId={courseId}
-          // handleChapterClick={handleChapterClick}
-          // updateChapterProgress={updateChapterProgress}
+          handleTopicClick={handleTopicClick}
+          updateTopicProgress={updateTopicProgress}
         />
       ))}
     </ul>
@@ -214,23 +245,17 @@ const TopicsList = ({
 const Topics = ({
   topic,
   index,
-  lessonId,
-  lessonProgress,
   topicId,
   courseId,
   handleTopicClick,
   updateTopicProgress,
 }) => {
-  const topicProgress = lessonProgress;
-
-  console.log("Lesson Progress : ", lessonProgress);
-
-  const isCompleted = topicProgress === 1 ? true : false;
-
+  const isCompleted = topic.progress.is_completed;
   const isCurrentTopic = topicId === topic.topic_id;
 
   const handleToggleComplete = (e) => {
-    // updateChapterProgress(sectionId, chapter.chapterId, !isCompleted);
+    e.stopPropagation();
+    // alert(1);
   };
 
   return (
@@ -238,7 +263,6 @@ const Topics = ({
       className={cn("chapters-sidebar__chapter", {
         "chapters-sidebar__chapter--current": isCurrentTopic,
       })}
-      // onClick={() => handleChapterClick(sectionId, chapter.chapterId)}
     >
       {isCompleted ? (
         <div
@@ -253,23 +277,31 @@ const Topics = ({
           className={cn("chapters-sidebar__chapter-number", {
             "chapters-sidebar__chapter-number--current": isCurrentTopic,
           })}
+          // onClick={handleToggleComplete}
         >
           {index + 1}
         </div>
       )}
-      <span
-        className={cn("chapters-sidebar__chapter-title", {
-          "chapters-sidebar__chapter-title--completed": isCompleted,
-          "chapters-sidebar__chapter-title--current": isCurrentTopic,
-        })}
+
+      <div
+        className="flex-1 flex items-center cursor-pointer"
+        onClick={() => handleTopicClick(courseId, topic.topic_id)}
       >
-        {topic.topic_title}
-      </span>
-      {/* {topic.type === "Text" && (
-        <FileText className="chapters-sidebar__text-icon" />
-      )} */}
+        <span
+          className={cn("chapters-sidebar__chapter-title", {
+            "chapters-sidebar__chapter-title--completed": isCompleted,
+            "chapters-sidebar__chapter-title--current": isCurrentTopic,
+          })}
+        >
+          {topic.topic_title}
+        </span>
+        {getFileType(topic?.materials?.[0]?.file_name) === "pdf" ? (
+          <FileText className="chapters-sidebar__text-icon" />
+        ) : (
+          <FileVideo className="chapters-sidebar__text-icon" />
+        )}
+      </div>
     </li>
   );
 };
-
 export default ChaptersSidebar;

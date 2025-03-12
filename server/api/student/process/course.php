@@ -19,7 +19,6 @@ class Course
     public function __construct()
     {
         $this->conn = DatabaseConnection::getInstance()->getConnection();
-
     }
 
     public function getCourses($json)
@@ -51,6 +50,7 @@ class Course
                         userinfo.middle_name AS speaker_middlename,
                         userinfo.last_name AS speaker_lastname,
                         userinfo.profile_image as speaker_image,
+                        userinfo.position as speaker_position,
                         courses.title, 
                         courses.description,
                         courses.course_image, 
@@ -58,8 +58,9 @@ class Course
                         courses.created_at,
                         categories.category_name,
                         enrollments.user_id AS student_id,
-                        CASE 
-                            WHEN enrollments.user_id IS NOT NULL THEN 1 
+                        enrollments.isAdmitted as isAdmitted,
+                       CASE 
+                            WHEN enrollments.user_id IS NOT NULL AND enrollments.isAdmitted = 1 THEN 1 
                             ELSE 0 
                         END AS enrolled
                     FROM 
@@ -73,7 +74,7 @@ class Course
                         AND enrollments.user_id = :userID
                     LEFT JOIN 
                         userinfo 
-                        ON courses.user_id = userinfo.user_id";
+                        ON courses.user_id = userinfo.user_id WHERE courses.course_status != 'draft' ";
 
             $stmt = $this->conn->prepare($sql);
             $stmt->bindParam(':userID', $user_id, PDO::PARAM_INT);
@@ -168,6 +169,7 @@ class Course
                         u.last_name AS teacher_lastname,
                         u.profile_image AS teacher_image,
                         u.user_about AS teacher_about,
+                        u.position as teacher_position,
                         CASE 
                             WHEN e.user_id IS NOT NULL THEN 1 
                             ELSE 0 
@@ -227,37 +229,35 @@ class Course
             $lessons = $lessonStmt->fetchAll(PDO::FETCH_ASSOC);
 
             foreach ($lessons as $key => $lesson) {
-
-                error_log("Fetching topics for lesson_id: " . $lesson['lesson_id']);
-
                 $topicSql = "SELECT 
-                t.topic_id,
-                t.topic_title AS topic_title,
-                t.topic_description AS topic_description,
-                t.sequence_number,
-                t.lesson_id,
-                COALESCE(tp.is_completed, 0) AS is_completed,
-                tp.completion_date,
-                tp.last_accessed,
-                GROUP_CONCAT(
-                    DISTINCT CONCAT_WS('::',
-                        m.material_id,
-                        m.file_name
-                    )
-                    SEPARATOR '||'
-                ) as materials
-            FROM 
-                topic t
-            LEFT JOIN 
-                topic_progress tp ON t.topic_id = tp.topic_id AND tp.user_id = :user_id
-            LEFT JOIN
-                materials m ON t.topic_id = m.topic_id
-            WHERE 
-                t.lesson_id = :lesson_id
-            GROUP BY 
-               t.topic_id, t.topic_title
-            ORDER BY 
-                t.sequence_number ASC";
+                        t.topic_id,
+                        t.topic_title,
+                        t.topic_description,
+                        t.sequence_number,
+                        t.lesson_id,
+                        COALESCE(tp.is_completed, 0) AS is_completed,
+                        tp.completion_date,
+                        tp.last_accessed,
+                        tp.time_spent,
+                        GROUP_CONCAT(
+                            DISTINCT CONCAT_WS('::',
+                                m.material_id,
+                                m.file_name
+                            )
+                            SEPARATOR '||'
+                        ) as materials
+                    FROM 
+                        topic t
+                    LEFT JOIN 
+                        topic_progress tp ON t.topic_id = tp.topic_id AND tp.user_id = :user_id
+                    LEFT JOIN
+                        materials m ON t.topic_id = m.topic_id
+                    WHERE 
+                        t.lesson_id = :lesson_id
+                    GROUP BY 
+                        t.topic_id, t.topic_title
+                    ORDER BY 
+                        t.sequence_number ASC";
 
                 $topicStmt = $this->conn->prepare($topicSql);
                 $topicStmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
@@ -278,7 +278,17 @@ class Course
                             ];
                         }
                     }
+
+                    // Process topic progress
+                    $topicProgress = [
+                        'is_completed' => (bool) $topic['is_completed'],
+                        'completion_date' => $topic['completion_date'],
+                        'last_accessed' => $topic['last_accessed'],
+                        'time_spent' => (int) $topic['time_spent']
+                    ];
+
                     $topic['materials'] = $processedMaterials;
+                    $topic['progress'] = $topicProgress;
 
                     $existingTopicKey = array_search($topic['topic_id'], array_column($uniqueTopics, 'topic_id'));
 
@@ -329,7 +339,12 @@ class Course
                 'total_topics' => $totalTopics,
                 'completed_topics' => $completedTopics,
                 'lesson_progress' => $completedLessons,
-                'topic_progress' => $completedTopics
+                'topic_progress' => $completedTopics,
+                'total_time_spent' => array_reduce($lessons, function ($carry, $lesson) {
+                    return $carry + array_reduce($lesson['topics'], function ($topicCarry, $topic) {
+                        return $topicCarry + ($topic['progress']['time_spent'] ?? 0);
+                    }, 0);
+                }, 0)
             ];
 
             http_response_code(200);
@@ -339,7 +354,6 @@ class Course
                 "data" => $courseDetails,
                 "message" => ""
             ]);
-
         } catch (PDOException $ex) {
             http_response_code(500);
             return json_encode([
@@ -351,7 +365,53 @@ class Course
         }
     }
 
+    public function enrollToCourse($json)
+    {
+        $data = json_decode($json, true);
+        $isDataSet = InputHelper::requiredFields($data, ['user_id', 'course_id']);
 
+        if ($isDataSet !== true) {
+            return $isDataSet;
+        }
+
+        $user_id = InputHelper::sanitizeInt($data['user_id']);
+        $course_id = InputHelper::sanitizeString($data['course_id']);
+
+        if (!InputHelper::validateInt($user_id)) {
+            http_response_code(422);
+            return json_encode([
+                "status" => 422,
+                "success" => false,
+                "data" => "",
+                "message" => "Invalid user id"
+            ]);
+        }
+
+        try {
+            $sql = "INSERT INTO enrollments (user_id, course_id, isAdmitted) VALUES (:user_id, :course_id, :isAdmitted)";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
+            $stmt->bindParam(':course_id', $course_id, PDO::PARAM_STR);
+            $stmt->bindValue(':isAdmitted', 0, PDO::PARAM_INT);
+            $stmt->execute();
+
+            http_response_code(201);
+            return json_encode([
+                "status" => 201,
+                "success" => true,
+                "data" => [],
+                "message" => "Awaiting for approval"
+            ]);
+        } catch (PDOException $ex) {
+            http_response_code(500);
+            return json_encode([
+                "status" => 500,
+                "success" => false,
+                "data" => [],
+                "message" => $ex->getMessage()
+            ]);
+        }
+    }
 }
 
 $course = new Course();
@@ -431,6 +491,20 @@ if (isset($headers['authorization']) && $headers['authorization'] === $validApiK
                         "success" => false,
                         "data" => [],
                         "message" => "Invalid request method for getUserCourseDetails. Use GET."
+                    ]);
+                }
+                break;
+
+            case "enrollToCourse":
+                if ($requestMethod === "POST") {
+                    echo $course->enrollToCourse($json);
+                } else {
+                    http_response_code(405);
+                    echo json_encode([
+                        "status" => 405,
+                        "success" => false,
+                        "data" => [],
+                        "message" => "Invalid request method for enrollToCourse. Use POST."
                     ]);
                 }
                 break;
