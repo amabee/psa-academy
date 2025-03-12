@@ -19,7 +19,6 @@ class Course
     public function __construct()
     {
         $this->conn = DatabaseConnection::getInstance()->getConnection();
-
     }
 
     public function getCourses($json)
@@ -59,8 +58,9 @@ class Course
                         courses.created_at,
                         categories.category_name,
                         enrollments.user_id AS student_id,
-                        CASE 
-                            WHEN enrollments.user_id IS NOT NULL THEN 1 
+                        enrollments.isAdmitted as isAdmitted,
+                       CASE 
+                            WHEN enrollments.user_id IS NOT NULL AND enrollments.isAdmitted = 1 THEN 1 
                             ELSE 0 
                         END AS enrolled
                     FROM 
@@ -354,7 +354,6 @@ class Course
                 "data" => $courseDetails,
                 "message" => ""
             ]);
-
         } catch (PDOException $ex) {
             http_response_code(500);
             return json_encode([
@@ -366,7 +365,53 @@ class Course
         }
     }
 
+    public function enrollToCourse($json)
+    {
+        $data = json_decode($json, true);
+        $isDataSet = InputHelper::requiredFields($data, ['user_id', 'course_id']);
 
+        if ($isDataSet !== true) {
+            return $isDataSet;
+        }
+
+        $user_id = InputHelper::sanitizeInt($data['user_id']);
+        $course_id = InputHelper::sanitizeString($data['course_id']);
+
+        if (!InputHelper::validateInt($user_id)) {
+            http_response_code(422);
+            return json_encode([
+                "status" => 422,
+                "success" => false,
+                "data" => "",
+                "message" => "Invalid user id"
+            ]);
+        }
+
+        try {
+            $sql = "INSERT INTO enrollments (user_id, course_id, isAdmitted) VALUES (:user_id, :course_id, :isAdmitted)";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
+            $stmt->bindParam(':course_id', $course_id, PDO::PARAM_STR);
+            $stmt->bindValue(':isAdmitted', 0, PDO::PARAM_INT);
+            $stmt->execute();
+
+            http_response_code(201);
+            return json_encode([
+                "status" => 201,
+                "success" => true,
+                "data" => [],
+                "message" => "Awaiting for approval"
+            ]);
+        } catch (PDOException $ex) {
+            http_response_code(500);
+            return json_encode([
+                "status" => 500,
+                "success" => false,
+                "data" => [],
+                "message" => $ex->getMessage()
+            ]);
+        }
+    }
 }
 
 $course = new Course();
@@ -446,6 +491,20 @@ if (isset($headers['authorization']) && $headers['authorization'] === $validApiK
                         "success" => false,
                         "data" => [],
                         "message" => "Invalid request method for getUserCourseDetails. Use GET."
+                    ]);
+                }
+                break;
+
+            case "enrollToCourse":
+                if ($requestMethod === "POST") {
+                    echo $course->enrollToCourse($json);
+                } else {
+                    http_response_code(405);
+                    echo json_encode([
+                        "status" => 405,
+                        "success" => false,
+                        "data" => [],
+                        "message" => "Invalid request method for enrollToCourse. Use POST."
                     ]);
                 }
                 break;
