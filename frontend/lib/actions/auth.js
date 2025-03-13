@@ -26,6 +26,7 @@ export const login = async (user, password) => {
       headers: {
         Authorization: SECRET_KEY,
       },
+      timeout: 3000,
     });
 
     if (response.status !== 200) {
