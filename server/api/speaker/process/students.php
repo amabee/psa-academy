@@ -90,7 +90,7 @@ class Courses
         }
     }
 
-    public function getCourseDetails($json)
+    public function getCourseStudents($json)
     {
         $data = json_decode($json, true);
 
@@ -114,41 +114,27 @@ class Courses
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if ($result) {
-                // Fetch lessons
                 $sql = "SELECT 
-                    lesson_id,
-                    lesson_title,
-                    lesson_description,
-                    resources,
-                    sequence_number
-                FROM lessons 
-                WHERE course_id = :course_id 
-                ORDER BY sequence_number";
+                    u.user_id,
+                    ui.first_name,
+                    ui.last_name,
+                    ui.email,
+                    ui.phone,
+                    ui.profile_image,
+                    ui.date_created,
+                    e.enrollment_date,
+                    e.isAdmitted
+                FROM enrollments e
+                LEFT JOIN user u ON e.user_id = u.user_id
+                LEFT JOIN userinfo ui ON u.user_id = ui.user_id
+                WHERE e.course_id = :course_id";
 
                 $stmt = $this->conn->prepare($sql);
-                $stmt->bindValue(':course_id', $result['course_id'], PDO::PARAM_STR);
+                $stmt->bindValue(':course_id', $data['course_id'], PDO::PARAM_STR);
                 $stmt->execute();
-                $lessons = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-                // Fetch topics for each lesson
-                foreach ($lessons as &$lesson) {
-                    $topicSql = "SELECT 
-                        topic_id,
-                        lesson_id,
-                        topic_title,
-                        topic_description,
-                        sequence_number
-                    FROM topic 
-                    WHERE lesson_id = :lesson_id 
-                    ORDER BY sequence_number";
-
-                    $topicStmt = $this->conn->prepare($topicSql);
-                    $topicStmt->bindValue(':lesson_id', $lesson['lesson_id'], PDO::PARAM_STR);
-                    $topicStmt->execute();
-                    $lesson['topics'] = $topicStmt->fetchAll(PDO::FETCH_ASSOC);
-                }
-
-                $result['lessons'] = $lessons;
+                $result['students'] = $students;
             } else {
                 http_response_code(404);
                 return json_encode([
@@ -245,9 +231,9 @@ if (isset($headers['authorization']) && $headers['authorization'] === $validApiK
                 }
                 break;
 
-            case "getCourseDetail":
+            case "getCourseStudents":
                 if ($requestMethod === "GET") {
-                    echo $course->getCourseDetails($json);
+                    echo $course->getCourseStudents($json);
                 } else {
                     http_response_code(405);
                     echo json_encode([

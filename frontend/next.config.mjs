@@ -7,6 +7,10 @@ const nextConfig = {
         hostname: "localhost",
       },
       {
+        protocol: "https",
+        hostname: "psalms-api.psainnovations.online",
+      },
+      {
         protocol: "http",
         hostname: "**",
       },
