@@ -1,9 +1,11 @@
 "use client";
 import { useUser } from "@/app/providers/UserProvider";
 import Header from "@/components/shared/header";
+import Loading from "@/components/shared/loading";
+import { useCourseStudents } from "@/queries/speaker/course_students";
 import { Eye, EyeIcon, Trash2 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 
 const EnrolledStudentsPage = () => {
   const router = useRouter();
@@ -11,96 +13,24 @@ const EnrolledStudentsPage = () => {
   const id = params.id;
   const user = useUser();
 
-  const [students, setStudents] = useState([
-    {
-      id: 1,
-      name: "Alex Johnson",
-      email: "alex.johnson@example.com",
-      enrollDate: "2025-02-15",
-      progress: 78,
-      status: "Active",
-    },
-    {
-      id: 2,
-      name: "Taylor Smith",
-      email: "taylor.smith@example.com",
-      enrollDate: "2025-01-22",
-      progress: 45,
-      status: "Active",
-    },
-    {
-      id: 3,
-      name: "Yskaela Yaena",
-      email: "yska.yaena@gmail.com",
-      enrollDate: "2025-01-26",
-      progress: 89,
-      status: "Active",
-    },
-    {
-      id: 4,
-      name: "Morgan Lee",
-      email: "morgan.lee@example.com",
-      enrollDate: "2025-03-10",
-      progress: 33,
-      status: "Inactive",
-    },
-    {
-      id: 5,
-      name: "Jordan Kim",
-      email: "jordan.kim@example.com",
-      enrollDate: "2025-02-01",
-      progress: 92,
-      status: "Active",
-    },
-    {
-      id: 6,
-      name: "Casey Brown",
-      email: "casey.brown@example.com",
-      enrollDate: "2025-01-30",
-      progress: 60,
-      status: "Active",
-    },
-    {
-      id: 7,
-      name: "Drew Parker",
-      email: "drew.parker@example.com",
-      enrollDate: "2025-02-28",
-      progress: 50,
-      status: "Inactive",
-    },
-    {
-      id: 8,
-      name: "Riley Adams",
-      email: "riley.adams@example.com",
-      enrollDate: "2025-01-15",
-      progress: 80,
-      status: "Active",
-    },
-    {
-      id: 9,
-      name: "Jamie Garcia",
-      email: "jamie.garcia@example.com",
-      enrollDate: "2025-03-05",
-      progress: 72,
-      status: "Active",
-    },
-    {
-      id: 10,
-      name: "Quinn Martinez",
-      email: "quinn.martinez@example.com",
-      enrollDate: "2025-02-20",
-      progress: 95,
-      status: "Active",
-    },
-    {
-      id: 11,
-      name: "Shan Gorra",
-      email: "shma.gorra.coc@phinmaed.com",
-      enrollDate: "2025-02-20",
+  const {
+    data: rawStudents,
+    isLoading: courseStudentsLoading,
+    isError: courseStudentsError,
+  } = useCourseStudents(id);
+
+  const students = useMemo(() => {
+    if (!rawStudents) return [];
+
+    return rawStudents.map((student) => ({
+      id: student.user_id,
+      name: `${student.first_name} ${student.last_name}`,
+      email: student.email,
+      enrollDate: student.enrollment_date || "N/A",
       progress: 0,
-      status: "Active",
-    },
-  ]);
+      status: student.isAdmitted ? "Active" : "Inactive",
+    }));
+  }, [rawStudents]);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -109,12 +39,13 @@ const EnrolledStudentsPage = () => {
   const [sortDirection, setSortDirection] = useState("asc");
 
   // Filter students based on search term
-  const filteredStudents = students.filter(
-    (student) =>
-      student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.status.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredStudents =
+    students?.filter(
+      (student) =>
+        student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.status.toLowerCase().includes(searchTerm.toLowerCase())
+    ) || [];
 
   // Sort students based on sort field and direction
   const sortedStudents = [...filteredStudents].sort((a, b) => {
@@ -149,6 +80,10 @@ const EnrolledStudentsPage = () => {
     }
   };
 
+  const handleInviteClick = () => {
+    router.push(`/courses/${id}/invite`);
+  };
+
   // Reset to first page when search term changes
   useEffect(() => {
     setCurrentPage(1);
@@ -173,6 +108,18 @@ const EnrolledStudentsPage = () => {
     if (sortField !== field) return "↓";
     return sortDirection === "asc" ? "↑" : "↓";
   };
+
+  if (courseStudentsLoading) {
+    return <Loading />;
+  }
+
+  if (courseStudentsError) {
+    return (
+      <div>
+        <span>Error</span>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full">
@@ -224,7 +171,7 @@ const EnrolledStudentsPage = () => {
 
           <button
             className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-            onClick={() => router.push(`/courses/${id}/invite`)}
+            onClick={() => handleInviteClick()}
           >
             Invite Students
           </button>
@@ -331,11 +278,11 @@ const EnrolledStudentsPage = () => {
             </div>
             <div className="col-span-1 flex items-center justify-center space-x-3">
               <button className="text-blue-400 hover:text-blue-300">
-                <EyeIcon className="h-5 w-5"/>
+                <EyeIcon className="h-5 w-5" />
               </button>
 
               <button className="text-red-400 hover:text-red-300">
-                <Trash2 className="h-5 w-5"/>
+                <Trash2 className="h-5 w-5" />
               </button>
             </div>
           </div>

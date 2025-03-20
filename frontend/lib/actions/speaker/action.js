@@ -750,7 +750,9 @@ export const getCourseStudents = async (course_id) => {
       method: "GET",
       params: {
         operation: "getCourseStudents",
-        json: JSON.stringify([]),
+        json: JSON.stringify({
+          course_id: course_id,
+        }),
       },
 
       headers: {
@@ -762,7 +764,9 @@ export const getCourseStudents = async (course_id) => {
       return { success: false, data: [], message: "Status error" };
     }
 
-    return { success: true, data: res.data.data, message: "" };
+    console.log(res.data.data.students);
+
+    return { success: true, data: res.data.data.students, message: "" };
   } catch (error) {
     const errorMessage =
       error.response?.data?.message ||
