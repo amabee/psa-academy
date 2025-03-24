@@ -764,8 +764,6 @@ export const getCourseStudents = async (course_id) => {
       return { success: false, data: [], message: "Status error" };
     }
 
-    console.log(res.data.data.students);
-
     return { success: true, data: res.data.data.students, message: "" };
   } catch (error) {
     const errorMessage =
