@@ -6,6 +6,7 @@ import { useCourseStudents } from "@/queries/speaker/course_students";
 import { Eye, EyeIcon, Trash2 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import React, { useState, useEffect, useMemo } from "react";
+import NotEnrolledStudentsModal from "../../components/InviteStudents_Modal";
 
 const EnrolledStudentsPage = () => {
   const router = useRouter();
@@ -169,12 +170,7 @@ const EnrolledStudentsPage = () => {
             </select>
           </div>
 
-          <button
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-            onClick={() => handleInviteClick()}
-          >
-            Invite Students
-          </button>
+          <NotEnrolledStudentsModal courseId={id} />
         </div>
       </div>
 

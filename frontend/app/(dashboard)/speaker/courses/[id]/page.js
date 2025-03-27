@@ -37,6 +37,7 @@ import { Separator } from "@radix-ui/react-context-menu";
 import { generateLessonID, updateCourse } from "@/lib/actions/speaker/action";
 import { useUser } from "@/app/providers/UserProvider";
 import { toast } from "sonner";
+import TestModal from "../../components/TestModalComponent";
 
 registerPlugin(
   FilePondPluginImageExifOrientation,
@@ -57,6 +58,7 @@ const CourseEditor = () => {
   } = useCourseDetail(id);
 
   const { data: categories, isLoading, isError } = useCategories();
+  const [isTestModalOpen, setIsTestModalOpen] = useState(false);
 
   const [files, setFiles] = useState(
     course?.course_image
@@ -203,6 +205,13 @@ const CourseEditor = () => {
     }
   };
 
+  const handleSaveTest = (test) => {
+    console.log("Saved Test:", test);
+    // toast.success(`${test.type.toUpperCase()} Test created successfully`);
+    toast.success("Test Saved!");
+    setIsTestModalOpen(false);
+  };
+
   if (isError) return <p>Something went wrong</p>;
   if (isLoading) return <Loading />;
 
@@ -228,7 +237,6 @@ const CourseEditor = () => {
           subtitle="Complete all fields and save your course"
           rightElement={
             <div className="flex items-center space-x-4">
-              {/* CUSTOM SWITCH */}
               <div className="flex items-center space-x-4">
                 <label className="text-sm text-gray-300">
                   {formData.courseStatus === "publish" ? "Published" : "Draft"}
@@ -516,7 +524,7 @@ const CourseEditor = () => {
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => toast("Feature coming soon")}
+                  onClick={() => setIsTestModalOpen(true)}
                   className="border-none text-primary-700 group"
                 >
                   <Plus className="mr-1 h-4 w-4 text-primary-700 group-hover:white-100" />
@@ -540,6 +548,11 @@ const CourseEditor = () => {
 
       <TopicModal />
       <LessonModal />
+      <TestModal
+        isOpen={isTestModalOpen}
+        onClose={() => setIsTestModalOpen(false)}
+        onSave={handleSaveTest}
+      />
     </div>
   );
 };

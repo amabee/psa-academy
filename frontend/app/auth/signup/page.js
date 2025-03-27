@@ -4,9 +4,23 @@ import { motion } from "framer-motion";
 import { signup } from "@/lib/actions/auth";
 import Swal from "sweetalert2";
 import { Loader2 } from "lucide-react";
+import HCaptcha from "@hcaptcha/react-hcaptcha";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 export default function RegisterPage() {
   const [signingUp, setSigningUp] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState(null);
+  const [isConfidentialityDialogOpen, setIsConfidentialityDialogOpen] =
+    useState(false);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -42,14 +56,8 @@ export default function RegisterPage() {
 
   const validatePhilippinePhone = (phone) => {
     const cleanPhone = phone.replace(/[\s\-()]/g, "");
-
     const mobilePattern = /^(\+63|0)9\d{9}$/;
-
-    if (mobilePattern.test(cleanPhone)) {
-      return true;
-    }
-
-    return false;
+    return mobilePattern.test(cleanPhone);
   };
 
   const [formData, setFormData] = useState({
@@ -88,13 +96,11 @@ export default function RegisterPage() {
       }
     });
 
-    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (formData.email && !emailRegex.test(formData.email)) {
       newErrors.email = "Please enter a valid email address";
     }
 
-    // Phone number validation
     const phoneRegex = /^\+?[\d\s-]{10,}$/;
     if (formData.phoneNumber && !phoneRegex.test(formData.phoneNumber)) {
       newErrors.phoneNumber = "Please enter a valid phone number";
@@ -107,7 +113,6 @@ export default function RegisterPage() {
       }
     }
 
-    // Password validation
     if (formData.password) {
       if (formData.password.length < 8) {
         newErrors.password = "Password must be at least 8 characters long";
@@ -119,12 +124,10 @@ export default function RegisterPage() {
       }
     }
 
-    // Confirm password validation
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = "Passwords do not match";
     }
 
-    // Terms validation
     if (!formData.terms) {
       newErrors.terms = "You must accept the Terms & Conditions";
     }
@@ -135,10 +138,33 @@ export default function RegisterPage() {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
+
+    if (name === "terms") {
+      if (checked) {
+        setIsConfidentialityDialogOpen(true);
+      }
+    }
+
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+  };
+
+  const handleConfidentialityAccept = () => {
+    setFormData((prev) => ({
+      ...prev,
+      terms: true,
+    }));
+    setIsConfidentialityDialogOpen(false);
+  };
+
+  const handleConfidentialityClose = () => {
+    setFormData((prev) => ({
+      ...prev,
+      terms: false,
+    }));
+    setIsConfidentialityDialogOpen(false);
   };
 
   const handleSubmit = async (e) => {
@@ -220,8 +246,62 @@ export default function RegisterPage() {
     }
   };
 
+  const handleCaptchaVerify = (token) => {
+    setCaptchaToken(token);
+  };
+
+  const handleCaptchaExpire = () => {
+    setCaptchaToken(null);
+  };
+
   return (
     <div className="font-[sans-serif]">
+      <Dialog
+        open={isConfidentialityDialogOpen}
+        onOpenChange={handleConfidentialityClose}
+      >
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Confidentiality and Privilege Notice</DialogTitle>
+            <DialogDescription>
+              Please read and understand the following confidentiality terms:
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4 space-y-4 text-sm">
+            <p class="bg-gray-50 border-l-4 border-blue-500 text-gray-700 p-3 rounded-md text-md">
+              The <strong>Philippine Statistics Authority</strong>, in compliance
+              with <span class="font-medium">Republic Act No. 10173</span> (Data
+              Privacy Act of 2012), emphasizes that this communication may
+              contain confidential and/or privileged information. If you are not
+              the intended recipient, any unauthorized disclosure, copying,
+              distribution, or use of this message is{" "}
+              <span class="font-semibold">prohibited by law</span>. If received
+              in error, please delete this email, including attachments, and
+              notify the sender immediately.
+            </p>
+
+            <p className="font-medium">
+              By proceeding, you confirm that you understand and will comply
+              with these confidentiality guidelines.
+            </p>
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleConfidentialityClose}
+            >
+              Cancel
+            </Button>
+            <Button type="button" onClick={handleConfidentialityAccept}>
+              I Understand
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <div className="grid lg:grid-cols-2 md:grid-cols-2 items-center gap-4">
         <motion.div
           initial={{ opacity: 0, x: -50 }}
@@ -488,6 +568,23 @@ export default function RegisterPage() {
           {errors.terms && (
             <p className="text-red-500 text-xs mt-1">{errors.terms}</p>
           )}
+
+          {errors.submit && (
+            <p className="text-red-500 text-sm mt-4 text-center">
+              {errors.submit}
+            </p>
+          )}
+
+          <motion.div variants={itemVariants} className="mt-4 w-full">
+            <HCaptcha
+              sitekey={process.env.NEXT_PUBLIC_CAPTCHA_KEY}
+              onVerify={handleCaptchaVerify}
+              onExpire={handleCaptchaExpire}
+            />
+            {errors.captcha && (
+              <p className="text-red-500 text-xs mt-1">{errors.captcha}</p>
+            )}
+          </motion.div>
 
           {errors.submit && (
             <p className="text-red-500 text-sm mt-4 text-center">
