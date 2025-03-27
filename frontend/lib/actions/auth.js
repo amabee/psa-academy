@@ -1,9 +1,17 @@
 "use server";
 import axios from "axios";
 import { cookies } from "next/headers";
+import https from 'https';
 
 const SECRET_KEY = process.env.SECRET_KEY;
 const BASE_URL = process.env.NEXT_PUBLIC_ROOT_URL;
+
+const axiosInstance = axios.create({
+  httpsAgent: new https.Agent({  
+    rejectUnauthorized: false
+  }),
+  withCredentials: true,
+});
 
 export const login = async (user, password) => {
   const formData = new FormData();
@@ -18,7 +26,7 @@ export const login = async (user, password) => {
   );
 
   try {
-    const response = await axios({
+    const response = await axiosInstance({
       url: `${BASE_URL}auth/auth.php`,
       method: "POST",
       data: formData,

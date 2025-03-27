@@ -20,13 +20,19 @@ export const getSession = async () => {
       method: "GET",
       params: {
         operation: "getSession",
-        json: JSON.stringify([]),
+        json: JSON.stringify({}),
       },
       headers: {
         Authorization: SECRET_KEY,
-        session_id: session_id,
-        session_token: session_token,
+        "X-Session-Id": session_id,
+        "X-Session-Token": session_token,
       },
+      transformRequest: [
+        (data, headers) => {
+          console.log("Request Headers:", headers);
+          return data;
+        },
+      ],
     });
 
     if (res.status !== 200) {
