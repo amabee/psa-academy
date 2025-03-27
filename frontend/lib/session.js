@@ -24,8 +24,8 @@ export const getSession = async () => {
       },
       headers: {
         Authorization: SECRET_KEY,
-        "X-Session-Id": session_id,
-        "X-Session-Token": session_token,
+        "x-session-id": session_id,
+        "x-session-token": session_token,
       },
       transformRequest: [
         (data, headers) => {
