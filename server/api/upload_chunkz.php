@@ -5,7 +5,8 @@ header('Content-Type: application/json');
 $allowed_origins = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
-    'http://192.168.20.33:3000'
+    'http://192.168.20.33:3000',
+    'https://phd9hbwzayqw.share.zrok.io/',
 ];
 
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';

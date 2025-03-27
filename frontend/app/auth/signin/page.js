@@ -7,12 +7,14 @@ import { login } from "@/lib/actions/auth";
 import { useAppStore } from "@/store/stateStore";
 import Swal from "sweetalert2";
 import { LoadingOverlay } from "@/components/shared/loadingoverlay";
+import HCaptcha from "@hcaptcha/react-hcaptcha";
 
 export default function LoginPage() {
   const [isViewPassword, setIsViewPassword] = useState(false);
   const [inputType, setInputType] = useState("password");
   const [user, setUser] = useState("");
   const [password, setPassword] = useState("");
+  const [captchaToken, setCaptchaToken] = useState("");
 
   const isLoading = useAppStore((state) => state.isLoading);
   const setIsLoading = useAppStore((state) => state.setIsLoading);
@@ -52,9 +54,20 @@ export default function LoginPage() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+   
+    if (!captchaToken) {
+      Swal.fire({
+        title: "Captcha Error",
+        text: "Please complete the captcha verification",
+        icon: "error",
+        confirmButtonText: "OK",
+      });
+      return;
+    }
+
     try {
       setIsLoading(true);
-      const { success, message, data } = await login(user, password);
+      const { success, message, data } = await login(user, password, captchaToken);
 
       if (!success) {
         Swal.fire({
@@ -95,7 +108,6 @@ export default function LoginPage() {
     }
   };
 
-  // Show loading overlay when redirecting
   if (isRedirecting) {
     return <LoadingOverlay />;
   }
@@ -210,6 +222,15 @@ export default function LoginPage() {
               </Button>
             </div>
           </motion.div>
+
+          <motion.div variants={itemVariants} className="mt-8 flex justify-center">
+            <HCaptcha
+              sitekey={process.env.NEXT_PUBLIC_CAPTCHA_KEY}
+              onVerify={(token) => setCaptchaToken(token)}
+              onExpire={() => setCaptchaToken(null)}
+            />
+          </motion.div>
+
           <motion.div variants={itemVariants} className="mt-12">
             <motion.button
               whileHover={{ scale: 1.02 }}

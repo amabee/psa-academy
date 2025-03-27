@@ -741,3 +741,35 @@ export const deleteTopicAct = async (topic_id) => {
     return { success: false, data: [], message: errorMessage };
   }
 };
+
+// GET STUDENT DATAS
+
+export const getCourseStudents = async (course_id) => {
+  try {
+    const res = await axios(`${BASE_URL}speaker/process/students.php`, {
+      method: "GET",
+      params: {
+        operation: "getCourseStudents",
+        json: JSON.stringify({
+          course_id: course_id,
+        }),
+      },
+
+      headers: {
+        Authorization: SECRET_KEY,
+      },
+    });
+
+    if (res.status !== 200) {
+      return { success: false, data: [], message: "Status error" };
+    }
+
+    return { success: true, data: res.data.data.students, message: "" };
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message ||
+      error.message ||
+      "An error occurred while fetching students";
+    return { success: false, data: [], message: errorMessage };
+  }
+};

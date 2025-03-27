@@ -99,6 +99,21 @@ const ChaptersSidebar = () => {
         <h2 className="chapters-sidebar__title">{course?.title}</h2>
         <hr className="chapters-sidebar__divider" />
       </div>
+      <div>
+        <div className="chapters-sidebar__section">
+          <div className="chapters-sidebar__section-header">
+            <div className="chapters-sidebar__section-title-wrapper">
+              <p className=" text-lg">PRE-TEST</p>
+            </div>
+            <h3 className="chapters-sidebar__section-title">
+              How much do you know?
+            </h3>
+          </div>
+          <hr className="chapters-sidebar__divider" />
+
+          <hr className="chapters-sidebar__divider" />
+        </div>
+      </div>
       {course.lessons.map((lesson, index) => (
         <Lesson
           key={lesson.lesson_id}
@@ -113,6 +128,22 @@ const ChaptersSidebar = () => {
           updateTopicProgress={handleUpdateTopicProgress}
         />
       ))}
+
+      <div>
+        <div className="chapters-sidebar__section">
+          <div className="chapters-sidebar__section-header">
+            <div className="chapters-sidebar__section-title-wrapper">
+              <p className=" text-lg">POST-TEST</p>
+            </div>
+            <h3 className="chapters-sidebar__section-title">
+              Learning Evaluation
+            </h3>
+          </div>
+          <hr className="chapters-sidebar__divider" />
+
+          <hr className="chapters-sidebar__divider" />
+        </div>
+      </div>
     </div>
   );
 };
