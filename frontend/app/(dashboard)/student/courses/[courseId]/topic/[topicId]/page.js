@@ -73,6 +73,7 @@ const Course = () => {
 
       setHasShownToast(true);
       refetch();
+      console.log(message);
       return toast.success("Topic Completed");
     } catch (error) {
       toast.error(error.message || "Failed to mark as complete");
@@ -100,7 +101,7 @@ const Course = () => {
       return (
         <ReactPlayer
           ref={playerRef}
-          url={`${process.env.NEXT_PUBLIC_ROOT_URL}file_serve.php?file=${currentTopic?.materials?.[0]?.file_name}`}
+          url={`${process.env.NEXT_PUBLIC_ROOT_URL}file.php?file=${currentTopic?.materials?.[0]?.file_name}`}
           controls
           width="100%"
           height="100%"
@@ -117,7 +118,7 @@ const Course = () => {
     } else if (fileType === "pdf") {
       return (
         <PDFViewer
-          url={`${process.env.NEXT_PUBLIC_ROOT_URL}file_serve.php?file=${currentTopic?.materials?.[0]?.file_name}`}
+          url={`${process.env.NEXT_PUBLIC_ROOT_URL}file.php?file=${currentTopic?.materials?.[0]?.file_name}`}
           onProgress={handleProgress}
         />
       );
@@ -224,7 +225,7 @@ const Course = () => {
                   {currentTopic?.materials?.map((material) => (
                     <div key={material.material_id} className="mb-2">
                       <a
-                        href={`${process.env.NEXT_PUBLIC_ROOT_URL}file_serve.php?file=${material.file_name}`}
+                        href={`${process.env.NEXT_PUBLIC_ROOT_URL}file.php?file=${material.file_name}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-500 hover:underline"

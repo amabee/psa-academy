@@ -66,6 +66,9 @@ class InputHelper
     // Check if input is empty
     public static function isEmpty($input)
     {
+        if (is_array($input)) {
+            return empty($input);
+        }
         return trim($input) === '';
     }
 
@@ -81,21 +84,9 @@ class InputHelper
     {
         foreach ($requiredFields as $field) {
             if (!isset($input[$field])) {
-                http_response_code(422);
-                return json_encode([
-                    "status" => 422,
-                    "success" => false,
-                    "data" => [],
-                    "message" => "Missing required field: $field"
-                ]);
+                return "Missing required field: $field";
             } else if (self::isEmpty($input[$field])) {
-                http_response_code(422);
-                return json_encode([
-                    "status" => 422,
-                    "success" => false,
-                    "data" => [],
-                    "message" => "Empty input for: $field"
-                ]);
+                return "Empty input for: $field";
             }
         }
         return true;

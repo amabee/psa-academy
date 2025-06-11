@@ -67,6 +67,46 @@ export const getUserCourseDetails = async (user_id, course_id) => {
   }
 };
 
+// ADD TOPIC PROGRESS
+
+export const addToTopicProgress = async (topic_id, user_id) => {
+  const formData = new FormData();
+  formData.append("operation", "addToTopicProgress");
+  formData.append(
+    "json",
+    JSON.stringify({
+      topic_id: topic_id,
+      user_id: user_id,
+    })
+  );
+
+  try {
+    const res = await axios(`${BASE_URL}student/process/topics.php`, {
+      method: "POST",
+      data: formData,
+      headers: {
+        Authorization: SECRET_KEY,
+      },
+    });
+
+    if (![200, 201].includes(res.status)) {
+      return {
+        success: false,
+        data: [],
+        message: `Status error: ${res.status}`,
+      };
+    }
+
+    return { success: true, data: res.data.data, message: res.data.message };
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message ||
+      error.message ||
+      "An error occurred while fetching courses";
+    return { success: false, data: [], message: errorMessage };
+  }
+};
+
 // UPDATE TOPIC PROGRESS
 
 export const updateTopicProgress = async (topic_id) => {
@@ -92,7 +132,7 @@ export const updateTopicProgress = async (topic_id) => {
       return { success: false, data: [], message: "Status error" };
     }
 
-    return { success: true, data: res.data.data, message: "" };
+    return { success: true, data: res.data.data, message: res.data.message };
   } catch (error) {
     const errorMessage =
       error.response?.data?.message ||

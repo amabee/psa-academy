@@ -59,6 +59,7 @@ const CourseEditor = () => {
 
   const { data: categories, isLoading, isError } = useCategories();
   const [isTestModalOpen, setIsTestModalOpen] = useState(false);
+  const [editingTest, setEditingTest] = useState(null);
 
   const [files, setFiles] = useState(
     course?.course_image
@@ -84,6 +85,8 @@ const CourseEditor = () => {
   const [isGeneratingLessonID, setIsGeneratingLessonID] = useState(false);
 
   const lessons = useLessonStore((state) => state.courseEditor.lessons);
+  const tests = useLessonStore((state) => state.courseEditor.tests);
+  const setTests = useLessonStore((state) => state.setTests);
 
   const [formData, setFormData] = useState({
     courseTitle: "",
@@ -123,6 +126,11 @@ const CourseEditor = () => {
 
       if (course.lessons) {
         setLessons(course.lessons);
+      }
+
+      // Load tests if they exist in the course data
+      if (course.tests) {
+        setTests(course.tests);
       }
 
       if (matchingCategory) {
@@ -205,12 +213,68 @@ const CourseEditor = () => {
     }
   };
 
-  const handleSaveTest = (test) => {
-    console.log("Saved Test:", test);
-    // toast.success(`${test.type.toUpperCase()} Test created successfully`);
-    toast.success("Test Saved!");
+  const handleSaveTest = (testData) => {
+    console.log("Saved Test:", testData);
+
+    const currentTests = useLessonStore.getState().courseEditor.tests || [];
+
+    if (editingTest) {
+      const updatedTests = currentTests.map((test) =>
+        test.test_id === editingTest.test_id
+          ? { ...test, ...testData, updated_at: new Date().toISOString() }
+          : test
+      );
+      setTests(updatedTests);
+      toast.success(
+        `${
+          testData.type === "pre" ? "Pre-Test" : "Post-Test"
+        } updated successfully`
+      );
+    } else {
+      // Add new test
+      const newTest = {
+        test_id: `test_${Date.now()}`,
+        test_title: testData.title,
+        test_description: testData.description,
+        test_type: testData.type,
+        questions: testData.questions || [],
+        course_id: id,
+        created_at: new Date().toISOString(),
+        ...testData,
+      };
+      setTests([...currentTests, newTest]);
+      toast.success(
+        `${
+          testData.type === "pre" ? "Pre-Test" : "Post-Test"
+        } created successfully`
+      );
+    }
+
+    setEditingTest(null);
     setIsTestModalOpen(false);
   };
+
+  const handleDeleteTest = (testId) => {
+    const currentTests = useLessonStore.getState().courseEditor.tests || [];
+    const updatedTests = currentTests.filter((test) => test.test_id !== testId);
+    setTests(updatedTests);
+    toast.success("Test deleted successfully");
+  };
+
+  const handleEditTest = (test) => {
+    console.log("Test to edit:", test);
+    setEditingTest(test);
+    setIsTestModalOpen(true);
+  };
+
+  // Check if there are any tests
+  const hasTests = tests && tests.length > 0;
+  const hasPreTests = tests?.some(
+    (test) => test.test_type === "pre-test" || test.type === "pre"
+  );
+  const hasPostTests = tests?.some(
+    (test) => test.test_type === "post-test" || test.type === "post"
+  );
 
   if (isError) return <p>Something went wrong</p>;
   if (isLoading) return <Loading />;
@@ -294,7 +358,7 @@ const CourseEditor = () => {
                       <path
                         className="opacity-75"
                         fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C6.48 0 0 6.48 0 12h4zm2 5.291V16a8 8 0 018 8v-4c-2.21 0-4-1.79-4-4h-4z"
+                        d="M4 12a8 8 0 018-8V0C6.48 0 0 6.48 0 12h4zm2 5.291V16a8 8 0 018 8v-4c-2.21 0-4-1.79-4-4z"
                       ></path>
                     </svg>
                     Saving Changes...
@@ -486,7 +550,9 @@ const CourseEditor = () => {
           </div>
           <div className="bg-customgreys-darkGrey mt-4 md:mt-0 p-4 rounded-lg basis-1/2">
             <div className="flex justify-between items-center mb-2">
-              <h2 className="text-2xl font-semibold text-white">Lessons</h2>
+              <h2 className="text-2xl font-semibold text-white">
+                Course Content
+              </h2>
               <div className="flex items-center space-x-2">
                 <Button
                   type="button"
@@ -535,12 +601,28 @@ const CourseEditor = () => {
               </div>
             </div>
 
+            {/* Content summary */}
+            <div className="mb-4 text-sm text-gray-400">
+              {hasPreTests && (
+                <span className="mr-4">📝 Pre-test available</span>
+              )}
+              {lessons?.length > 0 && (
+                <span className="mr-4">
+                  📚 {lessons.length} lesson{lessons.length !== 1 ? "s" : ""}
+                </span>
+              )}
+              {hasPostTests && <span>📝 Post-test available</span>}
+            </div>
+
             {isLoading ? (
               <p>Loading course content...</p>
-            ) : lessons?.length > 0 ? (
+            ) : lessons?.length > 0 || hasTests ? (
               <DroppableComponent />
             ) : (
-              <p>No lessons available</p>
+              <div className="text-center py-8 text-gray-400">
+                <p>No content available</p>
+                <p className="text-sm mt-2">Start by adding a lesson or test</p>
+              </div>
             )}
           </div>
         </div>
@@ -550,8 +632,12 @@ const CourseEditor = () => {
       <LessonModal />
       <TestModal
         isOpen={isTestModalOpen}
-        onClose={() => setIsTestModalOpen(false)}
+        onClose={() => {
+          setIsTestModalOpen(false);
+          setEditingTest(null);
+        }}
         onSave={handleSaveTest}
+        editingTest={editingTest}
       />
     </div>
   );

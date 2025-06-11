@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect, useRef } from "react";
 import {
   ChevronDown,
@@ -6,15 +8,19 @@ import {
   CheckCircle,
   Trophy,
   FileVideo,
+  ClipboardCheck,
 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { cn, getFileType } from "@/lib/utils";
 import { useSidebar } from "@/components/ui/sidebar";
 import { useUser } from "@/app/providers/UserProvider";
 import { getCourseLessonContents } from "@/queries/student/student_course";
-import { useAppStore, useNavigationStore } from "@/store/stateStore";
+import { useNavigationStore } from "@/store/stateStore";
 import { toast } from "sonner";
-import { updateTopicProgress } from "@/lib/actions/students/action";
+import {
+  addToTopicProgress,
+  updateTopicProgress,
+} from "@/lib/actions/students/action";
 
 const ChaptersSidebar = () => {
   const router = useRouter();
@@ -61,10 +67,30 @@ const ChaptersSidebar = () => {
       }
 
       refetch();
+      console.log(message);
       return toast.success("Topic progress updated");
     } catch (error) {
       toast.error(error.message || "Failed to update progress");
     }
+  };
+
+  const handleAddToTopicProgress = async (topicId, userId) => {
+    const { success, message } = await addToTopicProgress(topicId, userId);
+
+    if (!success) {
+      return toast.error(message);
+    }
+
+    refetch();
+  };
+
+  const handleTestNavigation = (testType) => {
+    if (!courseId) return;
+
+    setIsNavigating(true);
+    router.push(`/student/courses/${courseId}/test/${testType}`, {
+      scroll: false,
+    });
   };
 
   const sidebarRef = useRef(null);
@@ -90,6 +116,8 @@ const ChaptersSidebar = () => {
       router.push(`/student/courses/${courseId}/topic/${topicId}`, {
         scroll: false,
       });
+
+      handleAddToTopicProgress(topicId, user?.user.user_id);
     }
   };
 
@@ -101,16 +129,20 @@ const ChaptersSidebar = () => {
       </div>
       <div>
         <div className="chapters-sidebar__section">
-          <div className="chapters-sidebar__section-header">
+          <div
+            className="chapters-sidebar__section-header cursor-pointer"
+            onClick={() => handleTestNavigation("pre")}
+          >
             <div className="chapters-sidebar__section-title-wrapper">
-              <p className=" text-lg">PRE-TEST</p>
+              <p className="text-lg flex items-center">
+                <ClipboardCheck className="mr-2 h-5 w-5 text-primary-700" />
+                PRE-TEST
+              </p>
             </div>
             <h3 className="chapters-sidebar__section-title">
               How much do you know?
             </h3>
           </div>
-          <hr className="chapters-sidebar__divider" />
-
           <hr className="chapters-sidebar__divider" />
         </div>
       </div>
@@ -131,16 +163,20 @@ const ChaptersSidebar = () => {
 
       <div>
         <div className="chapters-sidebar__section">
-          <div className="chapters-sidebar__section-header">
+          <div
+            className="chapters-sidebar__section-header cursor-pointer"
+            onClick={() => handleTestNavigation("post")}
+          >
             <div className="chapters-sidebar__section-title-wrapper">
-              <p className=" text-lg">POST-TEST</p>
+              <p className="text-lg flex items-center">
+                <ClipboardCheck className="mr-2 h-5 w-5 text-primary-700" />
+                POST-TEST
+              </p>
             </div>
             <h3 className="chapters-sidebar__section-title">
               Learning Evaluation
             </h3>
           </div>
-          <hr className="chapters-sidebar__divider" />
-
           <hr className="chapters-sidebar__divider" />
         </div>
       </div>
