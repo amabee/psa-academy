@@ -30,39 +30,146 @@ import {
   FileText,
   HelpCircle,
   CheckCircle,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { getTestDetails } from "@/lib/actions/speaker/action";
 
-const TestModal = ({ isOpen, onClose, onSave, editingTest = null }) => {
+const TestModal = ({
+  isOpen,
+  onClose,
+  onSave,
+  editingTest = null,
+  testId = null,
+}) => {
   const [testType, setTestType] = useState("pre");
   const [testTitle, setTestTitle] = useState("");
   const [questions, setQuestions] = useState([]);
   const [editingQuestionId, setEditingQuestionId] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadError, setLoadError] = useState(null);
 
-  // Effect to populate modal with editing test data
+  // Helper function to transform API data to component format
+  const transformApiDataToComponentFormat = (apiData) => {
+    return {
+      ...apiData,
+      questions:
+        apiData.questions?.map((question) => ({
+          id: question.question_id?.toString() || `q_${Date.now()}`,
+          text: question.question_text || "",
+          answers:
+            question.choices?.map((choice) => ({
+              id: choice.choice_id?.toString() || `a_${Date.now()}`,
+              text: choice.choice_text || "",
+            })) || [],
+          correctAnswerId: question.choices
+            ?.find((choice) => choice.is_correct === 1)
+            ?.choice_id?.toString(),
+        })) || [],
+    };
+  };
+
+  // Helper function to transform component data back to API format
+  const transformComponentDataToApiFormat = (componentData) => {
+    return {
+      test_title: componentData.test_title,
+      test_type: componentData.test_type,
+      questions:
+        componentData.questions?.map((question) => ({
+          question_id: question.id,
+          question_text: question.text,
+          choices:
+            question.answers?.map((answer) => ({
+              choice_id: answer.id,
+              choice_text: answer.text,
+              is_correct: answer.id === question.correctAnswerId ? 1 : 0,
+            })) || [],
+        })) || [],
+    };
+  };
+
+  // Effect to load test data when editing
   useEffect(() => {
-    if (editingTest && isOpen) {
-      console.log("Editing Test Data:", editingTest);
+    const loadTestData = async () => {
+      // Reset states when modal opens
+      if (isOpen) {
+        setLoadError(null);
 
-      setTestType(
-        editingTest.type || editingTest.test_type?.replace("-test", "") || "pre"
-      );
-      setTestTitle(editingTest.title || editingTest.test_title || "");
-      setQuestions(editingTest.questions || []);
+        // Case 1: Editing with testId - fetch from API
+        if (testId && !editingTest) {
+          setIsLoading(true);
+          try {
+            const { success, data, message } = await getTestDetails(
+              testId.test_id
+            );
 
-      // Log the specific data you want to see
-      console.log("Test Title:", editingTest.title || editingTest.test_title);
-      console.log("Test Type:", editingTest.type || editingTest.test_type);
-      console.log("Test Questions:", editingTest.questions);
-      console.log("Full Test Object:", editingTest);
-    } else if (!editingTest && isOpen) {
-      // Reset for new test
-      setTestType("pre");
+            if (!success) {
+              setLoadError(message || "Failed to load test details");
+              return toast.error("Failed to load test details");
+            }
+
+            // Transform API data to component format
+            const transformedData = transformApiDataToComponentFormat(data);
+
+            setTestType(transformedData.test_type || "pre");
+            setTestTitle(transformedData.test_title || "");
+            setQuestions(transformedData.questions || []);
+          } catch (error) {
+            console.error("Error loading test details:", error);
+            setLoadError("Error loading test details");
+            toast.error("Error loading test details");
+          } finally {
+            setIsLoading(false);
+          }
+        }
+        // Case 2: Editing with existing test data
+        else if (editingTest && !testId) {
+          console.log("Using existing editingTest data:", editingTest);
+
+          // Check if editingTest is already in component format or API format
+          let transformedData;
+          if (editingTest.questions && editingTest.questions[0]?.choices) {
+            // API format - transform it
+            transformedData = transformApiDataToComponentFormat(editingTest);
+          } else {
+            // Already in component format
+            transformedData = editingTest;
+          }
+
+          setTestType(
+            transformedData.type ||
+              transformedData.test_type?.replace("-test", "") ||
+              "pre"
+          );
+          setTestTitle(
+            transformedData.title || transformedData.test_title || ""
+          );
+          setQuestions(transformedData.questions || []);
+        }
+        // Case 3: Creating new test
+        else if (!editingTest && !testId) {
+          setTestType("pre");
+          setTestTitle("");
+          setQuestions([]);
+          setEditingQuestionId(null);
+        }
+      }
+    };
+
+    loadTestData();
+  }, [editingTest, testId, isOpen]);
+
+  // Reset modal when closed
+  useEffect(() => {
+    if (!isOpen) {
       setTestTitle("");
+      setTestType("pre");
       setQuestions([]);
       setEditingQuestionId(null);
+      setIsLoading(false);
+      setLoadError(null);
     }
-  }, [editingTest, isOpen]);
+  }, [isOpen]);
 
   const addQuestion = () => {
     const newQuestion = {
@@ -145,9 +252,9 @@ const TestModal = ({ isOpen, onClose, onSave, editingTest = null }) => {
       testTitle.trim() !== "" &&
       questions.every(
         (q) =>
-          q.text.trim() !== "" &&
-          q.answers.length >= 2 &&
-          q.answers.every((a) => a.text.trim() !== "") &&
+          q.text?.trim() !== "" && // Added optional chaining
+          q.answers?.length >= 2 && // Added optional chaining
+          q.answers.every((a) => a.text?.trim() !== "") && // Added optional chaining
           q.correctAnswerId
       );
 
@@ -159,11 +266,11 @@ const TestModal = ({ isOpen, onClose, onSave, editingTest = null }) => {
     }
 
     const testData = {
-      
       test_title: testTitle,
       test_type: testType,
       questions,
       ...(editingTest && { test_id: editingTest.test_id }),
+      ...(testId && { test_id: testId }),
     };
 
     onSave(testData);
@@ -171,21 +278,74 @@ const TestModal = ({ isOpen, onClose, onSave, editingTest = null }) => {
   };
 
   const handleClose = () => {
-    setTestTitle("");
-    setTestType("pre");
-    setQuestions([]);
-    setEditingQuestionId(null);
     onClose();
   };
 
   const getQuestionStatus = (question) => {
-    const hasText = question.text.trim() !== "";
+    const hasText = question.text?.trim() !== ""; // Added optional chaining
     const hasValidAnswers =
-      question.answers.length >= 2 &&
-      question.answers.every((a) => a.text.trim() !== "");
+      question.answers?.length >= 2 && // Added optional chaining
+      question.answers.every((a) => a.text?.trim() !== ""); // Added optional chaining
     const hasCorrectAnswer = question.correctAnswerId;
     return hasText && hasValidAnswers && hasCorrectAnswer;
   };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <Dialog open={isOpen} onOpenChange={handleClose}>
+        <DialogContent className="max-w-md bg-slate-900 border border-slate-700 rounded-xl">
+          <DialogTitle>LOADING</DialogTitle>
+          <div className="flex flex-col items-center justify-center py-8 space-y-4">
+            <Loader2 className="h-8 w-8 animate-spin text-violet-400" />
+            <div className="text-white text-lg font-medium">
+              Loading test details...
+            </div>
+            <div className="text-slate-400 text-sm">
+              Please wait while we fetch the test data
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // Error state
+  if (loadError) {
+    return (
+      <Dialog open={isOpen} onOpenChange={handleClose}>
+        <DialogContent className="max-w-md bg-slate-900 border border-slate-700 rounded-xl">
+          <DialogTitle>SOMETHING WENT WRONG</DialogTitle>
+          <div className="flex flex-col items-center justify-center py-8 space-y-4">
+            <div className="h-12 w-12 rounded-full bg-red-500/20 flex items-center justify-center">
+              <HelpCircle className="h-6 w-6 text-red-400" />
+            </div>
+            <div className="text-white text-lg font-medium">
+              Failed to load test
+            </div>
+            <div className="text-slate-400 text-sm text-center">
+              {loadError}
+            </div>
+            <div className="flex space-x-2">
+              <Button
+                variant="outline"
+                onClick={handleClose}
+                className="border-slate-600 text-slate-300 hover:bg-slate-800"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => window.location.reload()}
+                className="bg-violet-600 hover:bg-violet-700 text-white"
+              >
+                Retry
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -193,12 +353,12 @@ const TestModal = ({ isOpen, onClose, onSave, editingTest = null }) => {
         <DialogHeader className="pb-4">
           <DialogTitle className="text-white text-2xl font-bold flex items-center gap-2">
             <FileText className="h-6 w-6 text-violet-400" />
-            {editingTest
+            {editingTest || testId
               ? `Edit ${testType.toUpperCase()} Test`
               : `Create a ${testType.toUpperCase()} Test`}
           </DialogTitle>
           <DialogDescription className="text-slate-400">
-            {editingTest
+            {editingTest || testId
               ? "Modify your existing test"
               : "Design a multiple-choice test with questions and answers"}
           </DialogDescription>
@@ -306,7 +466,7 @@ const TestModal = ({ isOpen, onClose, onSave, editingTest = null }) => {
                         <>
                           <Input
                             placeholder="Enter question text"
-                            value={question.text}
+                            value={question.text || ""} // Added fallback
                             onChange={(e) =>
                               updateQuestion(question.id, e.target.value)
                             }
@@ -317,54 +477,59 @@ const TestModal = ({ isOpen, onClose, onSave, editingTest = null }) => {
                             <Label className="text-white text-sm font-medium">
                               Answers
                             </Label>
-                            {question.answers.map((answer, aIndex) => (
-                              <div
-                                key={answer.id}
-                                className="flex items-center space-x-3"
-                              >
-                                <div className="flex items-center space-x-2 flex-1">
-                                  <span className="text-slate-400 text-sm w-6">
-                                    {String.fromCharCode(65 + aIndex)}.
-                                  </span>
-                                  <Input
-                                    placeholder={`Answer ${aIndex + 1}`}
-                                    value={answer.text}
-                                    onChange={(e) =>
-                                      updateAnswer(
-                                        question.id,
-                                        answer.id,
-                                        e.target.value
-                                      )
-                                    }
-                                    className="bg-slate-900 text-white border-slate-600 focus:ring-violet-500 focus:border-violet-500 flex-1"
-                                  />
+                            {question.answers?.map(
+                              (
+                                answer,
+                                aIndex // Added optional chaining
+                              ) => (
+                                <div
+                                  key={answer.id}
+                                  className="flex items-center space-x-3"
+                                >
+                                  <div className="flex items-center space-x-2 flex-1">
+                                    <span className="text-slate-400 text-sm w-6">
+                                      {String.fromCharCode(65 + aIndex)}.
+                                    </span>
+                                    <Input
+                                      placeholder={`Answer ${aIndex + 1}`}
+                                      value={answer.text || ""} // Added fallback
+                                      onChange={(e) =>
+                                        updateAnswer(
+                                          question.id,
+                                          answer.id,
+                                          e.target.value
+                                        )
+                                      }
+                                      className="bg-slate-900 text-white border-slate-600 focus:ring-violet-500 focus:border-violet-500 flex-1"
+                                    />
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <input
+                                      type="radio"
+                                      name={`correct_${question.id}`}
+                                      checked={
+                                        question.correctAnswerId === answer.id
+                                      }
+                                      onChange={() =>
+                                        setCorrectAnswer(question.id, answer.id)
+                                      }
+                                      className="w-4 h-4 text-violet-600 bg-slate-900 border-slate-600 focus:ring-violet-500"
+                                    />
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() =>
+                                        removeAnswer(question.id, answer.id)
+                                      }
+                                      className="text-red-400 hover:bg-red-500/20 h-8 w-8"
+                                      disabled={question.answers?.length <= 2} // Added optional chaining
+                                    >
+                                      <Trash2 className="h-3 w-3" />
+                                    </Button>
+                                  </div>
                                 </div>
-                                <div className="flex items-center space-x-2">
-                                  <input
-                                    type="radio"
-                                    name={`correct_${question.id}`}
-                                    checked={
-                                      question.correctAnswerId === answer.id
-                                    }
-                                    onChange={() =>
-                                      setCorrectAnswer(question.id, answer.id)
-                                    }
-                                    className="w-4 h-4 text-violet-600 bg-slate-900 border-slate-600 focus:ring-violet-500"
-                                  />
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() =>
-                                      removeAnswer(question.id, answer.id)
-                                    }
-                                    className="text-red-400 hover:bg-red-500/20 h-8 w-8"
-                                    disabled={question.answers.length <= 2}
-                                  >
-                                    <Trash2 className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                              </div>
-                            ))}
+                              )
+                            )}
                             <Button
                               variant="outline"
                               size="sm"
@@ -381,31 +546,36 @@ const TestModal = ({ isOpen, onClose, onSave, editingTest = null }) => {
                             {question.text || "No question text"}
                           </p>
                           <div className="space-y-2">
-                            {question.answers.map((answer, aIndex) => (
-                              <div
-                                key={answer.id}
-                                className={`p-3 rounded-lg flex items-center gap-2 ${
-                                  answer.id === question.correctAnswerId
-                                    ? "bg-green-500/20 border border-green-500/50"
-                                    : "bg-slate-900 border border-slate-700"
-                                }`}
-                              >
-                                <span className="text-slate-400 text-sm w-6">
-                                  {String.fromCharCode(65 + aIndex)}.
-                                </span>
-                                <span className="flex-1">
-                                  {answer.text || "No answer text"}
-                                </span>
-                                {answer.id === question.correctAnswerId && (
-                                  <Badge
-                                    variant="secondary"
-                                    className="bg-green-500/20 text-green-400 border-green-500/50"
-                                  >
-                                    Correct
-                                  </Badge>
-                                )}
-                              </div>
-                            ))}
+                            {question.answers?.map(
+                              (
+                                answer,
+                                aIndex // Added optional chaining
+                              ) => (
+                                <div
+                                  key={answer.id}
+                                  className={`p-3 rounded-lg flex items-center gap-2 ${
+                                    answer.id === question.correctAnswerId
+                                      ? "bg-green-500/20 border border-green-500/50"
+                                      : "bg-slate-900 border border-slate-700"
+                                  }`}
+                                >
+                                  <span className="text-slate-400 text-sm w-6">
+                                    {String.fromCharCode(65 + aIndex)}.
+                                  </span>
+                                  <span className="flex-1">
+                                    {answer.text || "No answer text"}
+                                  </span>
+                                  {answer.id === question.correctAnswerId && (
+                                    <Badge
+                                      variant="secondary"
+                                      className="bg-green-500/20 text-green-400 border-green-500/50"
+                                    >
+                                      Correct
+                                    </Badge>
+                                  )}
+                                </div>
+                              )
+                            )}
                           </div>
                         </div>
                       )}
@@ -501,7 +671,8 @@ const TestModal = ({ isOpen, onClose, onSave, editingTest = null }) => {
                       </p>
                       <div className="flex items-center gap-2 mt-2">
                         <span className="text-slate-400 text-xs">
-                          {question.answers.length} answers
+                          {question.answers?.length || 0} answers{" "}
+                          {/* Added optional chaining and fallback */}
                         </span>
                         {question.correctAnswerId && (
                           <Badge
@@ -532,8 +703,8 @@ const TestModal = ({ isOpen, onClose, onSave, editingTest = null }) => {
             onClick={handleSave}
             className="bg-violet-600 hover:bg-violet-700 text-white"
           >
-            {editingTest ? "Update Test" : "Save Test"} ({questions.length}{" "}
-            question
+            {editingTest || testId ? "Update Test" : "Save Test"} (
+            {questions.length} question
             {questions.length !== 1 ? "s" : ""})
           </Button>
         </DialogFooter>

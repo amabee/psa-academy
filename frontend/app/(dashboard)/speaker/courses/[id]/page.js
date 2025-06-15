@@ -61,6 +61,7 @@ const CourseEditor = () => {
   const { data: categories, isLoading, isError } = useCategories();
   const [isTestModalOpen, setIsTestModalOpen] = useState(false);
   const [editingTest, setEditingTest] = useState(null);
+  const [editingTestId, setEditingTestId] = useState(null);
 
   const [files, setFiles] = useState(
     course?.course_image
@@ -324,9 +325,9 @@ const CourseEditor = () => {
     toast.success("Test deleted successfully");
   };
 
-  const handleEditTest = (test) => {
-    console.log("Test to edit:", test);
-    setEditingTest(test);
+  const handleEditTest = (testID) => {
+    setEditingTestId(testID);
+    setEditingTest(null);
     setIsTestModalOpen(true);
   };
 
@@ -765,6 +766,7 @@ const CourseEditor = () => {
         }}
         onSave={handleSaveTest}
         editingTest={editingTest}
+        testId={editingTestId}
       />
     </div>
   );

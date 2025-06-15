@@ -773,3 +773,35 @@ export const getCourseStudents = async (course_id) => {
     return { success: false, data: [], message: errorMessage };
   }
 };
+
+// GET TEST DETAILS
+
+export const getTestDetails = async (test_id) => {
+  try {
+    const res = await axios(`${BASE_URL}speaker/process/tests.php`, {
+      method: "GET",
+      params: {
+        operation: "getTest",
+        json: JSON.stringify({
+          test_id: test_id,
+        }),
+      },
+
+      headers: {
+        Authorization: SECRET_KEY,
+      },
+    });
+
+    if (res.status !== 200) {
+      return { success: false, data: [], message: "Status error" };
+    }
+
+    return { success: true, data: res.data.data, message: "" };
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message ||
+      error.message ||
+      "An error occurred while fetching tests";
+    return { success: false, data: [], message: errorMessage };
+  }
+};

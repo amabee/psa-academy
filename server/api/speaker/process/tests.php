@@ -157,7 +157,6 @@ class Tests
     }
   }
 
-
   public function getTest($json)
   {
     try {
@@ -173,7 +172,7 @@ class Tests
       }
 
       // Get test details
-      $sql = "SELECT t.*, c.course_title 
+      $sql = "SELECT t.*, c.course_id 
                    FROM tests t 
                    JOIN courses c ON t.course_id = c.course_id 
                    WHERE t.test_id = :test_id";
