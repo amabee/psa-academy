@@ -85,6 +85,10 @@ const CourseEditor = () => {
   const [isImageChanged, setIsImageChanged] = useState(false);
   const [isGeneratingLessonID, setIsGeneratingLessonID] = useState(false);
 
+  // New state for tracking changes
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [originalFormData, setOriginalFormData] = useState(null);
+
   const lessons = useLessonStore((state) => state.courseEditor.lessons);
   const tests = useLessonStore((state) => state.courseEditor.tests);
   const setTests = useLessonStore((state) => state.setTests);
@@ -93,7 +97,6 @@ const CourseEditor = () => {
     courseTitle: "",
     courseDescription: "",
     courseCategory: 0,
-    courseImage: "",
     courseStatus: 0,
   });
 
@@ -117,13 +120,19 @@ const CourseEditor = () => {
         (category) => category.category_id === course.category_id
       );
 
-      setFormData((prev) => ({
-        ...prev,
+      const initialData = {
         courseTitle: course.title,
         courseDescription: course.description,
         courseCategory: course?.category_id,
         courseStatus: course?.course_status,
-      }));
+      };
+
+      setFormData(initialData);
+
+      // Store original data for comparison if not already set
+      if (!originalFormData) {
+        setOriginalFormData(initialData);
+      }
 
       if (course.lessons) {
         setLessons(course.lessons);
@@ -138,19 +147,56 @@ const CourseEditor = () => {
         setSelectedCategoryLabel(matchingCategory.category_name);
       }
     }
-  }, [course, categories]);
+  }, [course, categories, originalFormData]);
 
   useEffect(() => {
     setIsCreating(false);
     setIsRedirecting(false);
   }, []);
 
+  // Function to check if there are unsaved changes
+  const checkForChanges = (newFormData = formData) => {
+    if (!originalFormData) return false;
+
+    return (
+      newFormData.courseTitle !== originalFormData.courseTitle ||
+      newFormData.courseDescription !== originalFormData.courseDescription ||
+      newFormData.courseCategory !== originalFormData.courseCategory ||
+      newFormData.courseStatus !== originalFormData.courseStatus ||
+      isImageChanged
+    );
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => {
+      const newData = {
+        ...prev,
+        [name]: value,
+      };
+
+      // Check if there are unsaved changes
+      const hasChanges = checkForChanges(newData);
+      setHasUnsavedChanges(hasChanges);
+
+      return newData;
+    });
+  };
+
+  // Handle course status toggle
+  const handleStatusToggle = () => {
+    setFormData((prev) => {
+      const newData = {
+        ...prev,
+        courseStatus: prev.courseStatus === "draft" ? "publish" : "draft",
+      };
+
+      // Check if there are unsaved changes
+      const hasChanges = checkForChanges(newData);
+      setHasUnsavedChanges(hasChanges);
+
+      return newData;
+    });
   };
 
   const {
@@ -163,6 +209,13 @@ const CourseEditor = () => {
 
   const onUpdate = async (e) => {
     e.preventDefault();
+
+    // Check if there are any changes to save
+    if (!hasUnsavedChanges) {
+      toast.info("No changes to save");
+      return;
+    }
+
     try {
       setIsCreating(true);
 
@@ -184,6 +237,16 @@ const CourseEditor = () => {
       }
 
       toast.success("Course updated successfully");
+
+      // Update the original data to reflect the new saved state
+      setOriginalFormData({
+        courseTitle: formData.courseTitle,
+        courseDescription: formData.courseDescription,
+        courseCategory: formData.courseCategory,
+        courseStatus: formData.courseStatus,
+      });
+
+      setHasUnsavedChanges(false);
     } catch (error) {
       toast.error("An error occurred while updating the course");
     } finally {
@@ -267,6 +330,29 @@ const CourseEditor = () => {
     setIsTestModalOpen(true);
   };
 
+  // Handle file upload changes
+  const handleFileUpdate = (fileItems) => {
+    setFiles(fileItems);
+    const file = fileItems[0]?.file;
+    const fileName = fileItems[0]?.filename;
+    if (file) {
+      const isActuallyChanged = course?.course_image !== fileName;
+      setFormData((prev) => ({
+        ...prev,
+        courseImage: {
+          file: file,
+          fileName: fileName,
+        },
+      }));
+
+      setIsImageChanged(isActuallyChanged);
+
+      // Check for unsaved changes including image
+      const hasChanges = checkForChanges() || isActuallyChanged;
+      setHasUnsavedChanges(hasChanges);
+    }
+  };
+
   // Separate tests by type
   const preTests =
     tests?.filter(
@@ -305,7 +391,9 @@ const CourseEditor = () => {
       >
         <Header
           title="Course Setup"
-          subtitle="Complete all fields and save your course"
+          subtitle={`Complete all fields and save your course${
+            hasUnsavedChanges ? " • Unsaved changes" : ""
+          }`}
           rightElement={
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-4">
@@ -321,13 +409,7 @@ const CourseEditor = () => {
                                 : "bg-gray-300"
                             }
                           `}
-                  onClick={() =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      courseStatus:
-                        prev.courseStatus === "draft" ? "publish" : "draft",
-                    }))
-                  }
+                  onClick={handleStatusToggle}
                 >
                   <div
                     className={`
@@ -343,8 +425,12 @@ const CourseEditor = () => {
               </div>
               <Button
                 type="submit"
-                className="bg-primary-700 hover:bg-primary-600 flex items-center justify-center"
-                disabled={isCreating}
+                className={`flex items-center justify-center ${
+                  hasUnsavedChanges
+                    ? "bg-primary-700 hover:bg-primary-600"
+                    : "bg-gray-500 hover:bg-gray-400 cursor-not-allowed"
+                }`}
+                disabled={isCreating || !hasUnsavedChanges}
               >
                 {isCreating ? (
                   <>
@@ -370,10 +456,10 @@ const CourseEditor = () => {
                     </svg>
                     Saving Changes...
                   </>
-                ) : course ? (
+                ) : hasUnsavedChanges ? (
                   "Save Changes"
                 ) : (
-                  "Create Course"
+                  "No Changes to Save"
                 )}
               </Button>
             </div>
@@ -433,12 +519,14 @@ const CourseEditor = () => {
                 <Select
                   value={formData.courseCategory?.toString() || 99}
                   onValueChange={(value) => {
-                    setFormData((prev) => ({
-                      ...prev,
+                    const newFormData = {
+                      ...formData,
                       courseCategory: value
                         ? parseInt(value)
                         : course.category_id,
-                    }));
+                    };
+
+                    setFormData(newFormData);
 
                     const selectedCategory = categories.find(
                       (category) => category.category_id.toString() === value
@@ -457,6 +545,10 @@ const CourseEditor = () => {
                           : "Select a category"
                       );
                     }
+
+                    // Check for unsaved changes
+                    const hasChanges = checkForChanges(newFormData);
+                    setHasUnsavedChanges(hasChanges);
                   }}
                 >
                   <SelectTrigger className="w-full h-10 border-none bg-customgreys-primarybg p-4">
@@ -490,23 +582,7 @@ const CourseEditor = () => {
 
               <FilePond
                 files={files}
-                onupdatefiles={(fileItems) => {
-                  setFiles(fileItems);
-                  const file = fileItems[0]?.file;
-                  const fileName = fileItems[0]?.filename;
-                  if (file) {
-                    const isActuallyChanged = course?.course_image !== fileName;
-                    setFormData((prev) => ({
-                      ...prev,
-                      courseImage: {
-                        file: file,
-                        fileName: fileName,
-                      },
-                    }));
-
-                    setIsImageChanged(isActuallyChanged);
-                  }
-                }}
+                onupdatefiles={handleFileUpdate}
                 server={{
                   load: (source, load, error, progress, abort, headers) => {
                     progress(true, 0, 1);
