@@ -38,6 +38,7 @@ import { generateLessonID, updateCourse } from "@/lib/actions/speaker/action";
 import { useUser } from "@/app/providers/UserProvider";
 import { toast } from "sonner";
 import TestModal from "../../components/TestModalComponent";
+import TestDisplayComponent from "./testdisplay";
 
 registerPlugin(
   FilePondPluginImageExifOrientation,
@@ -231,7 +232,6 @@ const CourseEditor = () => {
         } updated successfully`
       );
     } else {
-      // Add new test
       const newTest = {
         test_id: `test_${Date.now()}`,
         test_title: testData.title,
@@ -267,14 +267,21 @@ const CourseEditor = () => {
     setIsTestModalOpen(true);
   };
 
+  // Separate tests by type
+  const preTests =
+    tests?.filter(
+      (test) => test.test_type === "pre-test" || test.test_type === "pre"
+    ) || [];
+
+  const postTests =
+    tests?.filter(
+      (test) => test.test_type === "post-test" || test.test_type === "post"
+    ) || [];
+
   // Check if there are any tests
   const hasTests = tests && tests.length > 0;
-  const hasPreTests = tests?.some(
-    (test) => test.test_type === "pre-test" || test.type === "pre"
-  );
-  const hasPostTests = tests?.some(
-    (test) => test.test_type === "post-test" || test.type === "post"
-  );
+  const hasPreTests = preTests.length > 0;
+  const hasPostTests = postTests.length > 0;
 
   if (isError) return <p>Something went wrong</p>;
   if (isLoading) return <Loading />;
@@ -358,7 +365,7 @@ const CourseEditor = () => {
                       <path
                         className="opacity-75"
                         fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C6.48 0 0 6.48 0 12h4zm2 5.291V16a8 8 0 018 8v-4c-2.21 0-4-1.79-4-4z"
+                        d="M4 12a8 8 0 018-8V0C6.48 0 0 6.48 0 12h4zm2 5.291V16a8 8 0 018 8v-4c-2.21 0-4-1.79-4z"
                       ></path>
                     </svg>
                     Saving Changes...
@@ -617,7 +624,51 @@ const CourseEditor = () => {
             {isLoading ? (
               <p>Loading course content...</p>
             ) : lessons?.length > 0 || hasTests ? (
-              <DroppableComponent />
+              <div className="space-y-4">
+                {/* Pre-Tests Section */}
+                {hasPreTests && (
+                  <div>
+                    <div className="mb-2">
+                      <h3 className="text-lg font-medium text-white mb-2">
+                        Pre-Tests
+                      </h3>
+                    </div>
+                    <TestDisplayComponent
+                      tests={preTests}
+                      onEditTest={handleEditTest}
+                      onDeleteTest={handleDeleteTest}
+                    />
+                  </div>
+                )}
+
+                {/* Lessons Section */}
+                {lessons?.length > 0 && (
+                  <div>
+                    <div className="mb-2">
+                      <h3 className="text-lg font-medium text-white mb-2">
+                        Lessons
+                      </h3>
+                    </div>
+                    <DroppableComponent />
+                  </div>
+                )}
+
+                {/* Post-Tests Section */}
+                {hasPostTests && (
+                  <div>
+                    <div className="mb-2">
+                      <h3 className="text-lg font-medium text-white mb-2">
+                        Post-Tests
+                      </h3>
+                    </div>
+                    <TestDisplayComponent
+                      tests={postTests}
+                      onEditTest={handleEditTest}
+                      onDeleteTest={handleDeleteTest}
+                    />
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="text-center py-8 text-gray-400">
                 <p>No content available</p>
