@@ -34,7 +34,13 @@ import FilePondPluginFileValidateType from "filepond-plugin-file-validate-type";
 import { ACCEPTED_IMAGE_TYPES } from "@/lib/utils";
 import useLessonStore from "@/store/lessonStore";
 import { Separator } from "@radix-ui/react-context-menu";
-import { generateLessonID, updateCourse } from "@/lib/actions/speaker/action";
+import {
+  generateLessonID,
+  updateCourse,
+  createTest,
+  updateTest,
+  deleteTest,
+} from "@/lib/actions/speaker/action";
 import { useUser } from "@/app/providers/UserProvider";
 import { toast } from "sonner";
 import TestModal from "../../components/TestModalComponent";
@@ -278,51 +284,106 @@ const CourseEditor = () => {
     }
   };
 
-  const handleSaveTest = (testData) => {
-    console.log("Saved Test:", testData);
-
-    const currentTests = useLessonStore.getState().courseEditor.tests || [];
-
-    if (editingTest) {
-      const updatedTests = currentTests.map((test) =>
-        test.test_id === editingTest.test_id
-          ? { ...test, ...testData, updated_at: new Date().toISOString() }
-          : test
-      );
-      setTests(updatedTests);
-      toast.success(
-        `${
-          testData.type === "pre" ? "Pre-Test" : "Post-Test"
-        } updated successfully`
-      );
-    } else {
-      const newTest = {
-        test_id: `test_${Date.now()}`,
-        test_title: testData.title,
-        test_description: testData.description,
-        test_type: testData.type,
-        questions: testData.questions || [],
+  const handleSaveTest = async (testData) => {
+    try {
+      const apiTestData = {
         course_id: id,
-        created_at: new Date().toISOString(),
-        ...testData,
+        test_title: testData.test_title,
+        test_type: testData.test_type,
+        questions: testData.questions.map((question) => ({
+          question_text: question.text,
+          question_type: "multiple_choice",
+          points: 1,
+          choices: question.answers.map((answer) => ({
+            choice_text: answer.text,
+            is_correct: answer.id === question.correctAnswerId ? 1 : 0,
+          })),
+        })),
       };
-      setTests([...currentTests, newTest]);
-      toast.success(
-        `${
-          testData.type === "pre" ? "Pre-Test" : "Post-Test"
-        } created successfully`
-      );
+
+      let result;
+      if (editingTestId) {
+        apiTestData.test_id = editingTestId;
+        result = await updateTest(apiTestData);
+      } else {
+        result = await createTest(apiTestData);
+      }
+
+      if (result.success) {
+        const currentTests = useLessonStore.getState().courseEditor.tests || [];
+
+        const formattedTestData = {
+          test_id: editingTestId || result.data.test_id || `test_${Date.now()}`,
+          test_title: testData.test_title,
+          test_type: testData.test_type,
+          course_id: id,
+          created_at: editingTestId
+            ? currentTests.find((t) => t.test_id === editingTestId)?.created_at
+            : new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          // Store questions in the format your display component expects
+          questions: testData.questions.map((question) => ({
+            question_id: question.id,
+            question_text: question.text,
+            question_type: "multiple_choice",
+            points: 1,
+            choices: question.answers.map((answer) => ({
+              choice_id: answer.id,
+              choice_text: answer.text,
+              is_correct: answer.id === question.correctAnswerId ? 1 : 0,
+            })),
+          })),
+        };
+
+        if (editingTestId) {
+          // Update existing test
+          const updatedTests = currentTests.map((test) =>
+            test.test_id === editingTestId ? formattedTestData : test
+          );
+          setTests(updatedTests);
+        } else {
+          // Add new test
+          setTests([...currentTests, formattedTestData]);
+        }
+
+        toast.success(
+          `${testData.test_type === "pre" ? "Pre-Test" : "Post-Test"} ${
+            editingTestId ? "updated" : "created"
+          } successfully`
+        );
+      } else {
+        console.log("TEST DATA: ", testData);
+        toast.error(result.message || "Failed to save test");
+      }
+    } catch (error) {
+      console.error("Error saving test:", error);
+      toast.error("An error occurred while saving the test");
     }
 
+    // Reset editing states
     setEditingTest(null);
+    setEditingTestId(null);
     setIsTestModalOpen(false);
   };
 
-  const handleDeleteTest = (testId) => {
-    const currentTests = useLessonStore.getState().courseEditor.tests || [];
-    const updatedTests = currentTests.filter((test) => test.test_id !== testId);
-    setTests(updatedTests);
-    toast.success("Test deleted successfully");
+  const handleDeleteTest = async (testId) => {
+    try {
+      const result = await deleteTest(testId);
+
+      if (result.success) {
+        const currentTests = useLessonStore.getState().courseEditor.tests || [];
+        const updatedTests = currentTests.filter(
+          (test) => test.test_id !== testId
+        );
+        setTests(updatedTests);
+        toast.success("Test deleted successfully");
+      } else {
+        toast.error(result.message || "Failed to delete test");
+      }
+    } catch (error) {
+      console.error("Error deleting test:", error);
+      toast.error("An error occurred while deleting the test");
+    }
   };
 
   const handleEditTest = (testID) => {
@@ -674,7 +735,11 @@ const CourseEditor = () => {
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => setIsTestModalOpen(true)}
+                  onClick={() => {
+                    setEditingTest(null);
+                    setEditingTestId(null);
+                    setIsTestModalOpen(true);
+                  }}
                   className="border-none text-primary-700 group"
                 >
                   <Plus className="mr-1 h-4 w-4 text-primary-700 group-hover:white-100" />
@@ -763,6 +828,7 @@ const CourseEditor = () => {
         onClose={() => {
           setIsTestModalOpen(false);
           setEditingTest(null);
+          setEditingTestId(null);
         }}
         onSave={handleSaveTest}
         editingTest={editingTest}

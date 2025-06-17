@@ -69,29 +69,9 @@ const TestModal = ({
     };
   };
 
-  // Helper function to transform component data back to API format
-  const transformComponentDataToApiFormat = (componentData) => {
-    return {
-      test_title: componentData.test_title,
-      test_type: componentData.test_type,
-      questions:
-        componentData.questions?.map((question) => ({
-          question_id: question.id,
-          question_text: question.text,
-          choices:
-            question.answers?.map((answer) => ({
-              choice_id: answer.id,
-              choice_text: answer.text,
-              is_correct: answer.id === question.correctAnswerId ? 1 : 0,
-            })) || [],
-        })) || [],
-    };
-  };
-
   // Effect to load test data when editing
   useEffect(() => {
     const loadTestData = async () => {
-      // Reset states when modal opens
       if (isOpen) {
         setLoadError(null);
 
@@ -252,9 +232,9 @@ const TestModal = ({
       testTitle.trim() !== "" &&
       questions.every(
         (q) =>
-          q.text?.trim() !== "" && // Added optional chaining
-          q.answers?.length >= 2 && // Added optional chaining
-          q.answers.every((a) => a.text?.trim() !== "") && // Added optional chaining
+          q.text?.trim() !== "" && 
+          q.answers?.length >= 2 && 
+          q.answers.every((a) => a.text?.trim() !== "") &&
           q.correctAnswerId
       );
 
@@ -466,7 +446,7 @@ const TestModal = ({
                         <>
                           <Input
                             placeholder="Enter question text"
-                            value={question.text || ""} // Added fallback
+                            value={question.text || ""}
                             onChange={(e) =>
                               updateQuestion(question.id, e.target.value)
                             }

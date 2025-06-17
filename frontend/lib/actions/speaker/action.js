@@ -805,3 +805,203 @@ export const getTestDetails = async (test_id) => {
     return { success: false, data: [], message: errorMessage };
   }
 };
+
+// TEST MANAGEMENT FUNCTIONS
+
+export const createTest = async (testData) => {
+  const formData = new FormData();
+
+  formData.append("operation", "createTest");
+  formData.append("json", JSON.stringify(testData));
+
+  console.log("WHAT THE FUCK IS IT?: ", testData);
+
+  try {
+    const res = await axios(`${BASE_URL}speaker/process/tests.php`, {
+      method: "POST",
+      headers: {
+        Authorization: SECRET_KEY,
+      },
+      data: formData,
+    });
+
+    if (res.status !== 200) {
+      return { success: false, data: [], message: "Status error" };
+    }
+
+    if (!res.data.success) {
+      return {
+        success: false,
+        data: [],
+        message: res.data.message || "Failed to create test",
+      };
+    }
+
+    return { success: true, data: res.data.data, message: res.data.message };
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message ||
+      error.message ||
+      "An error occurred while creating the test";
+    return { success: false, data: [], message: errorMessage };
+  }
+};
+
+export const updateTest = async (testData) => {
+  const formData = new FormData();
+
+  formData.append("operation", "updateTest");
+  formData.append(
+    "json",
+    JSON.stringify({
+      test_id: testData.test_id.test_id,
+      test_title: testData.test_title,
+      test_type: testData.test_type,
+      questions: testData.questions,
+    })
+  );
+  try {
+    const res = await axios(`${BASE_URL}speaker/process/tests.php`, {
+      method: "POST",
+      headers: {
+        Authorization: SECRET_KEY,
+      },
+      data: formData,
+    });
+
+    if (res.status !== 200) {
+      return { success: false, data: [], message: "Status error" };
+    }
+
+    if (!res.data.success) {
+      return {
+        success: false,
+        data: [],
+        message: res.data.message || "Failed to update test",
+      };
+    }
+
+    return { success: true, data: res.data.data, message: res.data.message };
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message ||
+      error.message ||
+      "An error occurred while updating the test";
+    return { success: false, data: [], message: errorMessage };
+  }
+};
+
+export const deleteTest = async (test_id) => {
+  const formData = new FormData();
+
+  formData.append("operation", "deleteTest");
+  formData.append(
+    "json",
+    JSON.stringify({
+      test_id: test_id,
+    })
+  );
+  try {
+    const res = await axios(`${BASE_URL}speaker/process/tests.php`, {
+      method: "POST",
+      data: formData,
+      headers: {
+        Authorization: SECRET_KEY,
+      },
+    });
+
+    if (res.status !== 200) {
+      return { success: false, data: [], message: "Status error" };
+    }
+
+    if (!res.data.success) {
+      return {
+        success: false,
+        data: [],
+        message: res.data.message || "Failed to delete test",
+      };
+    }
+
+    return { success: true, data: res.data.data, message: res.data.message };
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message ||
+      error.message ||
+      "An error occurred while deleting the test";
+    return { success: false, data: [], message: errorMessage };
+  }
+};
+
+export const getCourseTests = async (course_id) => {
+  try {
+    const res = await axios(`${BASE_URL}speaker/process/tests.php`, {
+      method: "GET",
+      params: {
+        operation: "getCourseTests",
+        json: JSON.stringify({
+          course_id: course_id,
+        }),
+      },
+      headers: {
+        Authorization: SECRET_KEY,
+      },
+    });
+
+    if (res.status !== 200) {
+      return { success: false, data: [], message: "Status error" };
+    }
+
+    if (!res.data.success) {
+      return {
+        success: false,
+        data: [],
+        message: res.data.message || "Failed to fetch course tests",
+      };
+    }
+
+    return { success: true, data: res.data.data, message: "" };
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message ||
+      error.message ||
+      "An error occurred while fetching course tests";
+    return { success: false, data: [], message: errorMessage };
+  }
+};
+
+export const getLessonTests = async (lesson_id) => {
+  try {
+    const res = await axios(`${BASE_URL}speaker/process/tests.php`, {
+      method: "GET",
+      params: {
+        operation: "getLessonTests",
+        json: JSON.stringify({
+          lesson_id: lesson_id,
+        }),
+      },
+      headers: {
+        Authorization: SECRET_KEY,
+      },
+    });
+
+    if (res.status !== 200) {
+      return { success: false, data: [], message: "Status error" };
+    }
+
+    if (!res.data.success) {
+      return {
+        success: false,
+        data: [],
+        message: res.data.message || "Failed to fetch lesson tests",
+      };
+    }
+
+    return { success: true, data: res.data.data, message: "" };
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message ||
+      error.message ||
+      "An error occurred while fetching lesson tests";
+    return { success: false, data: [], message: errorMessage };
+  }
+};
