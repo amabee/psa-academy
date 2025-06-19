@@ -25,114 +25,21 @@ import {
   CheckCircle2,
   FileText,
 } from "lucide-react";
-
-// Mock data - replace with your actual data fetching logic
-const fetchTestQuestions = async (courseId, testType) => {
-  return {
-    title: testType === "pre" ? "Pre-Test Assessment" : "Post-Test Evaluation",
-    description:
-      testType === "pre"
-        ? "Let's see how much you know before starting the course."
-        : "Test your knowledge after completing the course.",
-    timeLimit: 30, // minutes
-    questions: [
-      {
-        id: "q1",
-        question: "What is the primary purpose of this course?",
-        options: [
-          { id: "a", text: "To teach programming basics" },
-          { id: "b", text: "To improve critical thinking" },
-          { id: "c", text: "To enhance problem-solving skills" },
-          { id: "d", text: "All of the above" },
-        ],
-        correctAnswer: "d",
-      },
-      {
-        id: "q2",
-        question:
-          "Which of the following is NOT a key concept covered in this course?",
-        options: [
-          { id: "a", text: "Data structures" },
-          { id: "b", text: "Algorithms" },
-          { id: "c", text: "Machine learning" },
-          { id: "d", text: "Logic and reasoning" },
-        ],
-        correctAnswer: "c",
-      },
-      {
-        id: "q3",
-        question: "How many core modules are in this course?",
-        options: [
-          { id: "a", text: "3" },
-          { id: "b", text: "5" },
-          { id: "c", text: "7" },
-          { id: "d", text: "10" },
-        ],
-        correctAnswer: "b",
-      },
-      {
-        id: "q4",
-        question: "What is the recommended prerequisite for this course?",
-        options: [
-          { id: "a", text: "Advanced mathematics" },
-          { id: "b", text: "Basic computer literacy" },
-          { id: "c", text: "Prior programming experience" },
-          { id: "d", text: "None of the above" },
-        ],
-        correctAnswer: "b",
-      },
-      {
-        id: "q5",
-        question: "Which learning approach is emphasized in this course?",
-        options: [
-          { id: "a", text: "Theoretical learning only" },
-          { id: "b", text: "Practical application only" },
-          { id: "c", text: "Balanced theoretical and practical approach" },
-          { id: "d", text: "Self-directed learning" },
-        ],
-        correctAnswer: "c",
-      },
-      {
-        id: "q6",
-        question: "What is the expected duration to complete this course?",
-        options: [
-          { id: "a", text: "2-4 weeks" },
-          { id: "b", text: "1-2 months" },
-          { id: "c", text: "3-6 months" },
-          { id: "d", text: "6+ months" },
-        ],
-        correctAnswer: "b",
-      },
-      {
-        id: "q7",
-        question: "Which assessment method is primarily used in this course?",
-        options: [
-          { id: "a", text: "Multiple choice quizzes only" },
-          { id: "b", text: "Project-based assessments" },
-          { id: "c", text: "Peer reviews" },
-          { id: "d", text: "Mixed assessment methods" },
-        ],
-        correctAnswer: "d",
-      },
-      {
-        id: "q8",
-        question: "What level of support is provided to students?",
-        options: [
-          { id: "a", text: "Self-study only" },
-          { id: "b", text: "Email support" },
-          { id: "c", text: "Live sessions and forums" },
-          { id: "d", text: "One-on-one mentoring" },
-        ],
-        correctAnswer: "c",
-      },
-    ],
-  };
-};
+import {
+  getTestQuestions,
+  submitTestResponses,
+  getUserTestResults,
+  checkPreTestCompletion,
+} from "@/lib/actions/students/action";
+import TestResults from "./test-results";
+import { useUser } from "@/app/providers/UserProvider";
 
 export default function TestPage() {
   const params = useParams();
   const router = useRouter();
-  const { courseId, testType } = params;
+  const { courseId, testType, testId } = params;
+
+  const user = useUser();
 
   const [test, setTest] = useState(null);
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -142,14 +49,66 @@ export default function TestPage() {
   const [testCompleted, setTestCompleted] = useState(false);
   const [score, setScore] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showResults, setShowResults] = useState(false);
+  const [testResults, setTestResults] = useState(null);
+  const [preTestLocked, setPreTestLocked] = useState(false);
+  const [preTestLockMessage, setPreTestLockMessage] = useState("");
 
   useEffect(() => {
     const loadTest = async () => {
+      if (!testId || !user) return;
+
       try {
-        const testData = await fetchTestQuestions(courseId, testType);
-        setTest(testData);
-        setTimeRemaining(testData.timeLimit * 60);
-        setLoading(false);
+        setLoading(true);
+        
+        // If this is a post-test, check if pre-test is completed
+        if (testType === "post") {
+          const preTestStatus = await checkPreTestCompletion(user?.user?.user_id || user?.id, courseId);
+          
+          if (preTestStatus.success) {
+            if (!preTestStatus.data.can_take_post_test) {
+              setPreTestLocked(true);
+              setPreTestLockMessage(
+                preTestStatus.data.pre_test_exists 
+                  ? "You must complete the pre-test before taking the post-test."
+                  : "Pre-test is required before taking the post-test."
+              );
+              setLoading(false);
+              return;
+            }
+          } else {
+            toast.error("Failed to check pre-test status");
+            setLoading(false);
+            return;
+          }
+        }
+
+        // Check if user has already taken this test
+        try {
+          const existingResults = await getUserTestResults(user?.user?.user_id || user?.id, testId);
+          if (existingResults.success && existingResults.data) {
+            setTestResults(existingResults.data);
+            setTestCompleted(true);
+            setScore(existingResults.data.summary.percentage_score);
+            setShowResults(true);
+            setLoading(false);
+            return;
+          }
+        } catch (error) {
+          // User hasn't taken this test yet, continue loading
+        }
+
+        const result = await getTestQuestions(testId);
+
+        if (result.success) {
+          setTest(result.data);
+          // Set default time limit of 30 minutes if not specified
+          setTimeRemaining(30 * 60);
+          setLoading(false);
+        } else {
+          toast.error(result.message || "Failed to load test questions");
+          setLoading(false);
+        }
       } catch (error) {
         toast.error("Failed to load test questions");
         setLoading(false);
@@ -157,7 +116,7 @@ export default function TestPage() {
     };
 
     loadTest();
-  }, [courseId, testType]);
+  }, [testId, testType, courseId, user]);
 
   useEffect(() => {
     if (!timeRemaining || testCompleted) return;
@@ -196,25 +155,59 @@ export default function TestPage() {
   };
 
   const handleSubmitTest = async () => {
-    if (isSubmitting) return;
+    if (isSubmitting || !user) return;
 
     setIsSubmitting(true);
 
     try {
-      let correctCount = 0;
-      test.questions.forEach((question) => {
-        if (answers[question.id] === question.correctAnswer) {
-          correctCount++;
+      // Convert answers to the format expected by the API
+      const responses = test.questions.map((question) => {
+        const answer = answers[question.question_id];
+        const response = {
+          question_id: question.question_id,
+        };
+
+        if (question.question_type === "multiple_choice" && answer) {
+          // Find the choice ID based on the selected answer
+          const selectedChoice = question.choices.find(
+            (choice) => choice.choice_text === answer
+          );
+          response.answer_choice_id = selectedChoice
+            ? selectedChoice.choice_id
+            : null;
+        } else if (
+          question.question_type === "true_false" &&
+          answer !== undefined
+        ) {
+          response.answer_boolean = answer ? 1 : 0;
+        } else if (
+          (question.question_type === "essay" ||
+            question.question_type === "short_answer") &&
+          answer
+        ) {
+          response.answer_text = answer;
         }
+
+        return response;
       });
 
-      const scorePercentage = Math.round(
-        (correctCount / test.questions.length) * 100
-      );
+      const result = await submitTestResponses(testId, user?.user?.user_id || user?.id, responses);
 
-      setScore(scorePercentage);
-      setTestCompleted(true);
-      toast.success("Test submitted successfully!");
+      if (result.success) {
+        setScore(result.data.percentage_score);
+        setTestCompleted(true);
+
+        // Fetch detailed results
+        const resultsData = await getUserTestResults(user?.user?.user_id || user?.id, testId);
+        if (resultsData.success) {
+          setTestResults(resultsData.data);
+        }
+
+        setShowResults(true);
+        toast.success("Test submitted successfully!");
+      } else {
+        toast.error(result.message || "Failed to submit test");
+      }
     } catch (error) {
       toast.error("Failed to submit test");
     } finally {
@@ -238,6 +231,18 @@ export default function TestPage() {
     return Object.keys(answers).length;
   };
 
+  // Show results if test is completed
+  if (showResults && testResults) {
+    console.log("TEST RESULTS: ", testResults)
+    return (
+      <TestResults
+        testData={testResults.test}
+        userResponses={testResults.responses}
+        scoreData={testResults.summary}
+      />
+    );
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -249,43 +254,65 @@ export default function TestPage() {
     );
   }
 
-  if (testCompleted) {
+  if (preTestLocked) {
     return (
-      <div className="min-h-screen bg-customgreys-primarybg p-8">
-        <Card className="max-w-4xl mx-auto bg-customgreys-secondarybg border-none">
-          <CardHeader>
-            <CardTitle className="text-3xl text-center font-bold">
-              Test Completed
-            </CardTitle>
-            <CardDescription className="text-center text-lg mt-2">
-              {testType === "pre"
-                ? "Great job completing the pre-test! Now you're ready to start learning."
-                : "Congratulations on completing the course and the post-test!"}
+      <div className="min-h-screen bg-customgreys-primarybg flex items-center justify-center">
+        <Card className="max-w-md w-full">
+          <CardHeader className="text-center">
+            <div className="w-16 h-16 bg-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="w-8 h-8 text-white" />
+            </div>
+            <CardTitle className="text-2xl">Post-Test Locked</CardTitle>
+            <CardDescription className="text-lg mt-2">
+              {preTestLockMessage}
             </CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col items-center py-8">
-            <div className="w-40 h-40 rounded-full bg-gradient-to-br from-customgreys-primarybg to-customgreys-darkerGrey flex items-center justify-center mb-8 shadow-lg">
-              {score >= 70 ? (
-                <CheckCircle className="w-20 h-20 text-green-400" />
-              ) : (
-                <AlertCircle className="w-20 h-20 text-yellow-400" />
-              )}
-            </div>
-            <h3 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary-500 to-primary-700 bg-clip-text text-transparent">
-              {score}%
-            </h3>
-            <p className="text-customgreys-dirtyGrey mb-8 text-center max-w-md">
-              {score >= 70
-                ? "Excellent work! You've demonstrated a strong understanding of the material."
-                : "Keep learning! There's always room for improvement."}
-            </p>
-            <div className="w-full max-w-md mb-8">
-              <div className="flex justify-between text-sm mb-2">
-                <span>Your Score</span>
-                <span>{score}%</span>
+          <CardContent className="text-center">
+            <div className="bg-customgreys-primarybg p-4 rounded-lg mb-6">
+              <div className="text-sm text-customgreys-dirtyGrey">
+                <p className="mb-2">To unlock the post-test, you need to:</p>
+                <ol className="list-decimal list-inside space-y-1 text-left">
+                  <li>Complete the pre-test first</li>
+                  <li>Finish the course content</li>
+                  <li>Then return to take the post-test</li>
+                </ol>
               </div>
-              <Progress value={score} className="h-4" />
             </div>
+          </CardContent>
+          <CardFooter className="flex flex-col gap-3">
+            <Button
+              onClick={() => router.push(`/student/courses/${courseId}/tests`)}
+              className="w-full bg-primary-700 hover:bg-primary-600"
+            >
+              <FileText className="mr-2 h-4 w-4" />
+              Go to Tests Page
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => router.push(`/student/courses/${courseId}`)}
+              className="w-full bg-customgreys-primarybg border-customgreys-dirtyGrey text-white-50 hover:bg-customgreys-darkerGrey"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Course
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
+
+  if (testCompleted && !showResults) {
+    return (
+      <div className="min-h-screen bg-customgreys-primarybg flex items-center justify-center">
+        <Card className="max-w-md w-full">
+          <CardHeader className="text-center">
+            <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-8 h-8 text-white" />
+            </div>
+            <CardTitle className="text-2xl">Test Completed!</CardTitle>
+            <CardDescription>Your score: {score}%</CardDescription>
+          </CardHeader>
+          <CardContent className="text-center">
             <div className="grid grid-cols-2 gap-6 mb-8 text-center">
               <div className="bg-customgreys-primarybg p-4 rounded-lg">
                 <div className="text-2xl font-bold text-primary-500">
@@ -323,7 +350,9 @@ export default function TestPage() {
   const question = test.questions[currentQuestion];
   const progress = ((currentQuestion + 1) / test.questions.length) * 100;
   const isLastQuestion = currentQuestion === test.questions.length - 1;
-  const allQuestionsAnswered = test.questions.every((q) => answers[q.id]);
+  const allQuestionsAnswered = test.questions.every(
+    (q) => answers[q.question_id]
+  );
 
   return (
     <div className="min-h-screen bg-customgreys-primarybg">
@@ -335,9 +364,11 @@ export default function TestPage() {
             <div className="mb-8">
               <div className="flex justify-between items-start mb-6">
                 <div>
-                  <h1 className="text-3xl font-bold mb-2">{test.title}</h1>
+                  <h1 className="text-3xl font-bold mb-2">{test.test_title}</h1>
                   <p className="text-customgreys-dirtyGrey text-lg">
-                    {test.description}
+                    {testType === "pre"
+                      ? "Let's see how much you know before starting the course."
+                      : "Test your knowledge after completing the course."}
                   </p>
                 </div>
                 <div className="flex items-center gap-3 bg-customgreys-secondarybg px-6 py-3 rounded-xl shadow-lg">
@@ -369,7 +400,7 @@ export default function TestPage() {
             </div>
 
             {/* Question Card */}
-            <Card className="bg-customgreys-secondarybg border-none shadow-xl">
+            <Card className="mb-8">
               <CardHeader className="pb-6">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-10 h-10 bg-primary-700 rounded-full flex items-center justify-center text-white font-bold">
@@ -378,43 +409,110 @@ export default function TestPage() {
                   <div className="h-px bg-customgreys-dirtyGrey flex-1" />
                 </div>
                 <CardTitle className="text-xl leading-relaxed">
-                  {question.question}
+                  {question.question_text}
                 </CardTitle>
               </CardHeader>
               <CardContent className="pb-8">
-                <RadioGroup
-                  value={answers[question.id] || ""}
-                  onValueChange={(value) =>
-                    handleAnswerChange(question.id, value)
-                  }
-                  className="space-y-4"
-                >
-                  {question.options.map((option, index) => (
-                    <div
-                      key={option.id}
-                      className="group relative bg-customgreys-primarybg/50 hover:bg-customgreys-primarybg border border-transparent hover:border-primary-700/30 rounded-xl p-4 transition-all duration-200 cursor-pointer"
-                    >
+                {question.question_type === "multiple_choice" && (
+                  <RadioGroup
+                    value={answers[question.question_id] || ""}
+                    onValueChange={(value) =>
+                      handleAnswerChange(question.question_id, value)
+                    }
+                    className="space-y-4"
+                  >
+                    {question.choices.map((choice, index) => (
+                      <div
+                        key={choice.choice_id}
+                        className="group relative bg-customgreys-primarybg/50 hover:bg-customgreys-primarybg border border-transparent hover:border-primary-700/30 rounded-xl p-4 transition-all duration-200 cursor-pointer"
+                      >
+                        <div className="flex items-center space-x-4">
+                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-customgreys-secondarybg text-sm font-medium">
+                            {String.fromCharCode(65 + index)}
+                          </div>
+                          <RadioGroupItem
+                            value={choice.choice_text}
+                            id={`option-${choice.choice_id}`}
+                            className="data-[state=checked]:bg-primary-700 data-[state=checked]:border-primary-700"
+                          />
+                          <Label
+                            htmlFor={`option-${choice.choice_id}`}
+                            className="flex-grow cursor-pointer text-base leading-relaxed"
+                          >
+                            {choice.choice_text}
+                          </Label>
+                        </div>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                )}
+
+                {question.question_type === "true_false" && (
+                  <RadioGroup
+                    value={answers[question.question_id] || ""}
+                    onValueChange={(value) =>
+                      handleAnswerChange(question.question_id, value === "true")
+                    }
+                    className="space-y-4"
+                  >
+                    <div className="group relative bg-customgreys-primarybg/50 hover:bg-customgreys-primarybg border border-transparent hover:border-primary-700/30 rounded-xl p-4 transition-all duration-200 cursor-pointer">
                       <div className="flex items-center space-x-4">
                         <div className="flex items-center justify-center w-8 h-8 rounded-full bg-customgreys-secondarybg text-sm font-medium">
-                          {String.fromCharCode(65 + index)}
+                          T
                         </div>
                         <RadioGroupItem
-                          value={option.id}
-                          id={`option-${option.id}`}
+                          value="true"
+                          id="option-true"
                           className="data-[state=checked]:bg-primary-700 data-[state=checked]:border-primary-700"
                         />
                         <Label
-                          htmlFor={`option-${option.id}`}
+                          htmlFor="option-true"
                           className="flex-grow cursor-pointer text-base leading-relaxed"
                         >
-                          {option.text}
+                          True
                         </Label>
                       </div>
                     </div>
-                  ))}
-                </RadioGroup>
+                    <div className="group relative bg-customgreys-primarybg/50 hover:bg-customgreys-primarybg border border-transparent hover:border-primary-700/30 rounded-xl p-4 transition-all duration-200 cursor-pointer">
+                      <div className="flex items-center space-x-4">
+                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-customgreys-secondarybg text-sm font-medium">
+                          F
+                        </div>
+                        <RadioGroupItem
+                          value="false"
+                          id="option-false"
+                          className="data-[state=checked]:bg-primary-700 data-[state=checked]:border-primary-700"
+                        />
+                        <Label
+                          htmlFor="option-false"
+                          className="flex-grow cursor-pointer text-base leading-relaxed"
+                        >
+                          False
+                        </Label>
+                      </div>
+                    </div>
+                  </RadioGroup>
+                )}
+
+                {(question.question_type === "essay" ||
+                  question.question_type === "short_answer") && (
+                  <div className="space-y-4">
+                    <textarea
+                      value={answers[question.question_id] || ""}
+                      onChange={(e) =>
+                        handleAnswerChange(question.question_id, e.target.value)
+                      }
+                      placeholder={`Enter your ${
+                        question.question_type === "essay"
+                          ? "detailed answer"
+                          : "answer"
+                      } here...`}
+                      className="w-full p-4 bg-customgreys-primarybg border border-customgreys-dirtyGrey rounded-lg resize-none min-h-[120px] focus:outline-none focus:border-primary-700"
+                    />
+                  </div>
+                )}
               </CardContent>
-              <CardFooter className="flex justify-between pt-6">
+              <CardFooter className="flex justify-between">
                 <Button
                   variant="outline"
                   onClick={handlePrevQuestion}
@@ -446,7 +544,7 @@ export default function TestPage() {
         </div>
 
         {/* Right Sidebar */}
-        <div className="w-80 bg-customgreys-secondarybg border-l border-customgreys-dirtyGrey/20 p-6 overflow-y-auto">
+        <div className="w-80 bg-customgreys-secondarybg p-6 overflow-y-auto">
           <div className="sticky top-0">
             <div className="mb-6">
               <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
@@ -463,12 +561,12 @@ export default function TestPage() {
             {/* Question Grid */}
             <div className="grid grid-cols-4 gap-3 mb-6">
               {test.questions.map((q, index) => {
-                const isAnswered = answers[q.id];
+                const isAnswered = answers[q.question_id];
                 const isCurrent = index === currentQuestion;
 
                 return (
                   <button
-                    key={q.id}
+                    key={q.question_id}
                     onClick={() => handleQuestionNavigation(index)}
                     className={`
                       relative w-12 h-12 rounded-lg font-semibold text-sm transition-all duration-200 
