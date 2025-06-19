@@ -138,7 +138,7 @@ const TopicModal = () => {
 
   useEffect(() => {
     if (formData?.file) {
-      const fullFileUrl = `${process.env.NEXT_PUBLIC_ROOT_URL}file_serve.php?file=${formData.file}`;
+      const fullFileUrl = `${process.env.NEXT_PUBLIC_ROOT_URL}file.php?file=${formData.file}`;
       setFiles([
         {
           source: fullFileUrl,
@@ -357,7 +357,7 @@ const TopicModal = () => {
                     currentFile.source &&
                     formData?.file &&
                     currentFile.source ===
-                      `${process.env.NEXT_PUBLIC_ROOT_URL}file_serve.php?file=${formData.file}`
+                      `${process.env.NEXT_PUBLIC_ROOT_URL}file.php?file=${formData.file}`
                   ) {
                     setIsExistingFile(true);
                     setUploadedFileName(formData.file);
@@ -427,7 +427,8 @@ const TopicModal = () => {
                       headers: {
                         Origin:
                           "http://localhost:3000" ||
-                          "http://192.168.20.33:3000",
+                          "http://192.168.1.2:3000",
+                          
                         "X-Requested-With": "XMLHttpRequest",
                         Accept: "application/pdf,video/*",
                       },
@@ -438,7 +439,7 @@ const TopicModal = () => {
                         const blob = await response.blob();
 
                         progress(true, 0.75, 1);
-                        const fileName = source.includes("file_serve.php")
+                        const fileName = source.includes("file.php")
                           ? new URLSearchParams(new URL(source).search).get(
                               "file"
                             )

@@ -50,15 +50,11 @@ const CourseCard = ({ course, onGoToCourse, onApplyCourse, enrolling }) => {
             className={`${
               course.enrolled === 1
                 ? "text-green-600 font-bold text-md"
-                : course.isAdmitted === 0
-                ? "text-yellow-600 font-bold text-md"
                 : "course-card__price"
             }`}
           >
             {course.enrolled === 1 ? (
               "Enrolled"
-            ) : course.isAdmitted === 0 ? (
-              "Pending Approval"
             ) : (
               <Button
                 className="text-white-100 bg-green-600 hover:bg-green-700 shadow-md shadow-gray-800"

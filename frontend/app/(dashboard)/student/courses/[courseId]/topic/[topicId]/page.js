@@ -17,7 +17,7 @@ import "react-pdf/dist/esm/Page/TextLayer.css";
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from "lucide-react";
 import { useAppStore, useNavigationStore } from "@/store/stateStore";
 import { toast } from "sonner";
-import { updateTopicProgress } from "@/lib/actions/students/action";
+import { updateTopicProgress, addToTopicProgress } from "@/lib/actions/students/action";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
@@ -55,27 +55,36 @@ const Course = () => {
 
   const handleProgress = (played) => {
     if (played >= 0.8) {
-      markAsComplete();
+      markAsComplete(true);
     } else if (!hasTopicProgress) {
-      markAsComplete();
+      markAsComplete(true);
     }
   };
 
-  const markAsComplete = async () => {
+  const markAsComplete = async (showToast = true) => {
     if (hasShownToast) return;
 
     try {
+      // First, ensure topic progress exists for this user
+      if (!hasTopicProgress) {
+        const { success: addSuccess } = await addToTopicProgress(topicId, user?.user.user_id);
+        if (!addSuccess) {
+          return showToast ? toast.error("Failed to initialize topic progress") : null;
+        }
+      }
+
       const { success, message } = await updateTopicProgress(topicId);
 
       if (!success) {
-        return toast.error(message);
+        return showToast ? toast.error(message) : null;
       }
 
       setHasShownToast(true);
       refetch();
-      return toast.success("Topic Completed");
+      console.log(message);
+      return showToast ? toast.success("Topic Completed") : null;
     } catch (error) {
-      toast.error(error.message || "Failed to mark as complete");
+      return showToast ? toast.error(error.message || "Failed to mark as complete") : null;
     }
   };
 
@@ -100,7 +109,7 @@ const Course = () => {
       return (
         <ReactPlayer
           ref={playerRef}
-          url={`${process.env.NEXT_PUBLIC_ROOT_URL}file_serve.php?file=${currentTopic?.materials?.[0]?.file_name}`}
+          url={`${process.env.NEXT_PUBLIC_ROOT_URL}file.php?file=${currentTopic?.materials?.[0]?.file_name}`}
           controls
           width="100%"
           height="100%"
@@ -117,7 +126,7 @@ const Course = () => {
     } else if (fileType === "pdf") {
       return (
         <PDFViewer
-          url={`${process.env.NEXT_PUBLIC_ROOT_URL}file_serve.php?file=${currentTopic?.materials?.[0]?.file_name}`}
+          url={`${process.env.NEXT_PUBLIC_ROOT_URL}file.php?file=${currentTopic?.materials?.[0]?.file_name}`}
           onProgress={handleProgress}
         />
       );
@@ -133,6 +142,34 @@ const Course = () => {
   useEffect(() => {
     if (course) setIsNavigating(false);
   }, []);
+
+  // Auto-mark topic as complete when page loads (especially for first topic redirects)
+  useEffect(() => {
+    if (course && topicId && !hasTopicProgress) {
+      // Check if this is the first topic of the first lesson (the one students are redirected to)
+      const isFirstTopic = course.lessons && 
+        course.lessons.length > 0 && 
+        course.lessons[0].topics && 
+        course.lessons[0].topics.length > 0 && 
+        course.lessons[0].topics[0].topic_id === topicId;
+
+      if (isFirstTopic) {
+        // Add a small delay to ensure the page is fully loaded
+        const timer = setTimeout(() => {
+          markAsComplete(false); // Don't show toast for auto-completion
+        }, 2000); // 2 second delay
+
+        return () => clearTimeout(timer);
+      } else {
+        // For other topics, auto-complete after a longer delay to give students time to interact
+        const timer = setTimeout(() => {
+          markAsComplete(false); // Don't show toast for auto-completion
+        }, 30000); // 30 second delay for other topics
+
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [course, topicId, hasTopicProgress]);
 
   if (isLoading || isNavigating) return <Loading />;
 
@@ -224,7 +261,7 @@ const Course = () => {
                   {currentTopic?.materials?.map((material) => (
                     <div key={material.material_id} className="mb-2">
                       <a
-                        href={`${process.env.NEXT_PUBLIC_ROOT_URL}file_serve.php?file=${material.file_name}`}
+                        href={`${process.env.NEXT_PUBLIC_ROOT_URL}file.php?file=${material.file_name}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-500 hover:underline"

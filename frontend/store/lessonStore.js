@@ -9,6 +9,68 @@ const createActions = (set) => ({
       },
     })),
 
+  // Add tests-related actions
+  setTests: (tests) =>
+    set((state) => ({
+      courseEditor: {
+        ...state.courseEditor,
+        tests,
+      },
+    })),
+
+  addTest: ({ lessonIndex, topicIndex, test }) =>
+    set((state) => ({
+      courseEditor: {
+        ...state.courseEditor,
+        lessons: state.courseEditor.lessons.map((lesson, lIndex) => {
+          if (lIndex === lessonIndex) {
+            return {
+              ...lesson,
+              topics: lesson.topics.map((topic, tIndex) => {
+                if (tIndex === topicIndex) {
+                  return {
+                    ...topic,
+                    tests: [...(topic.tests || []), test],
+                  };
+                }
+                return topic;
+              }),
+            };
+          }
+          return lesson;
+        }),
+      },
+    })),
+
+  // Add course-level test management
+  addCourseTest: (test) =>
+    set((state) => ({
+      courseEditor: {
+        ...state.courseEditor,
+        tests: [...(state.courseEditor.tests || []), test],
+      },
+    })),
+
+  updateCourseTest: (testId, updatedTest) =>
+    set((state) => ({
+      courseEditor: {
+        ...state.courseEditor,
+        tests: (state.courseEditor.tests || []).map((test) =>
+          test.test_id === testId ? { ...test, ...updatedTest } : test
+        ),
+      },
+    })),
+
+  deleteCourseTest: (testId) =>
+    set((state) => ({
+      courseEditor: {
+        ...state.courseEditor,
+        tests: (state.courseEditor.tests || []).filter(
+          (test) => test.test_id !== testId
+        ),
+      },
+    })),
+
   openTopicModal: ({ lessonIndex, topicIndex }) =>
     set((state) => ({
       courseEditor: {
@@ -203,30 +265,6 @@ const createActions = (set) => ({
       },
     })),
 
-  addTest: ({ lessonIndex, topicIndex, test }) =>
-    set((state) => ({
-      courseEditor: {
-        ...state.courseEditor,
-        lessons: state.courseEditor.lessons.map((lesson, lIndex) => {
-          if (lIndex === lessonIndex) {
-            return {
-              ...lesson,
-              topics: lesson.topics.map((topic, tIndex) => {
-                if (tIndex === topicIndex) {
-                  return {
-                    ...topic,
-                    tests: [...(topic.tests || []), test],
-                  };
-                }
-                return topic;
-              }),
-            };
-          }
-          return lesson;
-        }),
-      },
-    })),
-
   editTest: ({ lessonIndex, topicIndex, testIndex, test }) =>
     set((state) => ({
       courseEditor: {
@@ -289,6 +327,7 @@ const createActions = (set) => ({
 const useLessonStore = create((set) => ({
   courseEditor: {
     lessons: [],
+    tests: [],
     isTopicModalOpen: false,
     isLessonModalOpen: false,
     isTestModalOpen: false,

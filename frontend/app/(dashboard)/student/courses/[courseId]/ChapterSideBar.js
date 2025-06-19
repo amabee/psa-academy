@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect, useRef } from "react";
 import {
   ChevronDown,
@@ -6,20 +8,25 @@ import {
   CheckCircle,
   Trophy,
   FileVideo,
+  ClipboardCheck,
 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { cn, getFileType } from "@/lib/utils";
 import { useSidebar } from "@/components/ui/sidebar";
 import { useUser } from "@/app/providers/UserProvider";
 import { getCourseLessonContents } from "@/queries/student/student_course";
-import { useAppStore, useNavigationStore } from "@/store/stateStore";
+import { useNavigationStore } from "@/store/stateStore";
 import { toast } from "sonner";
-import { updateTopicProgress } from "@/lib/actions/students/action";
+import {
+  addToTopicProgress,
+  updateTopicProgress,
+} from "@/lib/actions/students/action";
 
 const ChaptersSidebar = () => {
   const router = useRouter();
   const { setOpen } = useSidebar();
   const [expandedSections, setExpandedSections] = useState([]);
+  const [hasAutoAddedFirstTopic, setHasAutoAddedFirstTopic] = useState(false);
 
   const params = useParams();
   const courseId = params.courseId;
@@ -44,6 +51,27 @@ const ChaptersSidebar = () => {
     return topic?.progress || null;
   }, null);
 
+  // Auto-add first topic to progress
+  useEffect(() => {
+    if (
+      course &&
+      !hasAutoAddedFirstTopic &&
+      course.lessons &&
+      course.lessons.length > 0 &&
+      course.lessons[0].topics &&
+      course.lessons[0].topics.length > 0 &&
+      user?.user?.user_id
+    ) {
+      const firstTopic = course.lessons[0].topics[0];
+
+      // Check if the current topicId is the first topic
+      if (topicId === firstTopic.topic_id) {
+        handleAddToTopicProgress(firstTopic.topic_id, user.user.user_id);
+        setHasAutoAddedFirstTopic(true);
+      }
+    }
+  }, [course, topicId, user?.user?.user_id, hasAutoAddedFirstTopic]);
+
   const handleUpdateTopicProgress = async (topicId) => {
     try {
       const currentTopic = course?.lessons
@@ -61,10 +89,34 @@ const ChaptersSidebar = () => {
       }
 
       refetch();
+      console.log(message);
       return toast.success("Topic progress updated");
     } catch (error) {
       toast.error(error.message || "Failed to update progress");
     }
+  };
+
+  const handleAddToTopicProgress = async (topicId, userId) => {
+    try {
+      const { success, message } = await addToTopicProgress(topicId, userId);
+
+      if (!success) {
+        return toast.error(message);
+      }
+
+      refetch();
+    } catch (error) {
+      console.error("Error adding to topic progress:", error);
+    }
+  };
+
+  const handleTestNavigation = (testType) => {
+    if (!courseId) return;
+
+    setIsNavigating(true);
+    router.push(`/student/courses/${courseId}/tests`, {
+      scroll: false,
+    });
   };
 
   const sidebarRef = useRef(null);
@@ -90,6 +142,8 @@ const ChaptersSidebar = () => {
       router.push(`/student/courses/${courseId}/topic/${topicId}`, {
         scroll: false,
       });
+
+      handleAddToTopicProgress(topicId, user?.user.user_id);
     }
   };
 
@@ -101,16 +155,20 @@ const ChaptersSidebar = () => {
       </div>
       <div>
         <div className="chapters-sidebar__section">
-          <div className="chapters-sidebar__section-header">
+          <div
+            className="chapters-sidebar__section-header cursor-pointer"
+            onClick={() => handleTestNavigation("pre")}
+          >
             <div className="chapters-sidebar__section-title-wrapper">
-              <p className=" text-lg">PRE-TEST</p>
+              <p className="text-lg flex items-center">
+                <ClipboardCheck className="mr-2 h-5 w-5 text-primary-700" />
+                PRE-TEST
+              </p>
             </div>
             <h3 className="chapters-sidebar__section-title">
               How much do you know?
             </h3>
           </div>
-          <hr className="chapters-sidebar__divider" />
-
           <hr className="chapters-sidebar__divider" />
         </div>
       </div>
@@ -131,16 +189,20 @@ const ChaptersSidebar = () => {
 
       <div>
         <div className="chapters-sidebar__section">
-          <div className="chapters-sidebar__section-header">
+          <div
+            className="chapters-sidebar__section-header cursor-pointer"
+            onClick={() => handleTestNavigation("post")}
+          >
             <div className="chapters-sidebar__section-title-wrapper">
-              <p className=" text-lg">POST-TEST</p>
+              <p className="text-lg flex items-center">
+                <ClipboardCheck className="mr-2 h-5 w-5 text-primary-700" />
+                POST-TEST
+              </p>
             </div>
             <h3 className="chapters-sidebar__section-title">
               Learning Evaluation
             </h3>
           </div>
-          <hr className="chapters-sidebar__divider" />
-
           <hr className="chapters-sidebar__divider" />
         </div>
       </div>
@@ -335,4 +397,5 @@ const Topics = ({
     </li>
   );
 };
+
 export default ChaptersSidebar;

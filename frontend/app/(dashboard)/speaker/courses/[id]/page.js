@@ -34,10 +34,17 @@ import FilePondPluginFileValidateType from "filepond-plugin-file-validate-type";
 import { ACCEPTED_IMAGE_TYPES } from "@/lib/utils";
 import useLessonStore from "@/store/lessonStore";
 import { Separator } from "@radix-ui/react-context-menu";
-import { generateLessonID, updateCourse } from "@/lib/actions/speaker/action";
+import {
+  generateLessonID,
+  updateCourse,
+  createTest,
+  updateTest,
+  deleteTest,
+} from "@/lib/actions/speaker/action";
 import { useUser } from "@/app/providers/UserProvider";
 import { toast } from "sonner";
 import TestModal from "../../components/TestModalComponent";
+import TestDisplayComponent from "./testdisplay";
 
 registerPlugin(
   FilePondPluginImageExifOrientation,
@@ -59,6 +66,8 @@ const CourseEditor = () => {
 
   const { data: categories, isLoading, isError } = useCategories();
   const [isTestModalOpen, setIsTestModalOpen] = useState(false);
+  const [editingTest, setEditingTest] = useState(null);
+  const [editingTestId, setEditingTestId] = useState(null);
 
   const [files, setFiles] = useState(
     course?.course_image
@@ -83,13 +92,18 @@ const CourseEditor = () => {
   const [isImageChanged, setIsImageChanged] = useState(false);
   const [isGeneratingLessonID, setIsGeneratingLessonID] = useState(false);
 
+  // New state for tracking changes
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [originalFormData, setOriginalFormData] = useState(null);
+
   const lessons = useLessonStore((state) => state.courseEditor.lessons);
+  const tests = useLessonStore((state) => state.courseEditor.tests);
+  const setTests = useLessonStore((state) => state.setTests);
 
   const [formData, setFormData] = useState({
     courseTitle: "",
     courseDescription: "",
     courseCategory: 0,
-    courseImage: "",
     courseStatus: 0,
   });
 
@@ -113,35 +127,83 @@ const CourseEditor = () => {
         (category) => category.category_id === course.category_id
       );
 
-      setFormData((prev) => ({
-        ...prev,
+      const initialData = {
         courseTitle: course.title,
         courseDescription: course.description,
         courseCategory: course?.category_id,
         courseStatus: course?.course_status,
-      }));
+      };
+
+      setFormData(initialData);
+
+      // Store original data for comparison if not already set
+      if (!originalFormData) {
+        setOriginalFormData(initialData);
+      }
 
       if (course.lessons) {
         setLessons(course.lessons);
+      }
+
+      // Load tests if they exist in the course data
+      if (course.tests) {
+        setTests(course.tests);
       }
 
       if (matchingCategory) {
         setSelectedCategoryLabel(matchingCategory.category_name);
       }
     }
-  }, [course, categories]);
+  }, [course, categories, originalFormData]);
 
   useEffect(() => {
     setIsCreating(false);
     setIsRedirecting(false);
   }, []);
 
+  // Function to check if there are unsaved changes
+  const checkForChanges = (newFormData = formData) => {
+    if (!originalFormData) return false;
+
+    return (
+      newFormData.courseTitle !== originalFormData.courseTitle ||
+      newFormData.courseDescription !== originalFormData.courseDescription ||
+      newFormData.courseCategory !== originalFormData.courseCategory ||
+      newFormData.courseStatus !== originalFormData.courseStatus ||
+      isImageChanged
+    );
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => {
+      const newData = {
+        ...prev,
+        [name]: value,
+      };
+
+      // Check if there are unsaved changes
+      const hasChanges = checkForChanges(newData);
+      setHasUnsavedChanges(hasChanges);
+
+      return newData;
+    });
+  };
+
+  // Handle course status toggle
+  const handleStatusToggle = () => {
+    setFormData((prev) => {
+      const newData = {
+        ...prev,
+        courseStatus: prev.courseStatus === "draft" ? "publish" : "draft",
+      };
+
+      // Check if there are unsaved changes
+      const hasChanges = checkForChanges(newData);
+      setHasUnsavedChanges(hasChanges);
+
+      return newData;
+    });
   };
 
   const {
@@ -154,6 +216,13 @@ const CourseEditor = () => {
 
   const onUpdate = async (e) => {
     e.preventDefault();
+
+    // Check if there are any changes to save
+    if (!hasUnsavedChanges) {
+      toast.info("No changes to save");
+      return;
+    }
+
     try {
       setIsCreating(true);
 
@@ -175,6 +244,16 @@ const CourseEditor = () => {
       }
 
       toast.success("Course updated successfully");
+
+      // Update the original data to reflect the new saved state
+      setOriginalFormData({
+        courseTitle: formData.courseTitle,
+        courseDescription: formData.courseDescription,
+        courseCategory: formData.courseCategory,
+        courseStatus: formData.courseStatus,
+      });
+
+      setHasUnsavedChanges(false);
     } catch (error) {
       toast.error("An error occurred while updating the course");
     } finally {
@@ -205,12 +284,152 @@ const CourseEditor = () => {
     }
   };
 
-  const handleSaveTest = (test) => {
-    console.log("Saved Test:", test);
-    // toast.success(`${test.type.toUpperCase()} Test created successfully`);
-    toast.success("Test Saved!");
+  const handleSaveTest = async (testData) => {
+    try {
+      const apiTestData = {
+        course_id: id,
+        test_title: testData.test_title,
+        test_type: testData.test_type,
+        questions: testData.questions.map((question) => ({
+          question_text: question.text,
+          question_type: "multiple_choice",
+          points: 1,
+          choices: question.answers.map((answer) => ({
+            choice_text: answer.text,
+            is_correct: answer.id === question.correctAnswerId ? 1 : 0,
+          })),
+        })),
+      };
+
+      let result;
+      if (editingTestId) {
+        apiTestData.test_id = editingTestId;
+        result = await updateTest(apiTestData);
+      } else {
+        result = await createTest(apiTestData);
+      }
+
+      if (result.success) {
+        const currentTests = useLessonStore.getState().courseEditor.tests || [];
+
+        const formattedTestData = {
+          test_id: editingTestId || result.data.test_id || `test_${Date.now()}`,
+          test_title: testData.test_title,
+          test_type: testData.test_type,
+          course_id: id,
+          created_at: editingTestId
+            ? currentTests.find((t) => t.test_id === editingTestId)?.created_at
+            : new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          // Store questions in the format your display component expects
+          questions: testData.questions.map((question) => ({
+            question_id: question.id,
+            question_text: question.text,
+            question_type: "multiple_choice",
+            points: 1,
+            choices: question.answers.map((answer) => ({
+              choice_id: answer.id,
+              choice_text: answer.text,
+              is_correct: answer.id === question.correctAnswerId ? 1 : 0,
+            })),
+          })),
+        };
+
+        if (editingTestId) {
+          // Update existing test
+          const updatedTests = currentTests.map((test) =>
+            test.test_id === editingTestId ? formattedTestData : test
+          );
+          setTests(updatedTests);
+        } else {
+          // Add new test
+          setTests([...currentTests, formattedTestData]);
+        }
+
+        toast.success(
+          `${testData.test_type === "pre" ? "Pre-Test" : "Post-Test"} ${
+            editingTestId ? "updated" : "created"
+          } successfully`
+        );
+      } else {
+        console.log("TEST DATA: ", testData);
+        toast.error(result.message || "Failed to save test");
+      }
+    } catch (error) {
+      console.error("Error saving test:", error);
+      toast.error("An error occurred while saving the test");
+    }
+
+    // Reset editing states
+    setEditingTest(null);
+    setEditingTestId(null);
     setIsTestModalOpen(false);
   };
+
+  const handleDeleteTest = async (testId) => {
+    try {
+      const result = await deleteTest(testId);
+
+      if (result.success) {
+        const currentTests = useLessonStore.getState().courseEditor.tests || [];
+        const updatedTests = currentTests.filter(
+          (test) => test.test_id !== testId
+        );
+        setTests(updatedTests);
+        toast.success("Test deleted successfully");
+      } else {
+        toast.error(result.message || "Failed to delete test");
+      }
+    } catch (error) {
+      console.error("Error deleting test:", error);
+      toast.error("An error occurred while deleting the test");
+    }
+  };
+
+  const handleEditTest = (testID) => {
+    setEditingTestId(testID);
+    setEditingTest(null);
+    setIsTestModalOpen(true);
+  };
+
+  // Handle file upload changes
+  const handleFileUpdate = (fileItems) => {
+    setFiles(fileItems);
+    const file = fileItems[0]?.file;
+    const fileName = fileItems[0]?.filename;
+    if (file) {
+      const isActuallyChanged = course?.course_image !== fileName;
+      setFormData((prev) => ({
+        ...prev,
+        courseImage: {
+          file: file,
+          fileName: fileName,
+        },
+      }));
+
+      setIsImageChanged(isActuallyChanged);
+
+      // Check for unsaved changes including image
+      const hasChanges = checkForChanges() || isActuallyChanged;
+      setHasUnsavedChanges(hasChanges);
+    }
+  };
+
+  // Separate tests by type
+  const preTests =
+    tests?.filter(
+      (test) => test.test_type === "pre-test" || test.test_type === "pre"
+    ) || [];
+
+  const postTests =
+    tests?.filter(
+      (test) => test.test_type === "post-test" || test.test_type === "post"
+    ) || [];
+
+  // Check if there are any tests
+  const hasTests = tests && tests.length > 0;
+  const hasPreTests = preTests.length > 0;
+  const hasPostTests = postTests.length > 0;
 
   if (isError) return <p>Something went wrong</p>;
   if (isLoading) return <Loading />;
@@ -234,7 +453,9 @@ const CourseEditor = () => {
       >
         <Header
           title="Course Setup"
-          subtitle="Complete all fields and save your course"
+          subtitle={`Complete all fields and save your course${
+            hasUnsavedChanges ? " • Unsaved changes" : ""
+          }`}
           rightElement={
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-4">
@@ -250,13 +471,7 @@ const CourseEditor = () => {
                                 : "bg-gray-300"
                             }
                           `}
-                  onClick={() =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      courseStatus:
-                        prev.courseStatus === "draft" ? "publish" : "draft",
-                    }))
-                  }
+                  onClick={handleStatusToggle}
                 >
                   <div
                     className={`
@@ -272,8 +487,12 @@ const CourseEditor = () => {
               </div>
               <Button
                 type="submit"
-                className="bg-primary-700 hover:bg-primary-600 flex items-center justify-center"
-                disabled={isCreating}
+                className={`flex items-center justify-center ${
+                  hasUnsavedChanges
+                    ? "bg-primary-700 hover:bg-primary-600"
+                    : "bg-gray-500 hover:bg-gray-400 cursor-not-allowed"
+                }`}
+                disabled={isCreating || !hasUnsavedChanges}
               >
                 {isCreating ? (
                   <>
@@ -294,15 +513,15 @@ const CourseEditor = () => {
                       <path
                         className="opacity-75"
                         fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C6.48 0 0 6.48 0 12h4zm2 5.291V16a8 8 0 018 8v-4c-2.21 0-4-1.79-4-4h-4z"
+                        d="M4 12a8 8 0 018-8V0C6.48 0 0 6.48 0 12h4zm2 5.291V16a8 8 0 018 8v-4c-2.21 0-4-1.79-4z"
                       ></path>
                     </svg>
                     Saving Changes...
                   </>
-                ) : course ? (
+                ) : hasUnsavedChanges ? (
                   "Save Changes"
                 ) : (
-                  "Create Course"
+                  "No Changes to Save"
                 )}
               </Button>
             </div>
@@ -362,12 +581,14 @@ const CourseEditor = () => {
                 <Select
                   value={formData.courseCategory?.toString() || 99}
                   onValueChange={(value) => {
-                    setFormData((prev) => ({
-                      ...prev,
+                    const newFormData = {
+                      ...formData,
                       courseCategory: value
                         ? parseInt(value)
                         : course.category_id,
-                    }));
+                    };
+
+                    setFormData(newFormData);
 
                     const selectedCategory = categories.find(
                       (category) => category.category_id.toString() === value
@@ -386,6 +607,10 @@ const CourseEditor = () => {
                           : "Select a category"
                       );
                     }
+
+                    // Check for unsaved changes
+                    const hasChanges = checkForChanges(newFormData);
+                    setHasUnsavedChanges(hasChanges);
                   }}
                 >
                   <SelectTrigger className="w-full h-10 border-none bg-customgreys-primarybg p-4">
@@ -419,23 +644,7 @@ const CourseEditor = () => {
 
               <FilePond
                 files={files}
-                onupdatefiles={(fileItems) => {
-                  setFiles(fileItems);
-                  const file = fileItems[0]?.file;
-                  const fileName = fileItems[0]?.filename;
-                  if (file) {
-                    const isActuallyChanged = course?.course_image !== fileName;
-                    setFormData((prev) => ({
-                      ...prev,
-                      courseImage: {
-                        file: file,
-                        fileName: fileName,
-                      },
-                    }));
-
-                    setIsImageChanged(isActuallyChanged);
-                  }
-                }}
+                onupdatefiles={handleFileUpdate}
                 server={{
                   load: (source, load, error, progress, abort, headers) => {
                     progress(true, 0, 1);
@@ -486,7 +695,9 @@ const CourseEditor = () => {
           </div>
           <div className="bg-customgreys-darkGrey mt-4 md:mt-0 p-4 rounded-lg basis-1/2">
             <div className="flex justify-between items-center mb-2">
-              <h2 className="text-2xl font-semibold text-white">Lessons</h2>
+              <h2 className="text-2xl font-semibold text-white">
+                Course Content
+              </h2>
               <div className="flex items-center space-x-2">
                 <Button
                   type="button"
@@ -524,7 +735,11 @@ const CourseEditor = () => {
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => setIsTestModalOpen(true)}
+                  onClick={() => {
+                    setEditingTest(null);
+                    setEditingTestId(null);
+                    setIsTestModalOpen(true);
+                  }}
                   className="border-none text-primary-700 group"
                 >
                   <Plus className="mr-1 h-4 w-4 text-primary-700 group-hover:white-100" />
@@ -535,12 +750,72 @@ const CourseEditor = () => {
               </div>
             </div>
 
+            {/* Content summary */}
+            <div className="mb-4 text-sm text-gray-400">
+              {hasPreTests && (
+                <span className="mr-4">📝 Pre-test available</span>
+              )}
+              {lessons?.length > 0 && (
+                <span className="mr-4">
+                  📚 {lessons.length} lesson{lessons.length !== 1 ? "s" : ""}
+                </span>
+              )}
+              {hasPostTests && <span>📝 Post-test available</span>}
+            </div>
+
             {isLoading ? (
               <p>Loading course content...</p>
-            ) : lessons?.length > 0 ? (
-              <DroppableComponent />
+            ) : lessons?.length > 0 || hasTests ? (
+              <div className="space-y-4">
+                {/* Pre-Tests Section */}
+                {hasPreTests && (
+                  <div>
+                    <div className="mb-2">
+                      <h3 className="text-lg font-medium text-white mb-2">
+                        Pre-Tests
+                      </h3>
+                    </div>
+                    <TestDisplayComponent
+                      tests={preTests}
+                      onEditTest={handleEditTest}
+                      onDeleteTest={handleDeleteTest}
+                    />
+                  </div>
+                )}
+
+                {/* Lessons Section */}
+                {lessons?.length > 0 && (
+                  <div>
+                    <div className="mb-2">
+                      <h3 className="text-lg font-medium text-white mb-2">
+                        Lessons
+                      </h3>
+                    </div>
+                    <DroppableComponent />
+                  </div>
+                )}
+
+                {/* Post-Tests Section */}
+                {hasPostTests && (
+                  <div>
+                    <div className="mb-2">
+                      <h3 className="text-lg font-medium text-white mb-2">
+                        Post-Tests
+                      </h3>
+                    </div>
+                    <TestDisplayComponent
+                      tests={postTests}
+                      onEditTest={handleEditTest}
+                      onDeleteTest={handleDeleteTest}
+                    />
+                  </div>
+                )}
+              </div>
             ) : (
-              <p>No lessons available</p>
+              <div className="text-center py-8 text-gray-400">
+                <p>No content available</p>
+                <p className="text-sm mt-2">Start by adding a lesson or test</p>
+              </div>
             )}
           </div>
         </div>
@@ -550,8 +825,14 @@ const CourseEditor = () => {
       <LessonModal />
       <TestModal
         isOpen={isTestModalOpen}
-        onClose={() => setIsTestModalOpen(false)}
+        onClose={() => {
+          setIsTestModalOpen(false);
+          setEditingTest(null);
+          setEditingTestId(null);
+        }}
         onSave={handleSaveTest}
+        editingTest={editingTest}
+        testId={editingTestId}
       />
     </div>
   );
