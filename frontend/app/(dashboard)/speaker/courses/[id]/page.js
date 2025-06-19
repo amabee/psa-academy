@@ -352,7 +352,7 @@ const CourseEditor = () => {
           } successfully`
         );
       } else {
-        console.log("TEST DATA: ", testData);
+        console.log("TEST DATA: ", result);
         toast.error(result.message || "Failed to save test");
       }
     } catch (error) {
