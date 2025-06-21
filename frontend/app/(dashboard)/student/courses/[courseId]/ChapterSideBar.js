@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import {
   addToTopicProgress,
   updateTopicProgress,
+  checkPreTestCompletion,
 } from "@/lib/actions/students/action";
 
 const ChaptersSidebar = () => {
@@ -136,14 +137,44 @@ const ChaptersSidebar = () => {
     );
   };
 
-  const handleTopicClick = (courseId, topicId) => {
+  const handleTopicClick = async (courseId, topicId) => {
     if (params.topicId !== topicId) {
-      setIsNavigating(true);
-      router.push(`/student/courses/${courseId}/topic/${topicId}`, {
-        scroll: false,
-      });
+      try {
+        // Check if pre-test is completed
+        const preTestStatus = await checkPreTestCompletion(
+          user?.user.user_id,
+          courseId
+        );
+        
+        if (preTestStatus.success) {
+          // If pre-test exists and is not completed, redirect to tests page
+          if (preTestStatus.data.pre_test_exists && !preTestStatus.data.pre_test_completed) {
+            toast.info("Please complete the pre-test before accessing course content");
+            setIsNavigating(true);
+            router.push(`/student/courses/${courseId}/tests`, {
+              scroll: false,
+            });
+            return;
+          }
+        }
+        
+        // If pre-test is completed or doesn't exist, proceed to topic
+        setIsNavigating(true);
+        router.push(`/student/courses/${courseId}/topic/${topicId}`, {
+          scroll: false,
+        });
 
-      handleAddToTopicProgress(topicId, user?.user.user_id);
+        handleAddToTopicProgress(topicId, user?.user.user_id);
+      } catch (error) {
+        console.error("Error checking pre-test status:", error);
+        // If there's an error, proceed to topic as fallback
+        setIsNavigating(true);
+        router.push(`/student/courses/${courseId}/topic/${topicId}`, {
+          scroll: false,
+        });
+
+        handleAddToTopicProgress(topicId, user?.user.user_id);
+      }
     }
   };
 
