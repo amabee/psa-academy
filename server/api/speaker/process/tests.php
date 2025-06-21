@@ -84,7 +84,7 @@ class Tests
         return json_encode([
           "status" => 500,
           "success" => false,
-          "data" => [],
+          "data" => "Failed to create test",
           "message" => "Failed to create test"
         ]);
       }
@@ -106,7 +106,7 @@ class Tests
           return json_encode([
             "status" => 500,
             "success" => false,
-            "data" => [],
+            "data" => "Failed to create question",
             "message" => "Failed to create question"
           ]);
         }
@@ -128,7 +128,7 @@ class Tests
               return json_encode([
                 "status" => 500,
                 "success" => false,
-                "data" => [],
+                "data" => "Failed to create choice",
                 "message" => "Failed to create choice"
               ]);
             }
@@ -151,7 +151,7 @@ class Tests
       return json_encode([
         "status" => 500,
         "success" => false,
-        "data" => [],
+        "data" => "Error: " . $ex->getMessage(),
         "message" => "Error: " . $ex->getMessage()
       ]);
     }

@@ -9,7 +9,7 @@ import { useUser } from "@/app/providers/UserProvider";
 import { getUserCourse } from "@/queries/student/student_course";
 import Loading from "@/components/shared/loading";
 import LoadingOverlay from "@/components/shared/loadingoverlay";
-import { enrollCourse } from "@/lib/actions/students/action";
+import { enrollCourse, checkPreTestCompletion } from "@/lib/actions/students/action";
 import { toast } from "sonner";
 
 const Courses = () => {
@@ -44,28 +44,68 @@ const Courses = () => {
     });
   }, [courses, searchTerm, selectedCategory]);
 
-  const handleGoToCourse = (course) => {
+  const handleGoToCourse = async (course) => {
     if (course.enrolled !== 1) {
       return;
     }
 
-    if (
-      course.lessons &&
-      course.lessons.length > 0 &&
-      course.lessons[0].topics.length > 0
-    ) {
+    try {
       setIsRedirecting(true);
-      const firstChapter = course.lessons[0].topics[0];
-      router.push(
-        `/student/courses/${course.course_id}/topic/${firstChapter}`,
-        {
-          scroll: false,
-        }
+      
+      // Check if pre-test is completed
+      const preTestStatus = await checkPreTestCompletion(
+        user?.user.user_id,
+        course.course_id
       );
-    } else {
-      router.push(`/student/courses/${course.course_id}`, {
-        scroll: false,
-      });
+      
+      if (preTestStatus.success) {
+        // If pre-test exists and is not completed, redirect to tests page
+        if (preTestStatus.data.pre_test_exists && !preTestStatus.data.pre_test_completed) {
+          router.push(`/student/courses/${course.course_id}/tests`, {
+            scroll: false,
+          });
+          return;
+        }
+      }
+      
+      // If pre-test is completed or doesn't exist, proceed to first topic
+      if (
+        course.lessons &&
+        course.lessons.length > 0 &&
+        course.lessons[0].topics.length > 0
+      ) {
+        const firstChapter = course.lessons[0].topics[0];
+        router.push(
+          `/student/courses/${course.course_id}/topic/${firstChapter}`,
+          {
+            scroll: false,
+          }
+        );
+      } else {
+        router.push(`/student/courses/${course.course_id}`, {
+          scroll: false,
+        });
+      }
+    } catch (error) {
+      console.error("Error checking pre-test status:", error);
+      // If there's an error, proceed to first topic as fallback
+      if (
+        course.lessons &&
+        course.lessons.length > 0 &&
+        course.lessons[0].topics.length > 0
+      ) {
+        const firstChapter = course.lessons[0].topics[0];
+        router.push(
+          `/student/courses/${course.course_id}/topic/${firstChapter}`,
+          {
+            scroll: false,
+          }
+        );
+      } else {
+        router.push(`/student/courses/${course.course_id}`, {
+          scroll: false,
+        });
+      }
     }
   };
 

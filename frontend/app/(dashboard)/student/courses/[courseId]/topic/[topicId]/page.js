@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -17,7 +17,7 @@ import "react-pdf/dist/esm/Page/TextLayer.css";
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from "lucide-react";
 import { useAppStore, useNavigationStore } from "@/store/stateStore";
 import { toast } from "sonner";
-import { updateTopicProgress, addToTopicProgress } from "@/lib/actions/students/action";
+import { updateTopicProgress, addToTopicProgress, checkPreTestCompletion } from "@/lib/actions/students/action";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
@@ -27,6 +27,7 @@ const ReactPlayer = dynamic(() => import("react-player"), {
 
 const Course = () => {
   const params = useParams();
+  const router = useRouter();
   const courseId = params.courseId;
   const topicId = params.topicId;
 
@@ -34,6 +35,7 @@ const Course = () => {
   const setIsNavigating = useNavigationStore((state) => state.setIsNavigating);
 
   const [hasShownToast, setHasShownToast] = useState(false);
+  const [isCheckingPreTest, setIsCheckingPreTest] = useState(true);
 
   const user = useUser();
 
@@ -52,6 +54,41 @@ const Course = () => {
     const topic = lesson.topics?.find((topic) => topic.topic_id === topicId);
     return !!topic?.progress;
   }, false);
+
+  // Check pre-test completion when component mounts
+  useEffect(() => {
+    const checkPreTestAccess = async () => {
+      if (!isLoading && course && user?.user?.user_id) {
+        try {
+          setIsCheckingPreTest(true);
+          
+          // Check if pre-test is completed
+          const preTestStatus = await checkPreTestCompletion(
+            user.user.user_id,
+            courseId
+          );
+          
+          if (preTestStatus.success) {
+            // If pre-test exists and is not completed, redirect to tests page
+            if (preTestStatus.data.pre_test_exists && !preTestStatus.data.pre_test_completed) {
+              toast.info("Please complete the pre-test before accessing course content");
+              router.push(`/student/courses/${courseId}/tests`, {
+                scroll: false,
+              });
+              return;
+            }
+          }
+        } catch (error) {
+          console.error("Error checking pre-test status:", error);
+          // If there's an error, allow access as fallback
+        } finally {
+          setIsCheckingPreTest(false);
+        }
+      }
+    };
+
+    checkPreTestAccess();
+  }, [isLoading, course, user, courseId, router]);
 
   const handleProgress = (played) => {
     if (played >= 0.8) {
@@ -171,7 +208,7 @@ const Course = () => {
     }
   }, [course, topicId, hasTopicProgress]);
 
-  if (isLoading || isNavigating) return <Loading />;
+  if (isLoading || isNavigating || isCheckingPreTest) return <Loading />;
 
   if (!user) return <div>Please sign in to view this course.</div>;
   if (!course) return <div>Error loading course</div>;
