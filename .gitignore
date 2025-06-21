@@ -6,3 +6,6 @@ out/
 .env
 *.mp4
 *.pdf
+*.docx
+*.doc
+
