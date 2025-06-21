@@ -109,13 +109,14 @@ export const addToTopicProgress = async (topic_id, user_id) => {
 
 // UPDATE TOPIC PROGRESS
 
-export const updateTopicProgress = async (topic_id) => {
+export const updateTopicProgress = async (topic_id, user_id) => {
   const formData = new FormData();
   formData.append("operation", "updateTopicProgress");
   formData.append(
     "json",
     JSON.stringify({
       topic_id: topic_id,
+      user_id: user_id,
     })
   );
 

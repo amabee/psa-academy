@@ -213,10 +213,22 @@ export const updateCourse = async (
       },
     });
 
+    if (res.status !== 200) {
+      return { success: false, data: [], message: "Status Error" };
+    }
+
+    if (res.data.success === false) {
+      return {
+        success: false,
+        data: [],
+        message: res.data.message || "Something went wrong updating the course",
+      };
+    }
+
     return {
       success: true,
       data: res.data,
-      message: "Course updated successfully",
+      message: res.data.message || "Course updated successfully",
     };
   } catch (error) {
     const errorMessage =

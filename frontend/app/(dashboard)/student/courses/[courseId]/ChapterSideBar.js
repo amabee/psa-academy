@@ -83,7 +83,7 @@ const ChaptersSidebar = () => {
         return;
       }
 
-      const { success, message } = await updateTopicProgress(topicId);
+      const { success, message } = await updateTopicProgress(topicId, user?.user.user_id);
 
       if (!success) {
         return toast.error(message);

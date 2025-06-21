@@ -45,6 +45,7 @@ import { useUser } from "@/app/providers/UserProvider";
 import { toast } from "sonner";
 import TestModal from "../../components/TestModalComponent";
 import TestDisplayComponent from "./testdisplay";
+import { useQueryClient } from "@tanstack/react-query";
 
 registerPlugin(
   FilePondPluginImageExifOrientation,
@@ -106,6 +107,8 @@ const CourseEditor = () => {
     courseCategory: 0,
     courseStatus: 0,
   });
+
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (course?.course_image) {
@@ -254,6 +257,11 @@ const CourseEditor = () => {
       });
 
       setHasUnsavedChanges(false);
+
+      // Invalidate the query client to refresh the course data
+      await queryClient.invalidateQueries(["course", id]);
+      // Also invalidate the courses list to update the course list page
+      await queryClient.invalidateQueries(["courses"]);
     } catch (error) {
       toast.error("An error occurred while updating the course");
     } finally {
@@ -351,6 +359,9 @@ const CourseEditor = () => {
             editingTestId ? "updated" : "created"
           } successfully`
         );
+        
+        // Invalidate course detail query to refresh the course data
+        await queryClient.invalidateQueries(["course", id]);
       } else {
         console.log("TEST DATA: ", result);
         toast.error(result.message || "Failed to save test");
@@ -377,6 +388,9 @@ const CourseEditor = () => {
         );
         setTests(updatedTests);
         toast.success("Test deleted successfully");
+        
+        // Invalidate course detail query to refresh the course data
+        await queryClient.invalidateQueries(["course", id]);
       } else {
         toast.error(result.message || "Failed to delete test");
       }

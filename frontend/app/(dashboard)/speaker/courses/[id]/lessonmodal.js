@@ -112,6 +112,9 @@ const LessonModal = () => {
 
         addLesson(lessonData);
         toast.success("Lesson added successfully!");
+        
+        // Invalidate course detail query to refresh the course data
+        await queryClient.invalidateQueries(["course", id]);
       } else {
         const { success, data, message } = await updateLesson(
           lessonData.lesson_id,
@@ -129,6 +132,9 @@ const LessonModal = () => {
 
         editLesson({ index: selectedLessonIndex, lesson: lessonData });
         toast.success("Lesson updated successfully!");
+        
+        // Invalidate course detail query to refresh the course data
+        await queryClient.invalidateQueries(["course", id]);
       }
 
       console.log(lessonData);
@@ -152,6 +158,9 @@ const LessonModal = () => {
 
       useLessonStore.getState().deleteLesson(selectedLessonIndex);
       toast.success("Lesson deleted successfully!");
+      
+      // Invalidate course detail query to refresh the course data
+      await queryClient.invalidateQueries(["course", id]);
     } catch (error) {
       console.error("Error deleting lesson:", error);
       toast.error("Failed to delete lesson");

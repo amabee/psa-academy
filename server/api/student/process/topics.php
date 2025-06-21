@@ -104,7 +104,7 @@ class Topics
 
     try {
 
-      $isSetData = InputHelper::requiredFields($data, ['topic_id']);
+      $isSetData = InputHelper::requiredFields($data, ['topic_id', 'user_id']);
 
       // if ($isSetData !== true) {
       //     return $isSetData;
@@ -116,15 +116,16 @@ class Topics
           "status" => 422,
           "success" => false,
           "data" => [],
-          "message" => "Missing Parameters `topic_id`."
+          "message" => "Missing Parameters `topic_id` and `user_id`."
         ]);
       }
 
-      $sql = "UPDATE `topic_progress` SET `is_completed` = :is_completed, `completion_date` = NOW() WHERE `topic_id` = :topic_id";
+      $sql = "UPDATE `topic_progress` SET `is_completed` = :is_completed, `completion_date` = NOW() WHERE `topic_id` = :topic_id AND `user_id` = :user_id";
 
       $stmt = $this->conn->prepare($sql);
       $stmt->bindValue(":is_completed", 1, PDO::PARAM_INT);
       $stmt->bindParam(":topic_id", $data['topic_id']);
+      $stmt->bindParam(":user_id", $data['user_id']);
 
       if ($stmt->execute()) {
         http_response_code(201);
