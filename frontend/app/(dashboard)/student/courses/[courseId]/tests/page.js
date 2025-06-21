@@ -103,6 +103,10 @@ export default function TestsPage() {
     router.push(`/student/courses/${courseId}/test/${testType}/${testId}`);
   };
 
+  const navigateToEvaluation = () => {
+    router.push(`/student/courses/${courseId}/evaluation`);
+  };
+
   const getTestTypeInfo = (testType) => {
     switch (testType) {
       case "pre":
@@ -134,8 +138,6 @@ export default function TestsPage() {
 
   const getTestStatus = (test) => {
     const result = userResults[test.test_id];
-
-    console.log("TEST STATUS: ", tests);
     // Check if post-test is locked due to incomplete pre-test
     if (test.test_type === "post" && preTestStatus) {
       if (!preTestStatus.can_take_post_test) {
@@ -336,36 +338,50 @@ export default function TestsPage() {
                   </CardContent>
 
                   <CardFooter>
-                    <Button
-                      onClick={() =>
-                        navigateToTest(test.test_id, test.test_type)
-                      }
-                      className="w-full bg-primary-700 hover:bg-primary-600"
-                      disabled={
-                        status.locked ||
-                        (status.status === "excellent" &&
-                          test.test_type === "pre")
-                      }
-                    >
-                      {status.locked ? (
-                        <>
-                          <AlertCircle className="mr-2 h-4 w-4" />
-                          Test Locked
-                        </>
-                      ) : status.status === "not_taken" ? (
-                        <>
-                          <Play className="mr-2 h-4 w-4" />
-                          Start Test
-                        </>
-                      ) : (
-                        <>
-                          <FileText className="mr-2 h-4 w-4" />
-                          {test.test_type === "pre"
-                            ? "Retake Test"
-                            : "View Results"}
-                        </>
+                    <div className="w-full space-y-2">
+                      <Button
+                        onClick={() =>
+                          navigateToTest(test.test_id, test.test_type)
+                        }
+                        className="w-full bg-primary-700 hover:bg-primary-600"
+                        disabled={
+                          status.locked ||
+                          (status.status === "excellent" &&
+                            test.test_type === "pre")
+                        }
+                      >
+                        {status.locked ? (
+                          <>
+                            <AlertCircle className="mr-2 h-4 w-4" />
+                            Test Locked
+                          </>
+                        ) : status.status === "not_taken" ? (
+                          <>
+                            <Play className="mr-2 h-4 w-4" />
+                            Start Test
+                          </>
+                        ) : (
+                          <>
+                            <FileText className="mr-2 h-4 w-4" />
+                            {test.test_type === "pre"
+                              ? "Retake Test"
+                              : "View Results"}
+                          </>
+                        )}
+                      </Button>
+                      
+                      {/* Evaluation button for completed post-tests */}
+                      {test.test_type === "post" && result && (
+                        <Button
+                          onClick={navigateToEvaluation}
+                          variant="outline"
+                          className="w-full bg-green-600 hover:bg-green-700 text-white border-green-600"
+                        >
+                          <Award className="mr-2 h-4 w-4" />
+                          Complete Evaluation
+                        </Button>
                       )}
-                    </Button>
+                    </div>
                   </CardFooter>
                 </Card>
               );
@@ -430,6 +446,12 @@ export default function TestsPage() {
                     <div className="w-1.5 h-1.5 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
                     <span className="font-medium text-orange-600">
                       Only available after completing pre-test
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                    <span className="font-medium text-green-600">
+                      Course evaluation available after completion
                     </span>
                   </li>
                 </ul>
