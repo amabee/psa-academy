@@ -188,7 +188,7 @@ class AUTH
     // Account Details
     $username = InputHelper::sanitizeString($json['username']);
     $password = password_hash($json['password'], PASSWORD_BCRYPT);
-    $userTypeID = 4; // Student
+    $userTypeID = isset($json['userType']) ? (int)$json['userType'] : 4; // Default to student (4), speaker is 3
     $isActive = 1;
 
     // Check if email already exists
@@ -289,11 +289,12 @@ class AUTH
       // Commit transaction
       $this->conn->commit();
 
+      $userTypeText = $userTypeID == 3 ? "Speaker" : "Student";
       http_response_code(201);
       return json_encode([
         "success" => true,
         "data" => ["user_id" => $userID],
-        "message" => "User registered successfully"
+        "message" => "$userTypeText registered successfully"
       ]);
     } catch (Exception $e) {
       $this->conn->rollBack();

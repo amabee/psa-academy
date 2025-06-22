@@ -129,6 +129,7 @@ export const signup = async (formData) => {
       // Account Details
       username: formData.username,
       password: formData.password,
+      userType: formData.userType || 4, // Default to student (4) if not specified, speaker is 3
     })
   );
   
