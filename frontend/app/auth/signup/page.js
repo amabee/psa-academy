@@ -1,9 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { signup } from "@/lib/actions/auth";
 import Swal from "sweetalert2";
-import { Loader2, ChevronDown, ChevronUp } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import HCaptcha from "@hcaptcha/react-hcaptcha";
 import {
   Dialog,
@@ -15,6 +15,8 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import FormField from "@/components/signup/FormField";
+import SectionHeader from "@/components/signup/SectionHeader";
 
 export default function RegisterPage() {
   const [signingUp, setSigningUp] = useState(false);
@@ -59,11 +61,11 @@ export default function RegisterPage() {
     tap: { scale: 0.98 },
   };
 
-  const validatePhilippinePhone = (phone) => {
+  const validatePhilippinePhone = useCallback((phone) => {
     const cleanPhone = phone.replace(/[\s\-()]/g, "");
     const mobilePattern = /^(\+63|0)9\d{9}$/;
     return mobilePattern.test(cleanPhone);
-  };
+  }, []);
 
   const [formData, setFormData] = useState({
     // Personal Information
@@ -115,14 +117,14 @@ export default function RegisterPage() {
 
   const [errors, setErrors] = useState({});
 
-  const toggleSection = (section) => {
+  const toggleSection = useCallback((section) => {
     setExpandedSections(prev => ({
       ...prev,
       [section]: !prev[section]
     }));
-  };
+  }, []);
 
-  const validateForm = () => {
+  const validateForm = useCallback(() => {
     const newErrors = {};
 
     // Required fields validation
@@ -173,9 +175,9 @@ export default function RegisterPage() {
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
+  }, [formData, validatePhilippinePhone]);
 
-  const handleInputChange = (e) => {
+  const handleInputChange = useCallback((e) => {
     const { name, value, type, checked } = e.target;
 
     if (name === "terms") {
@@ -188,25 +190,25 @@ export default function RegisterPage() {
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
-  };
+  }, []);
 
-  const handleConfidentialityAccept = () => {
+  const handleConfidentialityAccept = useCallback(() => {
     setFormData((prev) => ({
       ...prev,
       terms: true,
     }));
     setIsConfidentialityDialogOpen(false);
-  };
+  }, []);
 
-  const handleConfidentialityClose = () => {
+  const handleConfidentialityClose = useCallback(() => {
     setFormData((prev) => ({
       ...prev,
       terms: false,
     }));
     setIsConfidentialityDialogOpen(false);
-  };
+  }, []);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
 
     if (validateForm()) {
@@ -255,76 +257,15 @@ export default function RegisterPage() {
         setSigningUp(false);
       }
     }
-  };
+  }, [formData, validateForm]);
 
-  const handleCaptchaVerify = (token) => {
+  const handleCaptchaVerify = useCallback((token) => {
     setCaptchaToken(token);
-  };
+  }, []);
 
-  const handleCaptchaExpire = () => {
+  const handleCaptchaExpire = useCallback(() => {
     setCaptchaToken(null);
-  };
-
-  const SectionHeader = ({ title, isExpanded, onToggle, children }) => (
-    <motion.div variants={itemVariants} className="border border-gray-200 rounded-lg mb-4">
-      <button
-        type="button"
-        onClick={onToggle}
-        className="w-full flex items-center justify-between p-4 text-left bg-gray-50 hover:bg-gray-100 transition-colors rounded-t-lg"
-      >
-        <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
-        {isExpanded ? (
-          <ChevronUp className="w-5 h-5 text-gray-600" />
-        ) : (
-          <ChevronDown className="w-5 h-5 text-gray-600" />
-        )}
-      </button>
-      {isExpanded && (
-        <div className="p-4 space-y-4">
-          {children}
-        </div>
-      )}
-    </motion.div>
-  );
-
-  const FormField = ({ label, name, type = "text", required = false, placeholder = "", options = null, className = "" }) => (
-    <div className={className}>
-      <label className="text-gray-800 text-sm block mb-2">
-        {label} {required && <span className="text-red-500">*</span>}
-      </label>
-      <div className="relative flex items-center">
-        {options ? (
-          <select
-            name={name}
-            required={required}
-            value={formData[name]}
-            onChange={handleInputChange}
-            className="w-full text-sm text-gray-800 border-b border-gray-300 focus:border-blue-600 px-2 py-3 outline-none bg-transparent"
-          >
-            <option value="">Select {label.toLowerCase()}</option>
-            {options.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        ) : (
-          <input
-            name={name}
-            type={type}
-            required={required}
-            value={formData[name]}
-            onChange={handleInputChange}
-            className="w-full text-sm text-gray-800 border-b border-gray-300 focus:border-blue-600 px-2 py-3 outline-none"
-            placeholder={placeholder}
-          />
-        )}
-      </div>
-      {errors[name] && (
-        <p className="text-red-500 text-xs mt-1">{errors[name]}</p>
-      )}
-    </div>
-  );
+  }, []);
 
   return (
     <div className="font-[sans-serif]">
@@ -423,28 +364,43 @@ export default function RegisterPage() {
                 name="firstName"
                 required
                 placeholder="Enter your first name"
+                value={formData.firstName}
+                onChange={handleInputChange}
+                error={errors.firstName}
               />
               <FormField
                 label="Middle Name"
                 name="middleName"
                 placeholder="Enter your middle name"
+                value={formData.middleName}
+                onChange={handleInputChange}
+                error={errors.middleName}
               />
               <FormField
                 label="Last Name"
                 name="lastName"
                 required
                 placeholder="Enter your last name"
+                value={formData.lastName}
+                onChange={handleInputChange}
+                error={errors.lastName}
               />
               <FormField
                 label="Suffix"
                 name="suffix"
                 placeholder="Jr., Sr., III, etc."
+                value={formData.suffix}
+                onChange={handleInputChange}
+                error={errors.suffix}
               />
               <FormField
                 label="Date of Birth"
                 name="dateOfBirth"
                 type="date"
                 required
+                value={formData.dateOfBirth}
+                onChange={handleInputChange}
+                error={errors.dateOfBirth}
               />
               <FormField
                 label="Sex"
@@ -454,6 +410,9 @@ export default function RegisterPage() {
                   { value: "male", label: "Male" },
                   { value: "female", label: "Female" }
                 ]}
+                value={formData.sex}
+                onChange={handleInputChange}
+                error={errors.sex}
               />
               <FormField
                 label="Blood Type"
@@ -468,6 +427,9 @@ export default function RegisterPage() {
                   { value: "O+", label: "O+" },
                   { value: "O-", label: "O-" }
                 ]}
+                value={formData.bloodType}
+                onChange={handleInputChange}
+                error={errors.bloodType}
               />
               <FormField
                 label="Civil Status"
@@ -482,6 +444,9 @@ export default function RegisterPage() {
                   { value: "civil_partnership", label: "Civil Partnership" },
                   { value: "cohabitation", label: "Cohabitation (live-in)" }
                 ]}
+                value={formData.civilStatus}
+                onChange={handleInputChange}
+                error={errors.civilStatus}
               />
               <FormField
                 label="Type of Disability"
@@ -499,6 +464,9 @@ export default function RegisterPage() {
                   { value: "cancer", label: "Cancer (RA11215)" },
                   { value: "rare_disease", label: "Rare Disease (RA10747)" }
                 ]}
+                value={formData.typeOfDisability}
+                onChange={handleInputChange}
+                error={errors.typeOfDisability}
               />
               <FormField
                 label="Religion"
@@ -519,6 +487,9 @@ export default function RegisterPage() {
                   { value: "hinduism", label: "Hinduism" },
                   { value: "atheist", label: "Atheist" }
                 ]}
+                value={formData.religion}
+                onChange={handleInputChange}
+                error={errors.religion}
               />
               <FormField
                 label="Educational Attainment"
@@ -532,6 +503,9 @@ export default function RegisterPage() {
                   { value: "vocational", label: "Vocational" },
                   { value: "post_graduate", label: "Post Graduate" }
                 ]}
+                value={formData.educationalAttainment}
+                onChange={handleInputChange}
+                error={errors.educationalAttainment}
               />
             </div>
           </SectionHeader>
@@ -549,30 +523,45 @@ export default function RegisterPage() {
                 required
                 placeholder="Enter house number and street"
                 className="md:col-span-2"
+                value={formData.houseNoAndStreet}
+                onChange={handleInputChange}
+                error={errors.houseNoAndStreet}
               />
               <FormField
                 label="Barangay"
                 name="barangay"
                 required
                 placeholder="Enter barangay"
+                value={formData.barangay}
+                onChange={handleInputChange}
+                error={errors.barangay}
               />
               <FormField
                 label="Municipality"
                 name="municipality"
                 required
                 placeholder="Enter municipality"
+                value={formData.municipality}
+                onChange={handleInputChange}
+                error={errors.municipality}
               />
               <FormField
                 label="Province"
                 name="province"
                 required
                 placeholder="Enter province"
+                value={formData.province}
+                onChange={handleInputChange}
+                error={errors.province}
               />
               <FormField
                 label="Region"
                 name="region"
                 required
                 placeholder="Enter region"
+                value={formData.region}
+                onChange={handleInputChange}
+                error={errors.region}
               />
             </div>
           </SectionHeader>
@@ -590,6 +579,9 @@ export default function RegisterPage() {
                 type="tel"
                 required
                 placeholder="0917 123 4567 or +63 917 123 4567"
+                value={formData.cellphoneNumber}
+                onChange={handleInputChange}
+                error={errors.cellphoneNumber}
               />
               <FormField
                 label="Email Address"
@@ -597,6 +589,9 @@ export default function RegisterPage() {
                 type="email"
                 required
                 placeholder="Enter email address"
+                value={formData.emailAddress}
+                onChange={handleInputChange}
+                error={errors.emailAddress}
               />
             </div>
           </SectionHeader>
@@ -617,6 +612,9 @@ export default function RegisterPage() {
                   { value: "coterminous", label: "Coterminous" },
                   { value: "contract_service", label: "Contract of Service Worker" }
                 ]}
+                value={formData.employmentType}
+                onChange={handleInputChange}
+                error={errors.employmentType}
               />
               <FormField
                 label="Civil Service Eligibility Level"
@@ -626,6 +624,9 @@ export default function RegisterPage() {
                   { value: "second_level", label: "Second Level (Professional)" },
                   { value: "third_level", label: "Third Level (Career Service Executive Eligibility)" }
                 ]}
+                value={formData.civilServiceEligibility}
+                onChange={handleInputChange}
+                error={errors.civilServiceEligibility}
               />
               <FormField
                 label="Salary Grade"
@@ -634,26 +635,41 @@ export default function RegisterPage() {
                   value: (i + 1).toString(),
                   label: (i + 1).toString()
                 }))}
+                value={formData.salaryGrade}
+                onChange={handleInputChange}
+                error={errors.salaryGrade}
               />
               <FormField
                 label="Present Position"
                 name="presentPosition"
                 placeholder="Enter present position"
+                value={formData.presentPosition}
+                onChange={handleInputChange}
+                error={errors.presentPosition}
               />
               <FormField
                 label="Office"
                 name="office"
                 placeholder="Enter office"
+                value={formData.office}
+                onChange={handleInputChange}
+                error={errors.office}
               />
               <FormField
                 label="Service"
                 name="service"
                 placeholder="Enter service"
+                value={formData.service}
+                onChange={handleInputChange}
+                error={errors.service}
               />
               <FormField
                 label="Division/Province"
                 name="divisionProvince"
                 placeholder="Enter division/province"
+                value={formData.divisionProvince}
+                onChange={handleInputChange}
+                error={errors.divisionProvince}
               />
             </div>
           </SectionHeader>
@@ -669,29 +685,44 @@ export default function RegisterPage() {
                 label="Name of Contact Person"
                 name="emergencyContactName"
                 placeholder="Enter emergency contact name"
+                value={formData.emergencyContactName}
+                onChange={handleInputChange}
+                error={errors.emergencyContactName}
               />
               <FormField
                 label="Relationship"
                 name="emergencyContactRelationship"
                 placeholder="Enter relationship"
+                value={formData.emergencyContactRelationship}
+                onChange={handleInputChange}
+                error={errors.emergencyContactRelationship}
               />
               <FormField
                 label="Contact Address"
                 name="emergencyContactAddress"
                 placeholder="Enter contact address"
                 className="md:col-span-2"
+                value={formData.emergencyContactAddress}
+                onChange={handleInputChange}
+                error={errors.emergencyContactAddress}
               />
               <FormField
                 label="Contact Number"
                 name="emergencyContactNumber"
                 type="tel"
                 placeholder="Enter contact number"
+                value={formData.emergencyContactNumber}
+                onChange={handleInputChange}
+                error={errors.emergencyContactNumber}
               />
               <FormField
                 label="Contact Email"
                 name="emergencyContactEmail"
                 type="email"
                 placeholder="Enter contact email"
+                value={formData.emergencyContactEmail}
+                onChange={handleInputChange}
+                error={errors.emergencyContactEmail}
               />
             </div>
           </SectionHeader>
@@ -708,6 +739,9 @@ export default function RegisterPage() {
                 name="username"
                 required
                 placeholder="Choose a username"
+                value={formData.username}
+                onChange={handleInputChange}
+                error={errors.username}
               />
               <FormField
                 label="Password"
@@ -715,6 +749,9 @@ export default function RegisterPage() {
                 type="password"
                 required
                 placeholder="Create password"
+                value={formData.password}
+                onChange={handleInputChange}
+                error={errors.password}
               />
               <FormField
                 label="Confirm Password"
@@ -722,6 +759,9 @@ export default function RegisterPage() {
                 type="password"
                 required
                 placeholder="Confirm password"
+                value={formData.confirmPassword}
+                onChange={handleInputChange}
+                error={errors.confirmPassword}
               />
             </div>
           </SectionHeader>
