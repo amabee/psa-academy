@@ -338,23 +338,35 @@ export const getUserTestResults = async (user_id, test_id) => {
 };
 
 export const checkPreTestCompletion = async (user_id, course_id) => {
+  const formData = new FormData();
+  formData.append("operation", "checkPreTestCompletion");
+  formData.append(
+    "json",
+    JSON.stringify({
+      user_id: user_id,
+      course_id: course_id,
+    })
+  );
+
   try {
     const res = await axios(`${BASE_URL}student/process/tests.php`, {
-      method: "GET",
-      params: {
-        operation: "checkPreTestCompletion",
-        json: JSON.stringify({
-          user_id: user_id,
-          course_id: course_id,
-        }),
-      },
+      method: "POST",
+      data: formData,
       headers: {
         Authorization: SECRET_KEY,
       },
     });
 
     if (res.status !== 200) {
-      return { success: false, data: null, message: "Status error" };
+      return { success: false, data: [], message: "Status error" };
+    }
+
+    if (!res.data.success) {
+      return {
+        success: false,
+        data: [],
+        message: res.data.message || "Failed to check pre-test completion",
+      };
     }
 
     return { success: true, data: res.data.data, message: res.data.message };
@@ -363,29 +375,44 @@ export const checkPreTestCompletion = async (user_id, course_id) => {
       error.response?.data?.message ||
       error.message ||
       "An error occurred while checking pre-test completion";
-    return { success: false, data: null, message: errorMessage };
+    return { success: false, data: [], message: errorMessage };
   }
 };
 
-// EVALUATION RELATED FUNCTIONS
+// EVALUATION FUNCTIONS
 
 export const submitCourseEvaluation = async (course_id, user_id, evaluation_type, answers) => {
+  const formData = new FormData();
+  formData.append("operation", "submitEvaluation");
+  formData.append(
+    "json",
+    JSON.stringify({
+      course_id: course_id,
+      user_id: user_id,
+      evaluation_type: evaluation_type,
+      answers: answers,
+    })
+  );
+
   try {
     const res = await axios(`${BASE_URL}student/process/evaluation.php`, {
       method: "POST",
-      data: {
-        course_id: course_id,
-        evaluation_type: evaluation_type,
-        answers: answers,
-      },
+      data: formData,
       headers: {
         Authorization: SECRET_KEY,
-        "Content-Type": "application/json",
       },
     });
 
-    if (res.status !== 200) {
-      return { success: false, data: null, message: "Status error" };
+    if (res.status !== 201 && res.status !== 200) {
+      return { success: false, data: [], message: "Status error" };
+    }
+
+    if (!res.data.success) {
+      return {
+        success: false,
+        data: [],
+        message: res.data.message || "Failed to submit evaluation",
+      };
     }
 
     return { success: true, data: res.data.data, message: res.data.message };
@@ -394,7 +421,7 @@ export const submitCourseEvaluation = async (course_id, user_id, evaluation_type
       error.response?.data?.message ||
       error.message ||
       "An error occurred while submitting evaluation";
-    return { success: false, data: null, message: errorMessage };
+    return { success: false, data: [], message: errorMessage };
   }
 };
 
@@ -403,7 +430,11 @@ export const getEvaluationStatus = async (course_id, user_id) => {
     const res = await axios(`${BASE_URL}student/process/evaluation.php`, {
       method: "GET",
       params: {
-        course_id: course_id,
+        operation: "getEvaluationStatus",
+        json: JSON.stringify({
+          course_id: course_id,
+          user_id: user_id,
+        }),
       },
       headers: {
         Authorization: SECRET_KEY,
@@ -414,7 +445,15 @@ export const getEvaluationStatus = async (course_id, user_id) => {
       return { success: false, data: [], message: "Status error" };
     }
 
-    return { success: true, data: res.data.data, message: res.data.message };
+    if (!res.data.success) {
+      return {
+        success: false,
+        data: [],
+        message: res.data.message || "Failed to fetch evaluation status",
+      };
+    }
+
+    return { success: true, data: res.data.data, message: "" };
   } catch (error) {
     const errorMessage =
       error.response?.data?.message ||

@@ -111,11 +111,18 @@ class AUTH
     $isDataSet = InputHelper::requiredFields($json, [
       'firstname',
       'lastname',
-      'email',
+      'dateOfBirth',
+      'sex',
+      'civilStatus',
+      'educationalAttainment',
+      'houseNoAndStreet',
+      'barangay',
+      'municipality',
+      'province',
+      'region',
+      'cellphoneNumber',
+      'emailAddress',
       'username',
-      'phoneNumber',
-      'bday',
-      'gender',
       'password'
     ]);
 
@@ -124,7 +131,7 @@ class AUTH
     }
 
     // Validate email
-    if (!InputHelper::validateEmail($json['email'])) {
+    if (!InputHelper::validateEmail($json['emailAddress'])) {
       http_response_code(422);
       return json_encode([
         "success" => false,
@@ -134,7 +141,7 @@ class AUTH
     }
 
     // Calculate age based on birthday
-    $bday = new DateTime($json['bday']);
+    $bday = new DateTime($json['dateOfBirth']);
     $today = new DateTime();
     $age = $today->diff($bday)->y;
 
@@ -142,18 +149,51 @@ class AUTH
     $firstname = InputHelper::sanitizeString($json['firstname']);
     $middlename = isset($json['middlename']) ? InputHelper::sanitizeString($json['middlename']) : "";
     $lastname = InputHelper::sanitizeString($json['lastname']);
-    $email = $json['email'];
+    $suffix = isset($json['suffix']) ? InputHelper::sanitizeString($json['suffix']) : "";
+    $dateOfBirth = $bday->format('Y-m-d');
+    $sex = InputHelper::sanitizeString($json['sex']);
+    $bloodType = isset($json['bloodType']) ? InputHelper::sanitizeString($json['bloodType']) : "";
+    $civilStatus = InputHelper::sanitizeString($json['civilStatus']);
+    $typeOfDisability = isset($json['typeOfDisability']) ? InputHelper::sanitizeString($json['typeOfDisability']) : "";
+    $religion = isset($json['religion']) ? InputHelper::sanitizeString($json['religion']) : "";
+    $educationalAttainment = InputHelper::sanitizeString($json['educationalAttainment']);
+    
+    // Address
+    $houseNoAndStreet = InputHelper::sanitizeString($json['houseNoAndStreet']);
+    $barangay = InputHelper::sanitizeString($json['barangay']);
+    $municipality = InputHelper::sanitizeString($json['municipality']);
+    $province = InputHelper::sanitizeString($json['province']);
+    $region = InputHelper::sanitizeString($json['region']);
+    
+    // Contact Information
+    $cellphoneNumber = InputHelper::sanitizeString($json['cellphoneNumber']);
+    $emailAddress = $json['emailAddress'];
+    
+    // Employment Details
+    $employmentType = isset($json['employmentType']) ? InputHelper::sanitizeString($json['employmentType']) : "";
+    $civilServiceEligibility = isset($json['civilServiceEligibility']) ? InputHelper::sanitizeString($json['civilServiceEligibility']) : "";
+    $salaryGrade = isset($json['salaryGrade']) ? InputHelper::sanitizeString($json['salaryGrade']) : "";
+    $presentPosition = isset($json['presentPosition']) ? InputHelper::sanitizeString($json['presentPosition']) : "";
+    $office = isset($json['office']) ? InputHelper::sanitizeString($json['office']) : "";
+    $service = isset($json['service']) ? InputHelper::sanitizeString($json['service']) : "";
+    $divisionProvince = isset($json['divisionProvince']) ? InputHelper::sanitizeString($json['divisionProvince']) : "";
+    
+    // Emergency Contact
+    $emergencyContactName = isset($json['emergencyContactName']) ? InputHelper::sanitizeString($json['emergencyContactName']) : "";
+    $emergencyContactRelationship = isset($json['emergencyContactRelationship']) ? InputHelper::sanitizeString($json['emergencyContactRelationship']) : "";
+    $emergencyContactAddress = isset($json['emergencyContactAddress']) ? InputHelper::sanitizeString($json['emergencyContactAddress']) : "";
+    $emergencyContactNumber = isset($json['emergencyContactNumber']) ? InputHelper::sanitizeString($json['emergencyContactNumber']) : "";
+    $emergencyContactEmail = isset($json['emergencyContactEmail']) ? InputHelper::sanitizeString($json['emergencyContactEmail']) : "";
+    
+    // Account Details
     $username = InputHelper::sanitizeString($json['username']);
-    $phoneNumber = InputHelper::sanitizeString($json['phoneNumber']);
-    $bdayFormatted = $bday->format('Y-m-d'); // Ensure the date is properly formatted
-    $gender = $json['gender'];
     $password = password_hash($json['password'], PASSWORD_BCRYPT);
-    $userTypeID = 4;
+    $userTypeID = 4; // Student
     $isActive = 1;
 
     // Check if email already exists
     $stmt = $this->conn->prepare("SELECT user_id FROM userinfo WHERE email = :email");
-    $stmt->bindParam(':email', $email);
+    $stmt->bindParam(':email', $emailAddress);
     $stmt->execute();
 
     if ($stmt->rowCount() > 0) {
@@ -195,18 +235,55 @@ class AUTH
       // Get last inserted user_id
       $userID = $this->conn->lastInsertId();
 
-      // Insert into `userinfo` table
-      $stmt = $this->conn->prepare("INSERT INTO userinfo (user_id, first_name, middle_name, last_name, age, email, phone, date_of_birth, gender) 
-                                          VALUES (:userID, :firstname, :middlename, :lastname, :age, :email, :phone, :bday, :gender)");
+      // Insert into `userinfo` table with all the new fields
+      $stmt = $this->conn->prepare("INSERT INTO userinfo (
+        user_id, first_name, middle_name, last_name, suffix, age, date_of_birth, sex, 
+        blood_type, civil_status, type_of_disability, religion, educational_attainment,
+        address, barangay, municipality, province, region, email, phone,
+        employment_type, civil_service_eligibility, salary_grade, present_position,
+        office, service, division_province, emergency_contact_name, emergency_contact_relationship,
+        emergency_contact_address, emergency_contact_number, emergency_contact_email
+      ) VALUES (
+        :userID, :firstname, :middlename, :lastname, :suffix, :age, :dateOfBirth, :sex,
+        :bloodType, :civilStatus, :typeOfDisability, :religion, :educationalAttainment,
+        :houseNoAndStreet, :barangay, :municipality, :province, :region, :emailAddress, :cellphoneNumber,
+        :employmentType, :civilServiceEligibility, :salaryGrade, :presentPosition,
+        :office, :service, :divisionProvince, :emergencyContactName, :emergencyContactRelationship,
+        :emergencyContactAddress, :emergencyContactNumber, :emergencyContactEmail
+      )");
+      
       $stmt->bindParam(':userID', $userID);
       $stmt->bindParam(':firstname', $firstname);
       $stmt->bindParam(':middlename', $middlename);
       $stmt->bindParam(':lastname', $lastname);
+      $stmt->bindParam(':suffix', $suffix);
       $stmt->bindParam(':age', $age);
-      $stmt->bindParam(':email', $email);
-      $stmt->bindParam(':phone', $phoneNumber);
-      $stmt->bindParam(':bday', $bdayFormatted);
-      $stmt->bindParam(':gender', $gender);
+      $stmt->bindParam(':dateOfBirth', $dateOfBirth);
+      $stmt->bindParam(':sex', $sex);
+      $stmt->bindParam(':bloodType', $bloodType);
+      $stmt->bindParam(':civilStatus', $civilStatus);
+      $stmt->bindParam(':typeOfDisability', $typeOfDisability);
+      $stmt->bindParam(':religion', $religion);
+      $stmt->bindParam(':educationalAttainment', $educationalAttainment);
+      $stmt->bindParam(':houseNoAndStreet', $houseNoAndStreet);
+      $stmt->bindParam(':barangay', $barangay);
+      $stmt->bindParam(':municipality', $municipality);
+      $stmt->bindParam(':province', $province);
+      $stmt->bindParam(':region', $region);
+      $stmt->bindParam(':emailAddress', $emailAddress);
+      $stmt->bindParam(':cellphoneNumber', $cellphoneNumber);
+      $stmt->bindParam(':employmentType', $employmentType);
+      $stmt->bindParam(':civilServiceEligibility', $civilServiceEligibility);
+      $stmt->bindParam(':salaryGrade', $salaryGrade);
+      $stmt->bindParam(':presentPosition', $presentPosition);
+      $stmt->bindParam(':office', $office);
+      $stmt->bindParam(':service', $service);
+      $stmt->bindParam(':divisionProvince', $divisionProvince);
+      $stmt->bindParam(':emergencyContactName', $emergencyContactName);
+      $stmt->bindParam(':emergencyContactRelationship', $emergencyContactRelationship);
+      $stmt->bindParam(':emergencyContactAddress', $emergencyContactAddress);
+      $stmt->bindParam(':emergencyContactNumber', $emergencyContactNumber);
+      $stmt->bindParam(':emergencyContactEmail', $emergencyContactEmail);
       $stmt->execute();
 
       // Commit transaction

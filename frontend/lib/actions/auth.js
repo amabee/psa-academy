@@ -79,39 +79,64 @@ export const login = async (user, password) => {
   }
 };
 
-export const signup = async (
-  firstname,
-  middlename,
-  lastname,
-  email,
-  username,
-  phoneNumber,
-  bday,
-  gender,
-  password
-) => {
-  const formData = new FormData();
+export const signup = async (formData) => {
+  const formDataToSend = new FormData();
 
-  formData.append("operation", "signup");
-  formData.append(
+  formDataToSend.append("operation", "signup");
+  formDataToSend.append(
     "json",
     JSON.stringify({
-      firstname: firstname,
-      middlename: middlename,
-      lastname: lastname,
-      email: email,
-      username: username,
-      phoneNumber: phoneNumber,
-      bday: bday,
-      gender: gender,
-      password: password,
+      // Personal Information
+      firstname: formData.firstName,
+      middlename: formData.middleName,
+      lastname: formData.lastName,
+      suffix: formData.suffix,
+      dateOfBirth: formData.dateOfBirth,
+      sex: formData.sex,
+      bloodType: formData.bloodType,
+      civilStatus: formData.civilStatus,
+      typeOfDisability: formData.typeOfDisability,
+      religion: formData.religion,
+      educationalAttainment: formData.educationalAttainment,
+      
+      // Address
+      houseNoAndStreet: formData.houseNoAndStreet,
+      barangay: formData.barangay,
+      municipality: formData.municipality,
+      province: formData.province,
+      region: formData.region,
+      
+      // Contact Information
+      cellphoneNumber: formData.cellphoneNumber,
+      emailAddress: formData.emailAddress,
+      
+      // Employment Details
+      employmentType: formData.employmentType,
+      civilServiceEligibility: formData.civilServiceEligibility,
+      salaryGrade: formData.salaryGrade,
+      presentPosition: formData.presentPosition,
+      office: formData.office,
+      service: formData.service,
+      divisionProvince: formData.divisionProvince,
+      
+      // Emergency Contact
+      emergencyContactName: formData.emergencyContactName,
+      emergencyContactRelationship: formData.emergencyContactRelationship,
+      emergencyContactAddress: formData.emergencyContactAddress,
+      emergencyContactNumber: formData.emergencyContactNumber,
+      emergencyContactEmail: formData.emergencyContactEmail,
+      
+      // Account Details
+      username: formData.username,
+      password: formData.password,
     })
   );
+  
   try {
     const response = await axios({
       url: `${BASE_URL}auth/auth.php`,
       method: "POST",
-      data: formData,
+      data: formDataToSend,
       withCredentials: true,
       headers: {
         Authorization: SECRET_KEY,
@@ -127,7 +152,7 @@ export const signup = async (
     const errorMessage =
       error.response?.data?.message ||
       error.message ||
-      "An error occurred during login";
+      "An error occurred during signup";
     return { success: false, data: [], message: errorMessage };
   }
 };

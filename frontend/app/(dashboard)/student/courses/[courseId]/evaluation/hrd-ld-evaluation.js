@@ -500,11 +500,62 @@ export default function HRDLDEvaluationPage() {
         return;
       }
 
+      // Transform flat answers into structured format
+      const structuredAnswers = {
+        level1_workshop: {
+          areas_of_evaluation: {
+            skills_development: answers.l1w_q1,
+            expectations_met: answers.l1w_q2,
+            information_accuracy: answers.l1w_q3,
+            logical_learning_build_up: answers.l1w_q4,
+            objectives_achieved: answers.l1w_q5,
+            addressed_office_needs: answers.l1w_q6,
+            training_materials_usefulness: answers.l1w_q7,
+            program_duration: answers.l1w_q8,
+            training_materials_quality: answers.l1w_q9,
+            preparation_coordination: answers.l1w_q10
+          },
+          assessment_questions: {
+            worth_attending: answers.l1w_q11,
+            online_training_conducive: answers.l1w_q12,
+            recommend_to_others: answers.l1w_q13
+          },
+          feedback: {
+            appreciated_most: answers.l1w_q14,
+            improvements_needed: answers.l1w_q15,
+            additional_comments: answers.l1w_q16
+          }
+        },
+        level1_trainer: {
+          areas_of_evaluation: {
+            subject_knowledge: answers.l1t_q1,
+            concrete_examples: answers.l1t_q2,
+            clear_presentation: answers.l1t_q3,
+            question_handling: answers.l1t_q4,
+            participant_engagement: answers.l1t_q5,
+            activity_explanation: answers.l1t_q6,
+            sensitivity_to_needs: answers.l1t_q7,
+            schedule_observance: answers.l1t_q8,
+            professional_demeanor: answers.l1t_q9,
+            gender_sensitivity: answers.l1t_q10
+          },
+          feedback: {
+            trainer_performance_comments: answers.l1t_q11
+          }
+        },
+        level2_learning: {
+          feedback: {
+            learning_impact: answers.l2_q1,
+            implementation_plans: answers.l2_q2
+          }
+        }
+      };
+
       const result = await submitCourseEvaluation(
         courseId,
         user.user.user_id,
         "hrd-ld",
-        answers
+        structuredAnswers
       );
 
       if (result.success) {
