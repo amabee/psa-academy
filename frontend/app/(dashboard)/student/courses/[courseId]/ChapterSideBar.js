@@ -9,6 +9,8 @@ import {
   Trophy,
   FileVideo,
   ClipboardCheck,
+  Award,
+  Lock,
 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { cn, getFileType } from "@/lib/utils";
@@ -21,6 +23,8 @@ import {
   addToTopicProgress,
   updateTopicProgress,
   checkPreTestCompletion,
+  getEvaluationStatus,
+  getCourseTests,
 } from "@/lib/actions/students/action";
 
 const ChaptersSidebar = () => {
@@ -28,6 +32,9 @@ const ChaptersSidebar = () => {
   const { setOpen } = useSidebar();
   const [expandedSections, setExpandedSections] = useState([]);
   const [hasAutoAddedFirstTopic, setHasAutoAddedFirstTopic] = useState(false);
+  const [evaluationStatus, setEvaluationStatus] = useState(null);
+  const [postTestStatus, setPostTestStatus] = useState(null);
+  const [isPostTestCompleted, setIsPostTestCompleted] = useState(false);
 
   const params = useParams();
   const courseId = params.courseId;
@@ -51,6 +58,37 @@ const ChaptersSidebar = () => {
     const topic = lesson.topics?.find((topic) => topic.topic_id === topicId);
     return topic?.progress || null;
   }, null);
+
+  // Fetch evaluation status and post-test status
+  useEffect(() => {
+    const fetchStatuses = async () => {
+      if (courseId && user?.user?.user_id) {
+        try {
+          // Fetch evaluation status
+          const evalResult = await getEvaluationStatus(courseId, user.user.user_id);
+          if (evalResult.success) {
+            setEvaluationStatus(evalResult.data);
+          }
+
+          // Fetch course tests to check post-test completion
+          const testsResult = await getCourseTests(courseId, user.user.user_id);
+          if (testsResult.success) {
+            const postTest = testsResult.data.find(test => test.test_type === 'post');
+            if (postTest) {
+              setPostTestStatus(postTest);
+              // Check if post-test is completed (has results)
+              const hasResults = postTest.answered_count > 0 && postTest.question_count > 0;
+              setIsPostTestCompleted(hasResults);
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching statuses:", error);
+        }
+      }
+    };
+
+    fetchStatuses();
+  }, [courseId, user?.user?.user_id]);
 
   // Auto-add first topic to progress
   useEffect(() => {
@@ -83,7 +121,7 @@ const ChaptersSidebar = () => {
         return;
       }
 
-      const { success, message } = await updateTopicProgress(topicId);
+      const { success, message } = await updateTopicProgress(topicId, user?.user.user_id);
 
       if (!success) {
         return toast.error(message);
@@ -116,6 +154,22 @@ const ChaptersSidebar = () => {
 
     setIsNavigating(true);
     router.push(`/student/courses/${courseId}/tests`, {
+      scroll: false,
+    });
+  };
+
+  const handleEvaluationNavigation = () => {
+    if (!courseId) return;
+
+    // Check if post-test is completed
+    if (!isPostTestCompleted) {
+      toast.info("Please complete the post-test before accessing the evaluation");
+      handleTestNavigation("post");
+      return;
+    }
+
+    setIsNavigating(true);
+    router.push(`/student/courses/${courseId}/evaluation`, {
       scroll: false,
     });
   };
@@ -178,6 +232,9 @@ const ChaptersSidebar = () => {
     }
   };
 
+  // Check if evaluation is completed
+  const isEvaluationCompleted = evaluationStatus && evaluationStatus.length > 0;
+
   return (
     <div ref={sidebarRef} className="chapters-sidebar">
       <div className="chapters-sidebar__header">
@@ -232,6 +289,43 @@ const ChaptersSidebar = () => {
             </div>
             <h3 className="chapters-sidebar__section-title">
               Learning Evaluation
+            </h3>
+          </div>
+          <hr className="chapters-sidebar__divider" />
+        </div>
+      </div>
+
+      <div>
+        <div className={cn(
+          "chapters-sidebar__section",
+          !isPostTestCompleted && "opacity-50"
+        )}>
+          <div
+            className={cn(
+              "chapters-sidebar__section-header",
+              isPostTestCompleted ? "cursor-pointer" : "cursor-not-allowed"
+            )}
+            onClick={handleEvaluationNavigation}
+          >
+            <div className="chapters-sidebar__section-title-wrapper">
+              <p className="text-lg flex items-center">
+                {!isPostTestCompleted ? (
+                  <Lock className="mr-2 h-5 w-5 text-gray-500" />
+                ) : isEvaluationCompleted ? (
+                  <CheckCircle className="mr-2 h-5 w-5 text-green-500" />
+                ) : (
+                  <Award className="mr-2 h-5 w-5 text-primary-700" />
+                )}
+                EVALUATION
+              </p>
+            </div>
+            <h3 className="chapters-sidebar__section-title">
+              {!isPostTestCompleted 
+                ? "Complete Post-Test First" 
+                : isEvaluationCompleted 
+                  ? "Course Feedback Submitted" 
+                  : "Share Your Experience"
+              }
             </h3>
           </div>
           <hr className="chapters-sidebar__divider" />

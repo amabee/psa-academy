@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import FormField from "@/components/signup/FormField";
 import SectionHeader from "@/components/signup/SectionHeader";
 
-export default function RegisterPage() {
+export default function SpeakerRegisterPage() {
   const [signingUp, setSigningUp] = useState(false);
   const [captchaToken, setCaptchaToken] = useState(null);
   const [isConfidentialityDialogOpen, setIsConfidentialityDialogOpen] = useState(false);
@@ -215,7 +215,13 @@ export default function RegisterPage() {
       try {
         setSigningUp(true);
 
-        const { success, data, message } = await signup(formData);
+        // Add userType to formData for speaker registration
+        const speakerFormData = {
+          ...formData,
+          userType: 3 // Speaker user type
+        };
+
+        const { success, data, message } = await signup(speakerFormData);
 
         if (!success) {
           Swal.fire({
@@ -231,7 +237,7 @@ export default function RegisterPage() {
         } else {
           Swal.fire({
             title: "Success!",
-            text: "Account created successfully!",
+            text: "Account created successfully!.",
             allowOutsideClick: false,
             allowEscapeKey: false,
             allowEnterKey: false,
@@ -338,7 +344,7 @@ export default function RegisterPage() {
         >
           <motion.div variants={itemVariants} className="mb-8">
             <h3 className="text-gray-800 text-4xl font-extrabold">
-              Create Account
+              Create Speaker Account
             </h3>
             <p className="text-gray-800 text-sm mt-6">
               Already have an account?
@@ -822,11 +828,11 @@ export default function RegisterPage() {
               className="relative w-full flex items-center justify-center gap-2 py-3 px-4 text-sm font-medium tracking-wide rounded-md text-white-100 bg-blue-600 hover:bg-blue-700 disabled:opacity-70 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
             >
               {signingUp && <Loader2 className="w-4 h-4 animate-spin" />}
-              <span>{signingUp ? "Signing Up..." : "Create Account"}</span>
+              <span>{signingUp ? "Signing Up..." : "Create Speaker Account"}</span>
             </motion.button>
           </motion.div>
         </motion.form>
       </div>
     </div>
   );
-}
+} 

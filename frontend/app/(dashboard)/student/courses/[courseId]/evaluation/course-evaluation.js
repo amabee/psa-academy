@@ -31,19 +31,11 @@ import {
   ArrowLeft,
   ArrowRight,
 } from "lucide-react";
-
-// Mock data - replace with your actual data fetching logic
-const fetchCourseData = async (courseId) => {
-  return {
-    id: courseId,
-    title: "Advanced React Development",
-    instructor: "Dr. Sarah Johnson",
-    duration: "8 weeks",
-    completedLessons: 24,
-    totalLessons: 28,
-    category: "Web Development",
-  };
-};
+import {
+  submitCourseEvaluation,
+  getUserCourseDetails,
+} from "@/lib/actions/students/action";
+import { useUser } from "@/app/providers/UserProvider";
 
 const evaluationSections = [
   {
@@ -226,29 +218,40 @@ const StarRating = ({ value, onChange, size = "lg" }) => {
 export default function CourseEvaluationPage() {
   const params = useParams();
   const router = useRouter();
+  const user = useUser();
   const { courseId } = params;
 
-  const [course, setCourse] = useState(null);
   const [currentSection, setCurrentSection] = useState(0);
   const [answers, setAnswers] = useState({});
+  const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [evaluationCompleted, setEvaluationCompleted] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [course, setCourse] = useState(null);
 
   useEffect(() => {
     const loadCourse = async () => {
+      if (!courseId || !user) return;
+
       try {
-        const courseData = await fetchCourseData(courseId);
-        setCourse(courseData);
-        setLoading(false);
+        setLoading(true);
+        const result = await getUserCourseDetails(user.user.user_id, courseId);
+
+        if (result.success) {
+          setCourse(result.data);
+        } else {
+          toast.error("Failed to load course data");
+        }
       } catch (error) {
         toast.error("Failed to load course data");
+      } finally {
         setLoading(false);
       }
     };
 
     loadCourse();
-  }, [courseId]);
+  }, [courseId, user]);
+
+  console.log("COURSE TO BE RATED: ", course);
 
   const handleAnswerChange = (questionId, value) => {
     setAnswers((prev) => ({
@@ -272,7 +275,7 @@ export default function CourseEvaluationPage() {
   };
 
   const handleSubmitEvaluation = async () => {
-    if (isSubmitting) return;
+    if (isSubmitting || !user) return;
 
     // Check required fields
     const requiredQuestions = evaluationSections.flatMap((section) =>
@@ -289,11 +292,19 @@ export default function CourseEvaluationPage() {
     setIsSubmitting(true);
 
     try {
-      // Here you would typically send the evaluation to your backend
-      // await submitEvaluation(courseId, answers);
+      const result = await submitCourseEvaluation(
+        courseId,
+        user.user.user_id,
+        "course",
+        answers
+      );
 
-      setEvaluationCompleted(true);
-      toast.success("Evaluation submitted successfully!");
+      if (result.success) {
+        setEvaluationCompleted(true);
+        toast.success("Evaluation submitted successfully!");
+      } else {
+        toast.error(result.message || "Failed to submit evaluation");
+      }
     } catch (error) {
       toast.error("Failed to submit evaluation");
     } finally {
@@ -436,24 +447,24 @@ export default function CourseEvaluationPage() {
                       <div className="flex items-center gap-4 text-sm text-customgreys-dirtyGrey">
                         <span className="flex items-center gap-1">
                           <User className="w-4 h-4" />
-                          {course.instructor}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-4 h-4" />
-                          {course.duration}
+                          {course.teacher_firstname} {course.teacher_lastname}
                         </span>
                         <span className="flex items-center gap-1">
                           <BookOpen className="w-4 h-4" />
-                          {course.completedLessons}/{course.totalLessons}{" "}
-                          lessons
+                          {course.progress?.completed_topics || 0}/
+                          {course.progress?.total_topics || 0} topics
                         </span>
                       </div>
                     </div>
                     <div className="text-right">
                       <div className="text-2xl font-bold text-primary-500">
-                        {Math.round(
-                          (course.completedLessons / course.totalLessons) * 100
-                        )}
+                        {course.progress && course.progress.total_topics > 0
+                          ? Math.round(
+                              (course.progress.completed_topics /
+                                course.progress.total_topics) *
+                                100
+                            )
+                          : 0}
                         %
                       </div>
                       <div className="text-sm text-customgreys-dirtyGrey">

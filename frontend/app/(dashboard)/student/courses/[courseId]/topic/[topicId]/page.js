@@ -52,7 +52,7 @@ const Course = () => {
   const hasTopicProgress = course?.lessons?.reduce((found, lesson) => {
     if (found) return true;
     const topic = lesson.topics?.find((topic) => topic.topic_id === topicId);
-    return !!topic?.progress;
+    return topic?.progress && topic.progress.last_accessed !== null;
   }, false);
 
   // Check pre-test completion when component mounts
@@ -93,8 +93,6 @@ const Course = () => {
   const handleProgress = (played) => {
     if (played >= 0.8) {
       markAsComplete(true);
-    } else if (!hasTopicProgress) {
-      markAsComplete(true);
     }
   };
 
@@ -110,7 +108,7 @@ const Course = () => {
         }
       }
 
-      const { success, message } = await updateTopicProgress(topicId);
+      const { success, message } = await updateTopicProgress(topicId, user?.user.user_id);
 
       if (!success) {
         return showToast ? toast.error(message) : null;
@@ -197,14 +195,8 @@ const Course = () => {
         }, 2000); // 2 second delay
 
         return () => clearTimeout(timer);
-      } else {
-        // For other topics, auto-complete after a longer delay to give students time to interact
-        const timer = setTimeout(() => {
-          markAsComplete(false); // Don't show toast for auto-completion
-        }, 30000); // 30 second delay for other topics
-
-        return () => clearTimeout(timer);
       }
+      // Remove auto-completion for other topics - let them be completed manually
     }
   }, [course, topicId, hasTopicProgress]);
 

@@ -43,6 +43,10 @@ export default function TestResults({ testData, userResponses, scoreData }) {
     );
   };
 
+  const navigateToEvaluation = () => {
+    router.push(`/student/courses/${courseId}/evaluation`);
+  };
+
   const getScoreColor = (percentage) => {
     if (percentage >= 90) return "text-green-500";
     if (percentage >= 80) return "text-blue-500";
@@ -345,6 +349,12 @@ export default function TestResults({ testData, userResponses, scoreData }) {
                             knowledge
                           </span>
                         </div>
+                        <div className="flex items-start gap-2">
+                          <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                          <span className="font-medium text-green-600">
+                            Complete the course evaluation to provide valuable feedback
+                          </span>
+                        </div>
                       </>
                     )}
                   </div>
@@ -353,6 +363,35 @@ export default function TestResults({ testData, userResponses, scoreData }) {
             </CardContent>
           </Card>
         </div>
+
+        {/* Evaluation Call-to-Action for Post-Tests */}
+        {testType === "post" && (
+          <Card className="mb-8 bg-gradient-to-r from-green-50 to-blue-50 border-green-200">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+                  <Award className="w-6 h-6 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-green-800 mb-1">
+                    Course Evaluation Available
+                  </h3>
+                  <p className="text-green-700 text-sm">
+                    Help us improve our courses by completing a brief evaluation. 
+                    Your feedback is valuable for enhancing the learning experience for future students.
+                  </p>
+                </div>
+                <Button
+                  onClick={navigateToEvaluation}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <Award className="mr-2 h-4 w-4" />
+                  Start Evaluation
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Action Buttons */}
         <Card className="border-none">
@@ -370,6 +409,16 @@ export default function TestResults({ testData, userResponses, scoreData }) {
                 className="bg-customgreys-primarybg border-customgreys-dirtyGrey text-white-50 hover:bg-customgreys-darkerGrey"
               >
                 Retake Test
+              </Button>
+            )}
+            {testType === "post" && (
+              <Button
+                variant="outline"
+                onClick={navigateToEvaluation}
+                className="bg-green-600 hover:bg-green-700 text-white border-green-600"
+              >
+                <Award className="mr-2 h-4 w-4" />
+                Complete Evaluation
               </Button>
             )}
           </CardFooter>

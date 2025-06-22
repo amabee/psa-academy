@@ -109,13 +109,14 @@ export const addToTopicProgress = async (topic_id, user_id) => {
 
 // UPDATE TOPIC PROGRESS
 
-export const updateTopicProgress = async (topic_id) => {
+export const updateTopicProgress = async (topic_id, user_id) => {
   const formData = new FormData();
   formData.append("operation", "updateTopicProgress");
   formData.append(
     "json",
     JSON.stringify({
       topic_id: topic_id,
+      user_id: user_id,
     })
   );
 
@@ -374,6 +375,90 @@ export const checkPreTestCompletion = async (user_id, course_id) => {
       error.response?.data?.message ||
       error.message ||
       "An error occurred while checking pre-test completion";
+    return { success: false, data: [], message: errorMessage };
+  }
+};
+
+// EVALUATION FUNCTIONS
+
+export const submitCourseEvaluation = async (course_id, user_id, evaluation_type, answers) => {
+  const formData = new FormData();
+  formData.append("operation", "submitEvaluation");
+  formData.append(
+    "json",
+    JSON.stringify({
+      course_id: course_id,
+      user_id: user_id,
+      evaluation_type: evaluation_type,
+      answers: answers,
+    })
+  );
+
+  try {
+    const res = await axios(`${BASE_URL}student/process/evaluation.php`, {
+      method: "POST",
+      data: formData,
+      headers: {
+        Authorization: SECRET_KEY,
+      },
+    });
+
+    if (res.status !== 201 && res.status !== 200) {
+      return { success: false, data: [], message: "Status error" };
+    }
+
+    if (!res.data.success) {
+      return {
+        success: false,
+        data: [],
+        message: res.data.message || "Failed to submit evaluation",
+      };
+    }
+
+    return { success: true, data: res.data.data, message: res.data.message };
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message ||
+      error.message ||
+      "An error occurred while submitting evaluation";
+    return { success: false, data: [], message: errorMessage };
+  }
+};
+
+export const getEvaluationStatus = async (course_id, user_id) => {
+  try {
+    const res = await axios(`${BASE_URL}student/process/evaluation.php`, {
+      method: "GET",
+      params: {
+        operation: "getEvaluationStatus",
+        json: JSON.stringify({
+          course_id: course_id,
+          user_id: user_id,
+        }),
+      },
+      headers: {
+        Authorization: SECRET_KEY,
+      },
+    });
+
+    if (res.status !== 200) {
+      return { success: false, data: [], message: "Status error" };
+    }
+
+    if (!res.data.success) {
+      return {
+        success: false,
+        data: [],
+        message: res.data.message || "Failed to fetch evaluation status",
+      };
+    }
+
+    return { success: true, data: res.data.data, message: "" };
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message ||
+      error.message ||
+      "An error occurred while fetching evaluation status";
     return { success: false, data: [], message: errorMessage };
   }
 };

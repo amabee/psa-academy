@@ -13,6 +13,8 @@ import {
 } from "@/lib/actions/speaker/action";
 import { toast } from "sonner";
 import Swal from "sweetalert2";
+import { useQueryClient } from "@tanstack/react-query";
+import { useParams } from "next/navigation";
 
 const LessonHeader = ({ lesson, lessonIndex, dragHandleProps }) => {
   const openLessonModal = useLessonStore((state) => state.openLessonModal);
@@ -103,6 +105,9 @@ const TopicItem = ({ topic, topicIndex, lessonIndex, draggableProvider }) => {
         }
         toast.success("Topic deleted successfully");
         deleteTopic({ lessonIndex, topicIndex });
+        
+        // Invalidate course detail query to refresh the course data
+        await queryClient.invalidateQueries(["course", courseId]);
       } catch (error) {
         Swal.fire({
           title: "Error",
@@ -165,6 +170,9 @@ export default function DroppableComponent() {
   const openTopicModal = useLessonStore((state) => state.openTopicModal);
 
   const [isCreating, setIsCreating] = useState(false);
+  const queryClient = useQueryClient();
+  const params = useParams();
+  const courseId = params.id;
 
   const createTopicID = async (lessonIndex) => {
     try {
@@ -215,6 +223,9 @@ export default function DroppableComponent() {
         toast.error(message || "Failed to update lesson sequence");
       } else {
         toast.success("Lesson sequence updated successfully!");
+        
+        // Invalidate course detail query to refresh the course data
+        await queryClient.invalidateQueries(["course", courseId]);
       }
     } catch (error) {
       setLessons(lessons);

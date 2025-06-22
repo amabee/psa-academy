@@ -5,3 +5,7 @@ out/
 *.log
 .env
 *.mp4
+*.pdf
+*.docx
+*.doc
+
