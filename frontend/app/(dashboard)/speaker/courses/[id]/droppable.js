@@ -13,8 +13,10 @@ import {
 } from "@/lib/actions/speaker/action";
 import { toast } from "sonner";
 import Swal from "sweetalert2";
-import { useQueryClient } from "@tanstack/react-query";
+import { QueryClient, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
+
+const queryClient = new QueryClient();
 
 const LessonHeader = ({ lesson, lessonIndex, dragHandleProps }) => {
   const openLessonModal = useLessonStore((state) => state.openLessonModal);
