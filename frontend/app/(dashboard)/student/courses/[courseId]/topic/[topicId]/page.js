@@ -17,7 +17,12 @@ import "react-pdf/dist/esm/Page/TextLayer.css";
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from "lucide-react";
 import { useAppStore, useNavigationStore } from "@/store/stateStore";
 import { toast } from "sonner";
-import { updateTopicProgress, addToTopicProgress, checkPreTestCompletion } from "@/lib/actions/students/action";
+import {
+  updateTopicProgress,
+  addToTopicProgress,
+  checkPreTestCompletion,
+} from "@/lib/actions/students/action";
+import "../../../../../dashboard_css.css";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
@@ -61,17 +66,22 @@ const Course = () => {
       if (!isLoading && course && user?.user?.user_id) {
         try {
           setIsCheckingPreTest(true);
-          
+
           // Check if pre-test is completed
           const preTestStatus = await checkPreTestCompletion(
             user.user.user_id,
             courseId
           );
-          
+
           if (preTestStatus.success) {
             // If pre-test exists and is not completed, redirect to tests page
-            if (preTestStatus.data.pre_test_exists && !preTestStatus.data.pre_test_completed) {
-              toast.info("Please complete the pre-test before accessing course content");
+            if (
+              preTestStatus.data.pre_test_exists &&
+              !preTestStatus.data.pre_test_completed
+            ) {
+              toast.info(
+                "Please complete the pre-test before accessing course content"
+              );
               router.push(`/student/courses/${courseId}/tests`, {
                 scroll: false,
               });
@@ -102,13 +112,21 @@ const Course = () => {
     try {
       // First, ensure topic progress exists for this user
       if (!hasTopicProgress) {
-        const { success: addSuccess } = await addToTopicProgress(topicId, user?.user.user_id);
+        const { success: addSuccess } = await addToTopicProgress(
+          topicId,
+          user?.user.user_id
+        );
         if (!addSuccess) {
-          return showToast ? toast.error("Failed to initialize topic progress") : null;
+          return showToast
+            ? toast.error("Failed to initialize topic progress")
+            : null;
         }
       }
 
-      const { success, message } = await updateTopicProgress(topicId, user?.user.user_id);
+      const { success, message } = await updateTopicProgress(
+        topicId,
+        user?.user.user_id
+      );
 
       if (!success) {
         return showToast ? toast.error(message) : null;
@@ -119,7 +137,9 @@ const Course = () => {
       console.log(message);
       return showToast ? toast.success("Topic Completed") : null;
     } catch (error) {
-      return showToast ? toast.error(error.message || "Failed to mark as complete") : null;
+      return showToast
+        ? toast.error(error.message || "Failed to mark as complete")
+        : null;
     }
   };
 
@@ -182,10 +202,11 @@ const Course = () => {
   useEffect(() => {
     if (course && topicId && !hasTopicProgress) {
       // Check if this is the first topic of the first lesson (the one students are redirected to)
-      const isFirstTopic = course.lessons && 
-        course.lessons.length > 0 && 
-        course.lessons[0].topics && 
-        course.lessons[0].topics.length > 0 && 
+      const isFirstTopic =
+        course.lessons &&
+        course.lessons.length > 0 &&
+        course.lessons[0].topics &&
+        course.lessons[0].topics.length > 0 &&
         course.lessons[0].topics[0].topic_id === topicId;
 
       if (isFirstTopic) {
@@ -266,7 +287,7 @@ const Course = () => {
                 Resources
               </TabsTrigger>
               <TabsTrigger className="course__tab" value="Comments">
-               Comments
+                Comments
               </TabsTrigger>
             </TabsList>
 
