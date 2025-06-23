@@ -47,13 +47,6 @@ export default function TestResults({ testData, userResponses, scoreData }) {
     router.push(`/student/courses/${courseId}/evaluation`);
   };
 
-  const getScoreColor = (percentage) => {
-    if (percentage >= 90) return "text-green-500";
-    if (percentage >= 80) return "text-blue-500";
-    if (percentage >= 70) return "text-yellow-500";
-    if (percentage >= 60) return "text-orange-500";
-    return "text-red-500";
-  };
 
   const getScoreBadge = (percentage) => {
     if (percentage >= 90) return { text: "Excellent", color: "bg-green-500" };
@@ -187,6 +180,9 @@ export default function TestResults({ testData, userResponses, scoreData }) {
                         <div className="text-xs text-customgreys-dirtyGrey mt-1">
                           {response.question_type.replace("_", " ")}
                         </div>
+                        {/* <div className="text-xs mt-1">
+                          <span className="font-semibold">Your Answer:</span> {response.user_answer || "No answer"}
+                        </div> */}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">

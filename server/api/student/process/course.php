@@ -392,7 +392,7 @@ class Course
             $stmt = $this->conn->prepare($sql);
             $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
             $stmt->bindParam(':course_id', $course_id, PDO::PARAM_STR);
-            $stmt->bindValue(':isAdmitted', 1, PDO::PARAM_INT);
+            $stmt->bindValue(':isAdmitted', 0, PDO::PARAM_INT);
             $stmt->execute();
 
             http_response_code(201);
@@ -400,7 +400,7 @@ class Course
                 "status" => 201,
                 "success" => true,
                 "data" => [],
-                "message" => "Successfully enrolled in course"
+                "message" => "Enrollment request submitted and is pending approval."
             ]);
         } catch (PDOException $ex) {
             http_response_code(500);

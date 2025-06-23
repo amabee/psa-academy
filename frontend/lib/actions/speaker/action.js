@@ -1017,3 +1017,79 @@ export const getLessonTests = async (lesson_id) => {
     return { success: false, data: [], message: errorMessage };
   }
 };
+
+// ENROLLMENT APPROVALS
+export const getPendingEnrollments = async (speaker_id) => {
+  try {
+    const res = await axios(`${BASE_URL}speaker/process/students.php`, {
+      method: "GET",
+      params: {
+        operation: "getPendingEnrollments",
+        json: JSON.stringify({ speaker_id }),
+      },
+      headers: {
+        Authorization: SECRET_KEY,
+      },
+    });
+    if (res.status !== 200) {
+      return { success: false, data: [], message: "Status error" };
+    }
+    return { success: true, data: res.data.data, message: "" };
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message ||
+      error.message ||
+      "An error occurred while fetching pending enrollments";
+    return { success: false, data: [], message: errorMessage };
+  }
+};
+
+export const approveEnrollment = async (enrollment_id) => {
+  const formData = new FormData();
+  formData.append("operation", "approveEnrollment");
+  formData.append("json", JSON.stringify({ enrollment_id }));
+  try {
+    const res = await axios(`${BASE_URL}speaker/process/students.php`, {
+      method: "POST",
+      data: formData,
+      headers: {
+        Authorization: SECRET_KEY,
+      },
+    });
+    if (res.status !== 200) {
+      return { success: false, data: [], message: "Status error" };
+    }
+    return { success: true, data: res.data.data, message: res.data.message };
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message ||
+      error.message ||
+      "An error occurred while approving enrollment";
+    return { success: false, data: [], message: errorMessage };
+  }
+};
+
+export const denyEnrollment = async (enrollment_id) => {
+  const formData = new FormData();
+  formData.append("operation", "denyEnrollment");
+  formData.append("json", JSON.stringify({ enrollment_id }));
+  try {
+    const res = await axios(`${BASE_URL}speaker/process/students.php`, {
+      method: "POST",
+      data: formData,
+      headers: {
+        Authorization: SECRET_KEY,
+      },
+    });
+    if (res.status !== 200) {
+      return { success: false, data: [], message: "Status error" };
+    }
+    return { success: true, data: res.data.data, message: res.data.message };
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message ||
+      error.message ||
+      "An error occurred while denying enrollment";
+    return { success: false, data: [], message: errorMessage };
+  }
+};

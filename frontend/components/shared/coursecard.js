@@ -47,14 +47,18 @@ const CourseCard = ({ course, onGoToCourse, onApplyCourse, enrolling }) => {
         <CardFooter className="course-card__footer">
           <div className="course-card__category">{course.category_name}</div>
           <span
-            className={`${
+            className={
               course.enrolled === 1
                 ? "text-green-600 font-bold text-md"
+                : course.isAdmitted === 0
+                ? "text-yellow-500 font-bold text-md"
                 : "course-card__price"
-            }`}
+            }
           >
             {course.enrolled === 1 ? (
               "Enrolled"
+            ) : course.isAdmitted === 0 ? (
+              "Pending Approval"
             ) : (
               <Button
                 className="text-white-100 bg-green-600 hover:bg-green-700 shadow-md shadow-gray-800"
