@@ -48,7 +48,7 @@ const AppSidebar = () => {
       case 1:
         return "admin";
       case 2:
-        return "manager";
+        return "resource-person";
       case 3:
         return "teacher";
       case 4:
@@ -76,9 +76,9 @@ const AppSidebar = () => {
       { icon: BookOpen, label: "Courses", href: "/admin/courses" },
       { icon: User, label: "Profile", href: "/admin/profile" },
     ],
-    manager: [
-      { icon: BookOpen, label: "Courses", href: "/manager/courses" },
-      { icon: User, label: "Profile", href: "/manager/profile" },
+    "resource-person": [
+      { icon: BookOpen, label: "Courses", href: "/resource-person/" },
+      { icon: User, label: "Profile", href: "/resource-person/profile" },
     ],
     guest: [
       { icon: BookOpen, label: "Courses", href: "/courses" },
