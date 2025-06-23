@@ -18,6 +18,11 @@ export async function middleware(request) {
         allowedTypes: [3],
         defaultRedirect: "/speaker/courses",
       },
+      resourcePerson: {
+        pattern: /^\/resource-person(\/.*)?$/,
+        allowedTypes: [2],
+        defaultRedirect: "/resource-person",
+      },
       dashboard: {
         pattern: /^\/dashboard(\/.*)?$/,
         allowedTypes: [1, 2, 3, 4],
@@ -89,8 +94,9 @@ export async function middleware(request) {
 function getRedirectUrlForUserType(userType, baseUrl) {
   switch (userType) {
     case 1:
+      return "/admin";
     case 2:
-      return "/welcome";
+      return "/resource-person";
     case 3:
       return "/speaker/courses";
     case 4:
@@ -106,6 +112,7 @@ export const config = {
     "/dashboard/:path*",
     "/student/:path*",
     "/speaker/:path*",
+    "/resource-person/:path*",
     "/auth/:path*",
   ],
 };

@@ -427,8 +427,9 @@ const TopicModal = () => {
                       headers: {
                         Origin:
                           "http://localhost:3000" ||
-                          "http://192.168.1.2:3000",
-                          
+                          "http://192.168.1.2:3000" ||
+                          "https://psa-academy.vercel.app",
+
                         "X-Requested-With": "XMLHttpRequest",
                         Accept: "application/pdf,video/*",
                       },

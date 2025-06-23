@@ -87,7 +87,7 @@ export default function LoginPage() {
         case 1:
           return (window.location.href = "/welcome");
         case 2:
-          return (window.location.href = "/welcome");
+          return (window.location.href = "/resource-person");
         case 3:
           return (window.location.href = "/speaker/courses");
         case 4:

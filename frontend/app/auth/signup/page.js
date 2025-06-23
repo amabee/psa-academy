@@ -239,7 +239,7 @@ export default function RegisterPage() {
             confirmButtonText: "OK",
             icon: "success",
           }).then(() => {
-            window.location.href = "/auth/signin";
+              window.location.href = "/auth/signin";
           });
         }
       } catch (error) {
