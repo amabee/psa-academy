@@ -52,7 +52,7 @@ export const login = async (user, password) => {
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
       path: "/",
-      maxAge: 7200,
+      maxAge: 86400,
     });
 
     await cookieStore.set("session_token", response.data.data.token, {
@@ -60,7 +60,7 @@ export const login = async (user, password) => {
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
       path: "/",
-      maxAge: 7200,
+      maxAge: 86400,
     });
 
     return { success: true, message: "", data: response.data };
