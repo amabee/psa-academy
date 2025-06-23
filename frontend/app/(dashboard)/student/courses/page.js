@@ -34,7 +34,10 @@ const Courses = () => {
   const filteredCourses = useMemo(() => {
     if (!courses) return [];
 
-    return courses.filter((course) => {
+    return courses.map((course) => ({
+      ...course,
+      isAdmitted: course.isAdmitted,
+    })).filter((course) => {
       const matchesSearch = course.title
         .toLowerCase()
         .includes(searchTerm.toLowerCase());

@@ -232,6 +232,92 @@ class Courses
       ]);
     }
   }
+
+  // Add: Approve enrollment request
+  public function approveEnrollment($json) {
+    $data = json_decode($json, true);
+    $isData = InputHelper::requiredFields($data, ['enrollment_id']);
+    if ($isData !== true) {
+      http_response_code(422);
+      return json_encode([
+        "status" => 422,
+        "success" => false,
+        "data" => [],
+        "message" => "Missing enrollment_id."
+      ]);
+    }
+    $enrollment_id = (int)$data['enrollment_id'];
+    $sql = "UPDATE enrollments SET isAdmitted = 1 WHERE enrollment_id = :enrollment_id";
+    $stmt = $this->conn->prepare($sql);
+    $stmt->bindParam(':enrollment_id', $enrollment_id, \PDO::PARAM_INT);
+    $stmt->execute();
+    http_response_code(200);
+    return json_encode([
+      "status" => 200,
+      "success" => true,
+      "data" => [],
+      "message" => "Enrollment approved."
+    ]);
+  }
+
+  // Add: Deny enrollment request
+  public function denyEnrollment($json) {
+    $data = json_decode($json, true);
+    $isData = InputHelper::requiredFields($data, ['enrollment_id']);
+    if ($isData !== true) {
+      http_response_code(422);
+      return json_encode([
+        "status" => 422,
+        "success" => false,
+        "data" => [],
+        "message" => "Missing enrollment_id."
+      ]);
+    }
+    $enrollment_id = (int)$data['enrollment_id'];
+    $sql = "UPDATE enrollments SET isAdmitted = 2 WHERE enrollment_id = :enrollment_id";
+    $stmt = $this->conn->prepare($sql);
+    $stmt->bindParam(':enrollment_id', $enrollment_id, \PDO::PARAM_INT);
+    $stmt->execute();
+    http_response_code(200);
+    return json_encode([
+      "status" => 200,
+      "success" => true,
+      "data" => [],
+      "message" => "Enrollment denied."
+    ]);
+  }
+
+  // Add: Get pending enrollment requests for speaker's courses
+  public function getPendingEnrollments($json) {
+    $data = json_decode($json, true);
+    $isData = InputHelper::requiredFields($data, ['speaker_id']);
+    if ($isData !== true) {
+      http_response_code(422);
+      return json_encode([
+        "status" => 422,
+        "success" => false,
+        "data" => [],
+        "message" => "Missing speaker_id."
+      ]);
+    }
+    $speaker_id = (int)$data['speaker_id'];
+    $sql = "SELECT e.enrollment_id, e.user_id, e.course_id, e.enrollment_date, uinfo.first_name, uinfo.last_name, c.title as course_title
+            FROM enrollments e
+            INNER JOIN courses c ON e.course_id = c.course_id
+            INNER JOIN userinfo uinfo ON e.user_id = uinfo.user_id
+            WHERE c.user_id = :speaker_id AND e.isAdmitted = 0";
+    $stmt = $this->conn->prepare($sql);
+    $stmt->bindParam(':speaker_id', $speaker_id, \PDO::PARAM_INT);
+    $stmt->execute();
+    $pending = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    http_response_code(200);
+    return json_encode([
+      "status" => 200,
+      "success" => true,
+      "data" => $pending,
+      "message" => "Pending enrollments fetched."
+    ]);
+  }
 }
 
 $course = new Courses();
@@ -304,6 +390,48 @@ if (isset($headers['authorization']) && $headers['authorization'] === $validApiK
       case "getCourseStudents":
         if ($requestMethod === "GET") {
           echo $course->getCourseStudents($json);
+        } else {
+          http_response_code(405);
+          echo json_encode([
+            "status" => 405,
+            "success" => false,
+            "data" => [],
+            "message" => "Invalid request method for login. Use GET."
+          ]);
+        }
+        break;
+
+      case "approveEnrollment":
+        if ($requestMethod === "POST") {
+          echo $course->approveEnrollment($json);
+        } else {
+          http_response_code(405);
+          echo json_encode([
+            "status" => 405,
+            "success" => false,
+            "data" => [],
+            "message" => "Invalid request method for login. Use POST."
+          ]);
+        }
+        break;
+
+      case "denyEnrollment":
+        if ($requestMethod === "POST") {
+          echo $course->denyEnrollment($json);
+        } else {
+          http_response_code(405);
+          echo json_encode([
+            "status" => 405,
+            "success" => false,
+            "data" => [],
+            "message" => "Invalid request method for login. Use POST."
+          ]);
+        }
+        break;
+
+      case "getPendingEnrollments":
+        if ($requestMethod === "GET") {
+          echo $course->getPendingEnrollments($json);
         } else {
           http_response_code(405);
           echo json_encode([

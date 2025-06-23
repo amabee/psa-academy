@@ -21,6 +21,8 @@ import {
 import { useParams, useRouter } from "next/navigation";
 import React, { useState, useEffect, useMemo } from "react";
 import NotEnrolledStudentsModal from "../../components/InviteStudents_Modal";
+import { getPendingEnrollments, approveEnrollment, denyEnrollment } from "@/lib/actions/speaker/action";
+import { toast } from "sonner";
 
 const EnrolledStudentsPage = () => {
   const router = useRouter();
@@ -61,6 +63,8 @@ const EnrolledStudentsPage = () => {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [pendingEnrollments, setPendingEnrollments] = useState([]);
+  const [loadingPending, setLoadingPending] = useState(false);
 
   // Filter students based on search term and status
   const filteredStudents = useMemo(() => {
@@ -180,6 +184,36 @@ const EnrolledStudentsPage = () => {
         text: `${diff.toFixed(1)}%`,
       };
     return { icon: Minus, color: "text-gray-400", text: "0%" };
+  };
+
+  useEffect(() => {
+    const fetchPending = async () => {
+      if (!user?.user?.user_id) return;
+      setLoadingPending(true);
+      const { success, data } = await getPendingEnrollments(user.user.user_id);
+      if (success) setPendingEnrollments(data);
+      setLoadingPending(false);
+    };
+    fetchPending();
+  }, [user]);
+
+  const handleApprove = async (enrollment_id) => {
+    const { success, message } = await approveEnrollment(enrollment_id);
+    if (success) {
+      toast.success("Enrollment approved");
+      setPendingEnrollments((prev) => prev.filter((e) => e.enrollment_id !== enrollment_id));
+    } else {
+      toast.error(message);
+    }
+  };
+  const handleDeny = async (enrollment_id) => {
+    const { success, message } = await denyEnrollment(enrollment_id);
+    if (success) {
+      toast.success("Enrollment denied");
+      setPendingEnrollments((prev) => prev.filter((e) => e.enrollment_id !== enrollment_id));
+    } else {
+      toast.error(message);
+    }
   };
 
   if (courseStudentsLoading) {
@@ -653,6 +687,27 @@ const EnrolledStudentsPage = () => {
           </div>
         </div>
       )}
+
+      {loadingPending ? (
+        <Loading />
+      ) : pendingEnrollments.length > 0 ? (
+        <div className="mb-8">
+          <h2 className="text-lg font-semibold mb-2 text-yellow-400">Pending Enrollment Requests</h2>
+          <div className="space-y-2">
+            {pendingEnrollments.map((req) => (
+              <div key={req.enrollment_id} className="flex items-center justify-between bg-yellow-100/10 border border-yellow-300/30 rounded p-3">
+                <div>
+                  <span className="font-medium">{req.first_name} {req.last_name}</span> requests to join <span className="font-semibold">{req.course_title}</span>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => handleApprove(req.enrollment_id)} className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700">Approve</button>
+                  <button onClick={() => handleDeny(req.enrollment_id)} className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700">Deny</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };
