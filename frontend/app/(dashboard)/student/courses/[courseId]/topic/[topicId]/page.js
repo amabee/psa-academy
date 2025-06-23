@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,6 +41,7 @@ const Course = () => {
 
   const [hasShownToast, setHasShownToast] = useState(false);
   const [isCheckingPreTest, setIsCheckingPreTest] = useState(true);
+  const [autoMarkedComplete, setAutoMarkedComplete] = useState(false);
 
   const user = useUser();
 
@@ -200,7 +201,12 @@ const Course = () => {
 
   // Auto-mark topic as complete when page loads (especially for first topic redirects)
   useEffect(() => {
-    if (course && topicId && !hasTopicProgress) {
+    if (
+      course &&
+      topicId &&
+      !hasTopicProgress &&
+      !autoMarkedComplete
+    ) {
       // Check if this is the first topic of the first lesson (the one students are redirected to)
       const isFirstTopic =
         course.lessons &&
@@ -213,13 +219,14 @@ const Course = () => {
         // Add a small delay to ensure the page is fully loaded
         const timer = setTimeout(() => {
           markAsComplete(false); // Don't show toast for auto-completion
+          setAutoMarkedComplete(true); // Prevent running again
         }, 2000); // 2 second delay
 
         return () => clearTimeout(timer);
       }
       // Remove auto-completion for other topics - let them be completed manually
     }
-  }, [course, topicId, hasTopicProgress]);
+  }, [course, topicId, hasTopicProgress, autoMarkedComplete]);
 
   if (isLoading || isNavigating || isCheckingPreTest) return <Loading />;
 
@@ -377,6 +384,13 @@ const PDFViewer = ({ url, onProgress }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [hasReachedEnd, setHasReachedEnd] = useState(false);
 
+  const pdfOptions = useMemo(
+    () => ({
+      disableWorker: false,
+    }),
+    []
+  );
+
   const onDocumentLoadSuccess = ({ numPages }) => {
     setNumPages(numPages);
   };
@@ -400,14 +414,13 @@ const PDFViewer = ({ url, onProgress }) => {
 
       if (scrollProgress >= 0.8 && !hasReachedEnd) {
         setHasReachedEnd(true);
-
         onProgress(0.8);
       }
     }
   };
 
   return (
-    <div className="flex flex-col items-center w-full max-w-4xl mx-auto h-[500]">
+    <div className="flex flex-col items-center w-full max-w-4xl mx-auto h-[500px] mt-10">
       <div className="flex items-center justify-center gap-4 p-4 bg-background border-b w-full">
         <div className="flex items-center gap-2">
           <span className="text-sm">
@@ -438,6 +451,7 @@ const PDFViewer = ({ url, onProgress }) => {
       >
         <Document
           file={url}
+          options={pdfOptions}
           onLoadSuccess={onDocumentLoadSuccess}
           loading={
             <div className="flex items-center justify-center h-full">
