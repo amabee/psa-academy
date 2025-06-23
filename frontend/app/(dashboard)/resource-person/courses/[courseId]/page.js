@@ -1,20 +1,20 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useUser } from "../../../../../providers/UserProvider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
+import {
   ArrowLeft,
-  BookOpen, 
-  Users, 
+  BookOpen,
+  Users,
   User,
   FileText,
-  BarChart3
+  BarChart3,
 } from "lucide-react";
 import { LoadingOverlay } from "@/components/shared/loadingoverlay";
+import { useUser } from "@/app/providers/UserProvider";
 
 const CourseDetailPage = () => {
   const params = useParams();
@@ -31,29 +31,32 @@ const CourseDetailPage = () => {
 
   const fetchCourseDetails = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_ROOT_URL}api/resource-person/process/courses.php`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          operation: 'getCourseDetails',
-          json: JSON.stringify({
-            user_id: user?.user_id,
-            course_id: courseId
-          })
-        })
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_ROOT_URL}api/resource-person/process/courses.php`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            operation: "getCourseDetails",
+            json: JSON.stringify({
+              user_id: user?.user_id,
+              course_id: courseId,
+            }),
+          }),
+        }
+      );
 
       const data = await response.json();
-      
+
       if (data.success) {
         setCourseData(data.data);
       } else {
-        console.error('Failed to fetch course details:', data.message);
+        console.error("Failed to fetch course details:", data.message);
       }
     } catch (error) {
-      console.error('Error fetching course details:', error);
+      console.error("Error fetching course details:", error);
     } finally {
       setLoading(false);
     }
@@ -61,20 +64,20 @@ const CourseDetailPage = () => {
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
   const getStatusBadge = (status) => {
     switch (status) {
-      case 'active':
+      case "active":
         return <Badge className="bg-green-100 text-green-800">Active</Badge>;
-      case 'inactive':
+      case "inactive":
         return <Badge className="bg-gray-100 text-gray-800">Inactive</Badge>;
-      case 'draft':
+      case "draft":
         return <Badge className="bg-yellow-100 text-yellow-800">Draft</Badge>;
       default:
         return <Badge className="bg-gray-100 text-gray-800">Unknown</Badge>;
@@ -89,10 +92,14 @@ const CourseDetailPage = () => {
     return (
       <div className="p-6">
         <div className="text-center py-8">
-          <h2 className="text-xl font-semibold text-gray-900">Course not found</h2>
-          <p className="text-gray-600 mt-2">The course you're looking for doesn't exist.</p>
-          <Button 
-            onClick={() => router.push('/resource-person')}
+          <h2 className="text-xl font-semibold text-gray-900">
+            Course not found
+          </h2>
+          <p className="text-gray-600 mt-2">
+            The course you're looking for doesn't exist.
+          </p>
+          <Button
+            onClick={() => router.push("/resource-person")}
             className="mt-4"
           >
             Back to Dashboard
@@ -109,14 +116,16 @@ const CourseDetailPage = () => {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => router.push('/resource-person')}
+          onClick={() => router.push("/resource-person")}
           className="flex items-center space-x-2"
         >
           <ArrowLeft className="h-4 w-4" />
           <span>Back</span>
         </Button>
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">{courseData.course.title}</h1>
+          <h1 className="text-3xl font-bold text-gray-900">
+            {courseData.course.title}
+          </h1>
           <p className="text-gray-600">{courseData.course.description}</p>
         </div>
       </div>
@@ -129,7 +138,9 @@ const CourseDetailPage = () => {
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{courseData.lessons?.length || 0}</div>
+            <div className="text-2xl font-bold">
+              {courseData.lessons?.length || 0}
+            </div>
             <p className="text-xs text-muted-foreground">Total lessons</p>
           </CardContent>
         </Card>
@@ -141,7 +152,10 @@ const CourseDetailPage = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {courseData.lessons?.reduce((total, lesson) => total + (lesson.topics?.length || 0), 0) || 0}
+              {courseData.lessons?.reduce(
+                (total, lesson) => total + (lesson.topics?.length || 0),
+                0
+              ) || 0}
             </div>
             <p className="text-xs text-muted-foreground">Total topics</p>
           </CardContent>
@@ -153,7 +167,9 @@ const CourseDetailPage = () => {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{courseData.students?.length || 0}</div>
+            <div className="text-2xl font-bold">
+              {courseData.students?.length || 0}
+            </div>
             <p className="text-xs text-muted-foreground">Enrolled students</p>
           </CardContent>
         </Card>
@@ -164,7 +180,9 @@ const CourseDetailPage = () => {
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{courseData.tests?.length || 0}</div>
+            <div className="text-2xl font-bold">
+              {courseData.tests?.length || 0}
+            </div>
             <p className="text-xs text-muted-foreground">Available tests</p>
           </CardContent>
         </Card>
@@ -203,8 +221,12 @@ const CourseDetailPage = () => {
                     )}
                   </div>
                   <div>
-                    <h3 className="font-semibold text-lg">{courseData.course.title}</h3>
-                    <p className="text-gray-600">{courseData.course.description}</p>
+                    <h3 className="font-semibold text-lg">
+                      {courseData.course.title}
+                    </h3>
+                    <p className="text-gray-600">
+                      {courseData.course.description}
+                    </p>
                     <div className="flex items-center space-x-2 mt-2">
                       {getStatusBadge(courseData.course.course_status)}
                       <span className="text-sm text-gray-500">
@@ -213,11 +235,13 @@ const CourseDetailPage = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Category:</span>
-                    <Badge variant="outline">{courseData.course.category_name}</Badge>
+                    <Badge variant="outline">
+                      {courseData.course.category_name}
+                    </Badge>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Status:</span>
@@ -248,9 +272,15 @@ const CourseDetailPage = () => {
                     )}
                   </div>
                   <div>
-                    <h3 className="font-semibold text-lg">{courseData.course.teacher_name}</h3>
-                    <p className="text-gray-600">{courseData.course.teacher_position}</p>
-                    <p className="text-sm text-gray-500 mt-1">{courseData.course.teacher_about}</p>
+                    <h3 className="font-semibold text-lg">
+                      {courseData.course.teacher_name}
+                    </h3>
+                    <p className="text-gray-600">
+                      {courseData.course.teacher_position}
+                    </p>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {courseData.course.teacher_about}
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -272,19 +302,27 @@ const CourseDetailPage = () => {
               ) : (
                 <div className="space-y-6">
                   {courseData.lessons?.map((lesson, lessonIndex) => (
-                    <div key={lesson.lesson_id} className="border rounded-lg p-4">
+                    <div
+                      key={lesson.lesson_id}
+                      className="border rounded-lg p-4"
+                    >
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="font-semibold text-lg">
                           Lesson {lessonIndex + 1}: {lesson.title}
                         </h3>
-                        <Badge variant="outline">{lesson.topics?.length || 0} topics</Badge>
+                        <Badge variant="outline">
+                          {lesson.topics?.length || 0} topics
+                        </Badge>
                       </div>
                       <p className="text-gray-600 mb-4">{lesson.description}</p>
-                      
+
                       {lesson.topics && lesson.topics.length > 0 && (
                         <div className="space-y-2">
                           {lesson.topics.map((topic, topicIndex) => (
-                            <div key={topic.topic_id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div
+                              key={topic.topic_id}
+                              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                            >
                               <div className="flex items-center space-x-3">
                                 <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
                                   <span className="text-sm font-medium text-blue-600">
@@ -293,11 +331,15 @@ const CourseDetailPage = () => {
                                 </div>
                                 <div>
                                   <p className="font-medium">{topic.title}</p>
-                                  <p className="text-sm text-gray-500">{topic.description}</p>
+                                  <p className="text-sm text-gray-500">
+                                    {topic.description}
+                                  </p>
                                 </div>
                               </div>
                               <div className="flex items-center space-x-2">
-                                <Badge variant="outline">{topic.duration || 'N/A'}</Badge>
+                                <Badge variant="outline">
+                                  {topic.duration || "N/A"}
+                                </Badge>
                               </div>
                             </div>
                           ))}
@@ -325,7 +367,10 @@ const CourseDetailPage = () => {
               ) : (
                 <div className="space-y-4">
                   {courseData.students?.map((student) => (
-                    <div key={student.user_id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div
+                      key={student.user_id}
+                      className="flex items-center justify-between p-4 border rounded-lg"
+                    >
                       <div className="flex items-center space-x-3">
                         <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100">
                           {student.profile_image ? (
@@ -341,14 +386,21 @@ const CourseDetailPage = () => {
                           )}
                         </div>
                         <div>
-                          <div className="font-medium">{student.student_name}</div>
-                          <div className="text-sm text-gray-500">{student.email}</div>
+                          <div className="font-medium">
+                            {student.student_name}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {student.email}
+                          </div>
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="font-medium">{student.progress_percentage || 0}%</div>
+                        <div className="font-medium">
+                          {student.progress_percentage || 0}%
+                        </div>
                         <div className="text-sm text-gray-500">
-                          {student.completed_topics || 0}/{student.total_topics || 0} topics
+                          {student.completed_topics || 0}/
+                          {student.total_topics || 0} topics
                         </div>
                       </div>
                     </div>
@@ -376,12 +428,18 @@ const CourseDetailPage = () => {
                     <div key={test.test_id} className="border rounded-lg p-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h3 className="font-semibold text-lg">{test.title}</h3>
+                          <h3 className="font-semibold text-lg">
+                            {test.title}
+                          </h3>
                           <p className="text-gray-600">{test.description}</p>
                           <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
-                            <span>Duration: {test.duration || 'N/A'} minutes</span>
+                            <span>
+                              Duration: {test.duration || "N/A"} minutes
+                            </span>
                             <span>Questions: {test.question_count || 0}</span>
-                            <span>Passing Score: {test.passing_score || 'N/A'}%</span>
+                            <span>
+                              Passing Score: {test.passing_score || "N/A"}%
+                            </span>
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
@@ -400,4 +458,4 @@ const CourseDetailPage = () => {
   );
 };
 
-export default CourseDetailPage; 
+export default CourseDetailPage;
