@@ -29,7 +29,8 @@ const nextConfig = {
     config.resolve.alias.canvas = false;
     return config;
   },
-  devIndicators: false
+  devIndicators: false,
+  
 };
 
 export default nextConfig;
