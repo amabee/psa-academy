@@ -209,19 +209,6 @@ const ResourcePersonDashboard = () => {
                 Monitor and manage all courses in the system
               </p>
             </div>
-            {/* <div className="flex items-center space-x-3">
-              <Button
-                variant="outline"
-                className="hover:bg-slate-50 transition-colors"
-              >
-                <Filter className="h-4 w-4 mr-2" />
-                Export Data
-              </Button>
-              <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl">
-                <TrendingUp className="h-4 w-4 mr-2" />
-                View Analytics
-              </Button>
-            </div> */}
           </div>
         </div>
 
