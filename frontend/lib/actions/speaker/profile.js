@@ -58,7 +58,7 @@ export const updateProfileImage = async (user_id, profile_image) => {
 
     formData.append("profile_image", profile_image);
 
-    formData.append("operation", "updateProfileIamge");
+    formData.append("operation", "updateProfileImage");
     formData.append(
       "json",
       JSON.stringify({
@@ -85,6 +85,46 @@ export const updateProfileImage = async (user_id, profile_image) => {
       error.response?.data?.message ||
       error.message ||
       "An error occurred while updating profile image";
+    return { success: false, data: [], message: errorMessage };
+  }
+};
+
+export const updatePassword = async (
+  user_id,
+  current_password,
+  new_password
+) => {
+  try {
+    const formData = new FormData();
+
+    formData.append("operation", "updatePassword");
+    formData.append(
+      "json",
+      JSON.stringify({
+        user_id: user_id,
+        current_password: current_password,
+        new_password: new_password,
+      })
+    );
+
+    const res = await axios(`${BASE_URL}speaker/process/profile.php`, {
+      method: "POST",
+      data: formData,
+      headers: {
+        Authorization: SECRET_KEY,
+      },
+    });
+
+    if (res.status !== 200) {
+      return { success: false, data: [], message: "Status error" };
+    }
+
+    return { success: true, data: [], message: res.data.message };
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message ||
+      error.message ||
+      "An error occurred while updating password";
     return { success: false, data: [], message: errorMessage };
   }
 };

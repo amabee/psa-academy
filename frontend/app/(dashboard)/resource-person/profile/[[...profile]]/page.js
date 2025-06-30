@@ -26,11 +26,11 @@ import { Separator } from "@/components/ui/separator";
 import {
   updateProfileDetails,
   updateProfileImage,
-} from "@/lib/actions/speaker/profile";
+} from "@/lib/actions/resource-person/profile";
 import { toast } from "sonner";
 import ProfileImageSection from "./profile_image";
 
-const SpeakerProfilePage = () => {
+const ResourcePersonProfilePage = () => {
   const [activeSection, setActiveSection] = useState("About");
   const gradientColor = "#93a9ad";
   const userDetail = useUser();
@@ -48,7 +48,7 @@ const SpeakerProfilePage = () => {
       case 1:
         return "Admin";
       case 2:
-        return "Program Manager";
+        return "Resource Person";
       case 3:
         return "Speaker";
       case 4:
@@ -75,6 +75,38 @@ const SpeakerProfilePage = () => {
     isSoloParent: userDetail?.user.is_SoloParent,
     isPregnant: userDetail?.user.is_Pregnant,
     position: userDetail?.user.position,
+    first_name: userDetail?.user.first_name || "",
+    middle_name: userDetail?.user.middle_name || "",
+    last_name: userDetail?.user.last_name || "",
+    suffix: userDetail?.user.suffix || "",
+    age: userDetail?.user.age || "",
+    date_of_birth: userDetail?.user.date_of_birth || "",
+    sex: userDetail?.user.sex || "",
+    phone: userDetail?.user.phone || "",
+    barangay: userDetail?.user.barangay || "",
+    municipality: userDetail?.user.municipality || "",
+    province: userDetail?.user.province || "",
+    region: userDetail?.user.region || "",
+    employment_type: userDetail?.user.employment_type || "",
+    civil_service_eligibility: userDetail?.user.civil_service_eligibility || "",
+    salary_grade: userDetail?.user.salary_grade || "",
+    present_position: userDetail?.user.present_position || "",
+    office: userDetail?.user.office || "",
+    service: userDetail?.user.service || "",
+    division_province: userDetail?.user.division_province || "",
+    emergency_contact_name: userDetail?.user.emergency_contact_name || "",
+    emergency_contact_relationship: userDetail?.user.emergency_contact_relationship || "",
+    emergency_contact_address: userDetail?.user.emergency_contact_address || "",
+    emergency_contact_number: userDetail?.user.emergency_contact_number || "",
+    emergency_contact_email: userDetail?.user.emergency_contact_email || "",
+    blood_type: userDetail?.user.blood_type || "",
+    civil_status: userDetail?.user.civil_status || "",
+    type_of_disability: userDetail?.user.type_of_disability || "",
+    religion: userDetail?.user.religion || "",
+    educational_attainment: userDetail?.user.educational_attainment || "",
+    allergies: userDetail?.user.allergies || "",
+    ip: userDetail?.user.ip || "",
+    office_id: userDetail?.user.office_id || "",
   }));
 
   const InputField = ({
@@ -160,9 +192,43 @@ const SpeakerProfilePage = () => {
       setIsDisabled(true);
       const { success, data, message } = await updateProfileDetails(
         userDetail.user.user_id,
+        user.first_name,
+        user.middle_name,
+        user.last_name,
+        user.suffix,
+        user.age,
+        user.date_of_birth,
+        user.sex,
+        user.gender,
         user.email,
-        user.bio,
+        user.phone,
         user.address,
+        user.barangay,
+        user.municipality,
+        user.province,
+        user.region,
+        user.employment_type,
+        user.civil_service_eligibility,
+        user.salary_grade,
+        user.present_position,
+        user.office,
+        user.service,
+        user.division_province,
+        user.emergency_contact_name,
+        user.emergency_contact_relationship,
+        user.emergency_contact_address,
+        user.emergency_contact_number,
+        user.emergency_contact_email,
+        user.blood_type,
+        user.civil_status,
+        user.type_of_disability,
+        user.religion,
+        user.educational_attainment,
+        user.allergies,
+        user.ip,
+        user.office_id,
+        user.position,
+        user.bio,
         user.isPregnant,
         user.isPwd,
         user.isSoloParent
@@ -177,13 +243,47 @@ const SpeakerProfilePage = () => {
 
       const updatedUser = {
         ...currentUser,
+        first_name: user.first_name,
+        middle_name: user.middle_name,
+        last_name: user.last_name,
+        suffix: user.suffix,
+        age: user.age,
+        date_of_birth: user.date_of_birth,
+        sex: user.sex,
+        gender: user.gender,
         email: user.email,
-        user_about: user.bio,
+        phone: user.phone,
         address: user.address,
+        barangay: user.barangay,
+        municipality: user.municipality,
+        province: user.province,
+        region: user.region,
+        employment_type: user.employment_type,
+        civil_service_eligibility: user.civil_service_eligibility,
+        salary_grade: user.salary_grade,
+        present_position: user.present_position,
+        office: user.office,
+        service: user.service,
+        division_province: user.division_province,
+        emergency_contact_name: user.emergency_contact_name,
+        emergency_contact_relationship: user.emergency_contact_relationship,
+        emergency_contact_address: user.emergency_contact_address,
+        emergency_contact_number: user.emergency_contact_number,
+        emergency_contact_email: user.emergency_contact_email,
+        blood_type: user.blood_type,
+        civil_status: user.civil_status,
+        type_of_disability: user.type_of_disability,
+        religion: user.religion,
+        educational_attainment: user.educational_attainment,
+        allergies: user.allergies,
+        ip: user.ip,
+        office_id: user.office_id,
+        position: user.position,
+        user_about: user.bio,
         is_Pregnant: user.isPregnant,
         is_Pwd: user.isPwd,
         is_SoloParent: user.isSoloParent,
-        date_updated: new Date().toISOString().slice(0, 19).replace("T", " "), // Update the timestamp
+        date_updated: new Date().toISOString().slice(0, 19).replace("T", " "),
       };
 
       // Save back to localStorage
@@ -199,6 +299,7 @@ const SpeakerProfilePage = () => {
 
   const handleUpdateProfileImage = async (file) => {
     try {
+      setIsDisabled(true);
       const { success, data, message } = await updateProfileImage(
         userDetail.user.user_id,
         file
@@ -209,16 +310,22 @@ const SpeakerProfilePage = () => {
         return;
       }
 
-      toast.success("Profile image updated successfully");
-
       const currentUser = JSON.parse(localStorage.getItem("user"));
+
       const updatedUser = {
         ...currentUser,
         profile_image: data,
+        date_updated: new Date().toISOString().slice(0, 19).replace("T", " "),
       };
+
+      // Save back to localStorage
       localStorage.setItem("user", JSON.stringify(updatedUser));
+
+      toast.success("Successfully updated profile image");
     } catch (error) {
-      toast.error(error.message || "Failed to update profile image");
+      toast.error("Failed to update profile image");
+    } finally {
+      setIsDisabled(false);
     }
   };
 
@@ -234,6 +341,16 @@ const SpeakerProfilePage = () => {
             isDisabled={isDisabled}
           />
         );
+      case "Profile Image":
+        return (
+          <ProfileImageSection
+            userProfile={userProfile}
+            onUpdate={handleUpdateProfileImage}
+            isDisabled={isDisabled}
+          />
+        );
+      case "Security":
+        return <SecurityContent InputField={InputField} />;
       case "Privacy":
         return (
           <PrivacyContent
@@ -243,8 +360,6 @@ const SpeakerProfilePage = () => {
         );
       case "Notifications":
         return <NotificationsContent CustomSwitch={CustomSwitch} />;
-      case "Security":
-        return <SecurityContent InputField={InputField} />;
       default:
         return (
           <div className="space-y-6">
@@ -260,16 +375,34 @@ const SpeakerProfilePage = () => {
     switch (section) {
       case "Account":
         return <User className="w-4 h-4" />;
+      case "Profile Image":
+        return <Camera className="w-4 h-4" />;
+      case "Security":
+        return <Shield className="w-4 h-4" />;
       case "Privacy":
         return <Lock className="w-4 h-4" />;
       case "Notifications":
         return <Bell className="w-4 h-4" />;
-      case "Security":
-        return <Shield className="w-4 h-4" />;
       default:
         return null;
     }
   };
+
+  const sections = [
+    "Account",
+    "Profile Image",
+    "Security",
+    "Privacy",
+    "Notifications",
+  ];
+
+  if (isLoading) {
+    return (
+      <div className="bg-inherit min-h-screen p-6 flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-inherit min-h-screen p-6">
@@ -277,137 +410,80 @@ const SpeakerProfilePage = () => {
         <MagicCard
           className="mb-6 cursor-default hover:shadow-xl transition-shadow duration-300"
           gradientColor={gradientColor}
-          gradientOpacity={0.1}
-          gradientSize={500}
         >
-          <div className="p-8">
-            <div className="flex flex-col md:flex-row items-start md:items-center gap-8">
-              <div className="relative group">
-                <ProfileImageSection
-                  userProfile={userProfile}
-                  userDetail={userDetail}
-                  onImageUpdate={handleUpdateProfileImage}
-                />
+          <div className="flex items-center space-x-4 p-6">
+            <div className="relative">
+              <div className="w-20 h-20 rounded-full overflow-hidden bg-gradient-to-br from-blue-100 to-blue-200 shadow-lg">
+                {userProfile.avatarUrl && userProfile.avatarUrl !== `${process.env.NEXT_PUBLIC_ROOT_URL}profile_image_serve.php?image=` ? (
+                  <img
+                    src={userProfile.avatarUrl}
+                    alt={userProfile.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <User className="h-10 w-10 text-blue-600" />
+                  </div>
+                )}
               </div>
-
-              <div className="flex-grow">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <h2 className="text-3xl font-bold text-white">
-                      {userProfile.name}
-                    </h2>
-
-                    <Separator
-                      orientation="vertical"
-                      className="h-6 w-[2px] bg-gray-400"
-                    />
-
-                    <p className="text-white/80 text-lg">
-                      @{userProfile.username}
-                    </p>
-                  </div>
+            </div>
+            <div className="flex-1">
+              <h1 className="text-2xl font-bold text-white mb-1">
+                {userProfile.name}
+              </h1>
+              <p className="text-slate-300 text-sm mb-2">{userProfile.role}</p>
+              <div className="flex items-center space-x-4 text-sm text-slate-400">
+                <div className="flex items-center space-x-1">
+                  <Mail className="h-4 w-4" />
+                  <span>{userProfile.email || "No email"}</span>
                 </div>
-                <div className="mt-6 flex flex-wrap gap-6">
-                  <div className="flex items-center text-white/80 hover:text-white transition-colors">
-                    <MapPin className="w-5 h-5 mr-2 text-blue-400" />
-                    <span>{userProfile.address}</span>
-                  </div>
-                  <div className="flex items-center text-white/80 hover:text-white transition-colors">
-                    <Mail className="w-5 h-5 mr-2 text-blue-400" />
-                    <span>{userProfile.email}</span>
-                  </div>
-                  <div className="flex items-center text-white/80 hover:text-white transition-colors">
-                    <Calendar className="w-5 h-5 mr-2 text-blue-400" />
-                    <span>Joined {userProfile.joinDate}</span>
-                  </div>
+                <div className="flex items-center space-x-1">
+                  <MapPin className="h-4 w-4" />
+                  <span>{userProfile.address || "No address"}</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <Calendar className="h-4 w-4" />
+                  <span>Joined {userProfile.joinDate}</span>
                 </div>
               </div>
             </div>
           </div>
         </MagicCard>
 
-        <div className="grid md:grid-cols-3 gap-6">
-          <div className="md:col-span-2">
-            <MagicCard
-              className="cursor-default hover:shadow-xl transition-shadow duration-300 w-full"
-              gradientColor={gradientColor}
-              gradientOpacity={0.1}
-              gradientSize={500}
-            >
-              <div className="p-8 w-full">
-                <h3 className="text-2xl font-semibold text-white mb-8">
-                  {activeSection}
-                </h3>
-                {renderContent()}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Sidebar */}
+          <div className="lg:col-span-1">
+            <MagicCard className="p-4">
+              <div className="space-y-2">
+                {sections.map((section) => (
+                  <button
+                    key={section}
+                    onClick={() => setActiveSection(section)}
+                    className={`w-full flex items-center space-x-3 p-3 rounded-lg transition-all duration-200 ${
+                      activeSection === section
+                        ? "bg-blue-600 text-white shadow-lg"
+                        : "text-slate-300 hover:bg-white/10 hover:text-white"
+                    }`}
+                  >
+                    {getIcon(section)}
+                    <span className="font-medium">{section}</span>
+                    <ChevronRight className="h-4 w-4 ml-auto" />
+                  </button>
+                ))}
               </div>
             </MagicCard>
           </div>
 
-          <div className="md:col-span-1">
-            <MagicCard
-              className="cursor-default hover:shadow-xl transition-shadow duration-300 h-[450]"
-              gradientColor={gradientColor}
-              gradientOpacity={0.1}
-              gradientSize={500}
-            >
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-semibold text-white">Settings</h3>
-                  <Settings className="w-5 h-5 text-white" />
-                </div>
-                <div className="space-y-2">
-                  {[
-                    "About",
-                    "Account",
-                    // "Privacy",
-                    // "Notifications",
-                    "Security",
-                  ].map((setting) => (
-                    <Button
-                      key={setting}
-                      onClick={() => setActiveSection(setting)}
-                      className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-300
-                        ${
-                          activeSection === setting
-                            ? "bg-blue-600 text-white shadow-lg shadow-blue-500/25 -translate-y-1"
-                            : "text-white hover:bg-white/10 hover:-translate-y-1 hover:shadow-lg"
-                        }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        {getIcon(setting)}
-                        <span>{setting}</span>
-                      </div>
-                      <ChevronRight
-                        className={`w-4 h-4 transition-transform duration-200 ${
-                          activeSection === setting ? "rotate-90" : ""
-                        }`}
-                      />
-                    </Button>
-                  ))}
-                </div>
-
-                <div className="mt-8 p-4 rounded-lg bg-white/5 border border-white/10">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 rounded-lg bg-green-500/10">
-                      <Shield className="w-5 h-5 text-green-400" />
-                    </div>
-                    <div>
-                      <h4 className="text-white font-medium">Profile Status</h4>
-                      <p className="text-sm text-white/60">
-                        Your profile is complete
-                      </p>
-                    </div>
-                  </div>
-                  <div className="w-full bg-white/10 rounded-full h-2">
-                    <div className="bg-green-500 h-2 rounded-full w-full"></div>
-                  </div>
-                </div>
-
-                {/* <Button className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-3 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition-all duration-300">
-                  <Lock className="w-4 h-4" />
-                  <span>Logout</span>
-                </Button> */}
+          {/* Main Content */}
+          <div className="lg:col-span-3">
+            <MagicCard className="p-6">
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-white mb-2">
+                  {activeSection}
+                </h2>
+                <Separator className="bg-slate-700" />
               </div>
+              {renderContent()}
             </MagicCard>
           </div>
         </div>
@@ -416,4 +492,4 @@ const SpeakerProfilePage = () => {
   );
 };
 
-export default SpeakerProfilePage;
+export default ResourcePersonProfilePage; 

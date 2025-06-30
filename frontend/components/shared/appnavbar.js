@@ -43,7 +43,7 @@ const Navbar = ({ isCoursePage }) => {
     switch (userTypeId) {
       case 1:
       case 2:
-        return "/dashboard/profile";
+        return "/resource-person/profile";
       case 3:
         return "/speaker/profile";
       case 4:

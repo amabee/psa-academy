@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Lock, Eye, EyeOff, Shield, Key } from "lucide-react";
-import { updatePassword } from "@/lib/actions/students/profile";
+import { updatePassword } from "@/lib/actions/resource-person/profile";
 import { useUser } from "@/app/providers/UserProvider";
 import { toast } from "sonner";
 
@@ -264,4 +264,4 @@ const SecurityContent = () => {
   );
 };
 
-export default SecurityContent;
+export default SecurityContent; 

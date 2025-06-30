@@ -98,7 +98,7 @@ export const updateProfileDetails = async (
       })
     );
 
-    const res = await axios(`${BASE_URL}student/process/profile.php`, {
+    const res = await axios(`${BASE_URL}resource-person/process/profile.php`, {
       method: "POST",
       data: formData,
       headers: {
@@ -116,43 +116,6 @@ export const updateProfileDetails = async (
       error.response?.data?.message ||
       error.message ||
       "An error occurred while updating profile";
-    return { success: false, data: [], message: errorMessage };
-  }
-};
-
-export const updateProfileImage = async (user_id, profile_image) => {
-  try {
-    const formData = new FormData();
-
-    formData.append("profile_image", profile_image);
-
-    formData.append("operation", "updateProfileImage");
-    formData.append(
-      "json",
-      JSON.stringify({
-        user_id: user_id,
-      })
-    );
-
-    const res = await axios(`${BASE_URL}student/process/profile.php`, {
-      method: "POST",
-      data: formData,
-      headers: {
-        Authorization: SECRET_KEY,
-        "Content-Type": "multipart/form-data",
-      },
-    });
-
-    if (res.status !== 200) {
-      return { success: false, data: [], message: "Status error" };
-    }
-
-    return { success: true, data: res.data.data, message: res.data.message };
-  } catch (error) {
-    const errorMessage =
-      error.response?.data?.message ||
-      error.message ||
-      "An error occurred while updating profile image";
     return { success: false, data: [], message: errorMessage };
   }
 };
@@ -175,7 +138,7 @@ export const updatePassword = async (
       })
     );
 
-    const res = await axios(`${BASE_URL}student/process/profile.php`, {
+    const res = await axios(`${BASE_URL}resource-person/process/profile.php`, {
       method: "POST",
       data: formData,
       headers: {
@@ -196,3 +159,40 @@ export const updatePassword = async (
     return { success: false, data: [], message: errorMessage };
   }
 };
+
+export const updateProfileImage = async (user_id, profile_image) => {
+  try {
+    const formData = new FormData();
+
+    formData.append("profile_image", profile_image);
+
+    formData.append("operation", "updateProfileImage");
+    formData.append(
+      "json",
+      JSON.stringify({
+        user_id: user_id,
+      })
+    );
+
+    const res = await axios(`${BASE_URL}resource-person/process/profile.php`, {
+      method: "POST",
+      data: formData,
+      headers: {
+        Authorization: SECRET_KEY,
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    if (res.status !== 200) {
+      return { success: false, data: [], message: "Status error" };
+    }
+
+    return { success: true, data: res.data.data, message: res.data.message };
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message ||
+      error.message ||
+      "An error occurred while updating profile image";
+    return { success: false, data: [], message: errorMessage };
+  }
+}; 

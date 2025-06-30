@@ -1,6 +1,13 @@
+"use client";
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Mail, MapPin, User, Calendar, Shield, Baby, Heart, Edit, Loader2 } from "lucide-react";
 
 const AccountContent = ({
   userProfile,
@@ -26,18 +33,18 @@ const AccountContent = ({
     educational_attainment: userProfile?.educational_attainment || "",
     allergies: userProfile?.allergies || "",
     ip: userProfile?.ip || "",
-
+    
     // Contact Information
     email: userProfile?.email || "",
     phone: userProfile?.phone || "",
-
+    
     // Address Information
     address: userProfile?.address || "",
     barangay: userProfile?.barangay || "",
     municipality: userProfile?.municipality || "",
     province: userProfile?.province || "",
     region: userProfile?.region || "",
-
+    
     // Employment Information
     employment_type: userProfile?.employment_type || "",
     civil_service_eligibility: userProfile?.civil_service_eligibility || "",
@@ -48,20 +55,19 @@ const AccountContent = ({
     division_province: userProfile?.division_province || "",
     office_id: userProfile?.office_id || "",
     position: userProfile?.position || "",
-
+    
     // Emergency Contact
     emergency_contact_name: userProfile?.emergency_contact_name || "",
-    emergency_contact_relationship:
-      userProfile?.emergency_contact_relationship || "",
+    emergency_contact_relationship: userProfile?.emergency_contact_relationship || "",
     emergency_contact_address: userProfile?.emergency_contact_address || "",
     emergency_contact_number: userProfile?.emergency_contact_number || "",
     emergency_contact_email: userProfile?.emergency_contact_email || "",
-
+    
     // Special Categories
     isPregnant: userProfile?.isPregnant || "No",
     isPwd: userProfile?.isPwd || "No",
     isSoloParent: userProfile?.isSoloParent || "No",
-
+    
     // Bio
     bio: userProfile?.bio || "",
   });
@@ -101,8 +107,7 @@ const AccountContent = ({
         office_id: userProfile.office_id || "",
         position: userProfile.position || "",
         emergency_contact_name: userProfile.emergency_contact_name || "",
-        emergency_contact_relationship:
-          userProfile.emergency_contact_relationship || "",
+        emergency_contact_relationship: userProfile.emergency_contact_relationship || "",
         emergency_contact_address: userProfile.emergency_contact_address || "",
         emergency_contact_number: userProfile.emergency_contact_number || "",
         emergency_contact_email: userProfile.emergency_contact_email || "",
@@ -113,8 +118,6 @@ const AccountContent = ({
       });
     }
   }, [userProfile]);
-
-  console.log(userProfile);
 
   const handleInputChange = (field) => (e) => {
     setFormData((prev) => ({
@@ -439,9 +442,7 @@ const AccountContent = ({
         </h3>
         <div className="space-y-2">
           <div className="flex justify-between items-center">
-            <label className="text-sm font-medium text-white/90">
-              About Me
-            </label>
+            <label className="text-sm font-medium text-white/90">About Me</label>
             <span className="text-sm text-white/70">
               {formData.bio.length}/{maxLength} characters
             </span>
@@ -450,7 +451,9 @@ const AccountContent = ({
             value={formData.bio}
             onChange={handleInputChange("bio")}
             rows={5}
-            className="w-full p-4 rounded-lg bg-inherit text-white-100 border border-white/10 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all duration-200 placeholder-white/30 hover:bg-white/10 resize-none"
+            className="w-full p-4 rounded-lg bg-inherit text-white-100 border border-white/10 
+              focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none
+              transition-all duration-200 placeholder-white/30 hover:bg-white/10 resize-none"
             placeholder="Tell us about yourself"
             maxLength={maxLength}
           />
@@ -460,7 +463,9 @@ const AccountContent = ({
       {/* Submit Button */}
       <Button
         type="submit"
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/25 hover:-translate-y-1"
+        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg 
+          transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/25 
+          hover:-translate-y-1"
         disabled={isDisabled}
       >
         {isDisabled ? (
@@ -476,4 +481,4 @@ const AccountContent = ({
   );
 };
 
-export default AccountContent;
+export default AccountContent; 

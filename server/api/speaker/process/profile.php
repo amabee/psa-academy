@@ -31,7 +31,41 @@ class Profile
                 'address',
                 'isPregnant',
                 'isPwd',
-                'isSoloParent'
+                'isSoloParent',
+                'first_name',
+                'middle_name',
+                'last_name',
+                'suffix',
+                'age',
+                'date_of_birth',
+                'sex',
+                'gender',
+                'barangay',
+                'municipality',
+                'province',
+                'region',
+                'employment_type',
+                'civil_service_eligibility',
+                'salary_grade',
+                'present_position',
+                'office',
+                'service',
+                'division_province',
+                'emergency_contact_name',
+                'emergency_contact_relationship',
+                'emergency_contact_address',
+                'emergency_contact_number',
+                'emergency_contact_email',
+                'phone',
+                'blood_type',
+                'civil_status',
+                'type_of_disability',
+                'religion',
+                'educational_attainment',
+                'allergies',
+                'ip',
+                'office_id',
+                'position'
             ]);
 
             if ($isDataSet !== true) {
@@ -54,34 +88,95 @@ class Profile
                 ]);
             }
 
-            $email = $data['email'];
-            $bio = InputHelper::sanitizeString($data['bio']);
-            $address = InputHelper::sanitizeString($data['address']);
-            $isPregnant = (int) $data['isPregnant'];
-            $isPwd = (int) $data['isPwd'];
-            $isSoloParent = (int) $data['isSoloParent'];
-
             $this->conn->beginTransaction();
 
             $sql = "UPDATE `userinfo` 
-                    SET `email` = :email, 
-                        `user_about` = :bio, 
-                        `address` = :address, 
-                        `is_Pregnant` = :isPregnant, 
-                        `is_Pwd` = :isPwd, 
+                    SET `first_name` = :first_name,
+                        `middle_name` = :middle_name,
+                        `last_name` = :last_name,
+                        `suffix` = :suffix,
+                        `age` = :age,
+                        `date_of_birth` = :date_of_birth,
+                        `sex` = :sex,
+                        `gender` = :gender,
+                        `email` = :email,
+                        `phone` = :phone,
+                        `address` = :address,
+                        `barangay` = :barangay,
+                        `municipality` = :municipality,
+                        `province` = :province,
+                        `region` = :region,
+                        `employment_type` = :employment_type,
+                        `civil_service_eligibility` = :civil_service_eligibility,
+                        `salary_grade` = :salary_grade,
+                        `present_position` = :present_position,
+                        `office` = :office,
+                        `service` = :service,
+                        `division_province` = :division_province,
+                        `emergency_contact_name` = :emergency_contact_name,
+                        `emergency_contact_relationship` = :emergency_contact_relationship,
+                        `emergency_contact_address` = :emergency_contact_address,
+                        `emergency_contact_number` = :emergency_contact_number,
+                        `emergency_contact_email` = :emergency_contact_email,
+                        `blood_type` = :blood_type,
+                        `civil_status` = :civil_status,
+                        `type_of_disability` = :type_of_disability,
+                        `religion` = :religion,
+                        `educational_attainment` = :educational_attainment,
+                        `allergies` = :allergies,
+                        `ip` = :ip,
+                        `office_id` = :office_id,
+                        `position` = :position,
+                        `user_about` = :bio,
+                        `is_Pregnant` = :isPregnant,
+                        `is_Pwd` = :isPwd,
                         `is_SoloParent` = :isSoloParent,
-                         date_updated = NOW() WHERE `user_id` = :user_id";
+                        `date_updated` = NOW() 
+                    WHERE `user_id` = :user_id";
 
             $stmt = $this->conn->prepare($sql);
 
-            $stmt->bindParam(':email', $email);
-            $stmt->bindParam(':bio', $bio);
-            $stmt->bindParam(':address', $address);
-            $stmt->bindParam(':isPregnant', $isPregnant, PDO::PARAM_INT);
-            $stmt->bindParam(':isPwd', $isPwd, PDO::PARAM_INT);
-            $stmt->bindParam(':isSoloParent', $isSoloParent, PDO::PARAM_INT);
+            $stmt->bindParam(':first_name', InputHelper::sanitizeString($data['first_name']));
+            $stmt->bindParam(':middle_name', InputHelper::sanitizeString($data['middle_name']));
+            $stmt->bindParam(':last_name', InputHelper::sanitizeString($data['last_name']));
+            $stmt->bindParam(':suffix', InputHelper::sanitizeString($data['suffix']));
+            $stmt->bindParam(':age', (int) $data['age']);
+            $stmt->bindParam(':date_of_birth', $data['date_of_birth']);
+            $stmt->bindParam(':sex', InputHelper::sanitizeString($data['sex']));
+            $stmt->bindParam(':gender', InputHelper::sanitizeString($data['gender']));
+            $stmt->bindParam(':email', $data['email']);
+            $stmt->bindParam(':phone', InputHelper::sanitizeString($data['phone']));
+            $stmt->bindParam(':address', InputHelper::sanitizeString($data['address']));
+            $stmt->bindParam(':barangay', InputHelper::sanitizeString($data['barangay']));
+            $stmt->bindParam(':municipality', InputHelper::sanitizeString($data['municipality']));
+            $stmt->bindParam(':province', InputHelper::sanitizeString($data['province']));
+            $stmt->bindParam(':region', InputHelper::sanitizeString($data['region']));
+            $stmt->bindParam(':employment_type', InputHelper::sanitizeString($data['employment_type']));
+            $stmt->bindParam(':civil_service_eligibility', InputHelper::sanitizeString($data['civil_service_eligibility']));
+            $stmt->bindParam(':salary_grade', InputHelper::sanitizeString($data['salary_grade']));
+            $stmt->bindParam(':present_position', InputHelper::sanitizeString($data['present_position']));
+            $stmt->bindParam(':office', InputHelper::sanitizeString($data['office']));
+            $stmt->bindParam(':service', InputHelper::sanitizeString($data['service']));
+            $stmt->bindParam(':division_province', InputHelper::sanitizeString($data['division_province']));
+            $stmt->bindParam(':emergency_contact_name', InputHelper::sanitizeString($data['emergency_contact_name']));
+            $stmt->bindParam(':emergency_contact_relationship', InputHelper::sanitizeString($data['emergency_contact_relationship']));
+            $stmt->bindParam(':emergency_contact_address', InputHelper::sanitizeString($data['emergency_contact_address']));
+            $stmt->bindParam(':emergency_contact_number', InputHelper::sanitizeString($data['emergency_contact_number']));
+            $stmt->bindParam(':emergency_contact_email', InputHelper::sanitizeString($data['emergency_contact_email']));
+            $stmt->bindParam(':blood_type', InputHelper::sanitizeString($data['blood_type']));
+            $stmt->bindParam(':civil_status', InputHelper::sanitizeString($data['civil_status']));
+            $stmt->bindParam(':type_of_disability', InputHelper::sanitizeString($data['type_of_disability']));
+            $stmt->bindParam(':religion', InputHelper::sanitizeString($data['religion']));
+            $stmt->bindParam(':educational_attainment', InputHelper::sanitizeString($data['educational_attainment']));
+            $stmt->bindParam(':allergies', InputHelper::sanitizeString($data['allergies']));
+            $stmt->bindParam(':ip', InputHelper::sanitizeString($data['ip']));
+            $stmt->bindParam(':office_id', InputHelper::sanitizeString($data['office_id']));
+            $stmt->bindParam(':position', InputHelper::sanitizeString($data['position']));
+            $stmt->bindParam(':bio', InputHelper::sanitizeString($data['bio']));
+            $stmt->bindParam(':isPregnant', (int) $data['isPregnant'], PDO::PARAM_INT);
+            $stmt->bindParam(':isPwd', (int) $data['isPwd'], PDO::PARAM_INT);
+            $stmt->bindParam(':isSoloParent', (int) $data['isSoloParent'], PDO::PARAM_INT);
             $stmt->bindParam(':user_id', $data['user_id'], PDO::PARAM_INT);
-
 
             if ($stmt->execute()) {
                 $this->conn->commit();
@@ -222,6 +317,115 @@ class Profile
         }
     }
 
+    public function updatePassword($json)
+    {
+        try {
+            $data = json_decode($json, true);
+
+            $isDataSet = InputHelper::requiredFields($data, [
+                'user_id',
+                'current_password',
+                'new_password'
+            ]);
+
+            if ($isDataSet !== true) {
+                http_response_code(422);
+                return json_encode([
+                    "status" => 422,
+                    "success" => false,
+                    "data" => [],
+                    "message" => $isDataSet
+                ]);
+            }
+
+            $user_id = (int) $data['user_id'];
+            $current_password = $data['current_password'];
+            $new_password = $data['new_password'];
+
+            // Validate new password
+            if (strlen($new_password) < 8) {
+                http_response_code(422);
+                return json_encode([
+                    "status" => 422,
+                    "success" => false,
+                    "data" => [],
+                    "message" => "New password must be at least 8 characters long"
+                ]);
+            }
+
+            $this->conn->beginTransaction();
+
+            // Get current password from database
+            $sql = "SELECT password FROM user WHERE user_id = :user_id";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
+            $stmt->execute();
+
+            if ($stmt->rowCount() === 0) {
+                $this->conn->rollBack();
+                http_response_code(404);
+                return json_encode([
+                    "status" => 404,
+                    "success" => false,
+                    "data" => [],
+                    "message" => "User not found"
+                ]);
+            }
+
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            // Verify current password
+            if (!password_verify($current_password, $user['password'])) {
+                $this->conn->rollBack();
+                http_response_code(401);
+                return json_encode([
+                    "status" => 401,
+                    "success" => false,
+                    "data" => [],
+                    "message" => "Current password is incorrect"
+                ]);
+            }
+
+            // Hash new password
+            $hashed_password = password_hash($new_password, PASSWORD_BCRYPT);
+
+            // Update password
+            $sql = "UPDATE user SET password = :password WHERE user_id = :user_id";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bindParam(':password', $hashed_password);
+            $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
+
+            if ($stmt->execute()) {
+                $this->conn->commit();
+                http_response_code(200);
+                return json_encode([
+                    "status" => 200,
+                    "success" => true,
+                    "data" => [],
+                    "message" => "Password updated successfully"
+                ]);
+            } else {
+                $this->conn->rollBack();
+                http_response_code(500);
+                return json_encode([
+                    "status" => 500,
+                    "success" => false,
+                    "data" => [],
+                    "message" => "Failed to update password"
+                ]);
+            }
+
+        } catch (PDOException $ex) {
+            $this->conn->rollBack();
+            http_response_code(500);
+            return json_encode([
+                "status" => 500,
+                "success" => false,
+                "data" => [],
+                "message" => "Database error: " . $ex->getMessage()
+            ]);
+        }
+    }
 
 }
 
@@ -276,7 +480,7 @@ if (isset($headers['authorization']) && $headers['authorization'] === $validApiK
                 }
                 break;
 
-            case "updateProfileIamge":
+            case "updateProfileImage":
                 if ($requestMethod === "POST") {
                     echo $profile->updateProfileImage($json);
                 } else {
@@ -285,11 +489,24 @@ if (isset($headers['authorization']) && $headers['authorization'] === $validApiK
                         "status" => 405,
                         "success" => false,
                         "data" => [],
-                        "message" => "Invalid request method for login. Use POST."
+                        "message" => "Invalid request method for updateProfileImage. Use POST."
                     ]);
                 }
                 break;
 
+            case "updatePassword":
+                if ($requestMethod === "POST") {
+                    echo $profile->updatePassword($json);
+                } else {
+                    http_response_code(405);
+                    echo json_encode([
+                        "status" => 405,
+                        "success" => false,
+                        "data" => [],
+                        "message" => "Invalid request method for updatePassword. Use POST."
+                    ]);
+                }
+                break;
 
             default:
                 http_response_code(400);
