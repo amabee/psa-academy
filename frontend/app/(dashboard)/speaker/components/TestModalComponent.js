@@ -104,7 +104,7 @@ const TestModal = ({
         }
         // Case 2: Editing with existing test data
         else if (editingTest && !testId) {
-          console.log("Using existing editingTest data:", editingTest);
+          // console.log("Using existing editingTest data:", editingTest);
 
           // Check if editingTest is already in component format or API format
           let transformedData;

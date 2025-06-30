@@ -29,7 +29,7 @@ export const getSession = async () => {
       },
       transformRequest: [
         (data, headers) => {
-          console.log("Request Headers:", headers);
+          // console.log("Request Headers:", headers);
           return data;
         },
       ],

@@ -31,25 +31,43 @@ import {
   Filter,
   MoreHorizontal,
   ArrowUpRight,
+  Edit,
+  Trash2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { LoadingOverlay } from "@/components/shared/loadingoverlay";
 import { useUser } from "@/app/providers/UserProvider";
 import axios from "axios";
+import { useCoursesResourceManager } from "@/queries/resource-person/students";
+import { fetchAllCourses } from "@/lib/actions/resource-person/action";
+import { toast } from "sonner";
 
 const ResourcePersonDashboard = () => {
   const { user } = useUser();
   const router = useRouter();
-  const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [courses, setCourses] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredCourses, setFilteredCourses] = useState([]);
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
 
   useEffect(() => {
-    fetchAllCourses();
+    fetchCourses();
   }, []);
+
+  const fetchCourses = async () => {
+    const { success, data, message } = await fetchAllCourses();
+
+    if (!success) {
+      return toast.error("Something went wrong while fetching data");
+    }
+
+    setCourses(data);
+    setLoading(false);
+  };
+
+  console.log(courses);
 
   useEffect(() => {
     const filtered = courses.filter((course) => {
@@ -83,33 +101,6 @@ const ResourcePersonDashboard = () => {
     setFilteredCourses(filtered);
   }, [searchTerm, courses, statusFilter, sortBy]);
 
-  const fetchAllCourses = async () => {
-    // try {
-    //   const response = await axios.get(
-    //     `${process.env.NEXT_PUBLIC_ROOT_URL}resource-person/process/courses.php?operation=getAllCourses`,
-    //     {
-    //       headers: {
-    //         Authorization: process.env.NEXT_PUBLIC_API_KEY,
-    //       },
-    //     }
-    //   );
-
-    //   const data = response.data;
-
-    //   if (data.success) {
-    //     setCourses(data.data);
-    //   } else {
-    //     console.error("Failed to fetch courses:", data.message);
-    //   }
-    // } catch (error) {
-    //   console.error("Error fetching courses:", error);
-    // } finally {
-    //   setLoading(false);
-    // }
-
-    setLoading(false);
-  };
-
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -121,27 +112,24 @@ const ResourcePersonDashboard = () => {
 
   const getStatusBadge = (status) => {
     switch (status) {
-      case "active":
+      case "publish":
         return (
-          <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 transition-colors">
+          <Badge className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100 transition-colors font-medium px-3 py-1">
+            <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
             Active
-          </Badge>
-        );
-      case "inactive":
-        return (
-          <Badge className="bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 transition-colors">
-            Inactive
           </Badge>
         );
       case "draft":
         return (
-          <Badge className="bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 transition-colors">
+          <Badge className="bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100 transition-colors font-medium px-3 py-1">
+            <div className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></div>
             Draft
           </Badge>
         );
       default:
         return (
-          <Badge className="bg-slate-50 text-slate-700 border-slate-200">
+          <Badge className="bg-slate-50 text-slate-700 border-slate-200 font-medium px-3 py-1">
+            <div className="w-2 h-2 bg-slate-400 rounded-full mr-2"></div>
             Unknown
           </Badge>
         );
@@ -196,16 +184,16 @@ const ResourcePersonDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gradient-to-br ">
       <div className="p-6 space-y-8 max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex flex-col space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-4xl font-bold text-slate-300">
+              <h1 className="text-4xl font-bold text-white">
                 Resource Person Dashboard
               </h1>
-              <p className="text-slate-400 mt-2 text-lg">
+              <p className="text-slate-300 mt-2 text-lg">
                 Monitor and manage all courses in the system
               </p>
             </div>
@@ -217,14 +205,14 @@ const ResourcePersonDashboard = () => {
           {stats.map((stat, index) => (
             <Card
               key={index}
-              className="group hover:shadow-xl transition-all duration-300 border-0 shadow-md hover:-translate-y-1 bg-slate-800 backdrop-blur-sm"
+              className="group hover:shadow-xl transition-all duration-300 border-0 shadow-md hover:-translate-y-1 bg-slate-800/60 backdrop-blur-sm border border-slate-700/50"
             >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-slate-200">
                   {stat.title}
                 </CardTitle>
                 <div
-                  className={`h-10 w-10 rounded-xl ${stat.color} flex items-center justify-center group-hover:scale-110 transition-transform duration-200`}
+                  className={`h-10 w-10 rounded-xl ${stat.color} flex items-center justify-center group-hover:scale-110 transition-transform duration-200 shadow-lg`}
                 >
                   <stat.icon className="h-5 w-5 text-white" />
                 </div>
@@ -232,14 +220,14 @@ const ResourcePersonDashboard = () => {
               <CardContent>
                 <div className="flex items-end justify-between">
                   <div>
-                    <div className="text-3xl font-bold text-slate-200">
+                    <div className="text-3xl font-bold text-white">
                       {stat.value.toLocaleString()}
                     </div>
                     <p className="text-xs text-slate-400 mt-1">
                       {stat.description}
                     </p>
                   </div>
-                  <div className="flex items-center text-emerald-600 text-sm font-medium">
+                  <div className="flex items-center text-emerald-400 text-sm font-medium">
                     <ArrowUpRight className="h-4 w-4 mr-1" />
                     {stat.trend}
                   </div>
@@ -250,24 +238,25 @@ const ResourcePersonDashboard = () => {
         </div>
 
         {/* Search and Filters */}
-        <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-          <CardHeader className="pb-4">
+        <Card className="border-0 shadow-xl bg-white/95 backdrop-blur-sm border border-slate-200/50">
+          <CardHeader className="pb-4 border-b border-slate-100">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
-              <CardTitle className="text-xl font-semibold text-slate-300">
-                All Courses
+              <CardTitle className="text-2xl font-bold text-white-100 flex items-center">
+                <BookOpen className="h-6 w-6 mr-3 text-blue-600" />
+                Course Management
               </CardTitle>
               <div className="flex flex-col sm:flex-row gap-3">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-700" />
                   <Input
                     placeholder="Search courses, teachers, or categories..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 w-full sm:w-80 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200"
+                    className="pl-10 w-full sm:w-80 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 bg-white/80 text-slate-900"
                   />
                 </div>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-full sm:w-40 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20">
+                  <SelectTrigger className="w-full sm:w-40 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20 bg-white/80">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -278,7 +267,7 @@ const ResourcePersonDashboard = () => {
                   </SelectContent>
                 </Select>
                 <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-full sm:w-40 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20">
+                  <SelectTrigger className="w-full sm:w-40 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20 bg-white/80">
                     <SelectValue placeholder="Sort by" />
                   </SelectTrigger>
                   <SelectContent>
@@ -292,50 +281,50 @@ const ResourcePersonDashboard = () => {
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="rounded-lg border border-slate-200 overflow-hidden">
+            <div className="overflow-hidden">
               <Table>
-                <TableHeader className="bg-slate-700">
-                  <TableRow className=" border-slate-200">
-                    <TableHead className="font-semibold text-slate-200 text-md">
-                      Course
+                <TableHeader>
+                  <TableRow className=" border-none">
+                    <TableHead className="font-bold text-slate-100 text-md py-4 px-6">
+                      COURSE DETAILS
                     </TableHead>
-                    <TableHead className="font-semibold text-slate-200 text-md">
-                      Teacher
+                    <TableHead className="font-bold text-slate-100 text-md py-4 px-6">
+                      INSTRUCTOR
                     </TableHead>
-                    <TableHead className="font-semibold text-slate-200 text-md">
-                      Category
+                    <TableHead className="font-bold text-slate-100 text-md py-4 px-6">
+                      CATEGORY
                     </TableHead>
-                    <TableHead className="font-semibold text-slate-200 text-md">
-                      Students
+                    <TableHead className="font-bold text-slate-100 text-md py-4 px-6 text-center">
+                      ENROLLMENT
                     </TableHead>
-                    <TableHead className="font-semibold text-slate-200 text-md">
-                      Status
+                    <TableHead className="font-bold text-slate-100 text-md py-4 px-6 text-center">
+                      STATUS
                     </TableHead>
-                    <TableHead className="font-semibold text-slate-200 text-md">
-                      Created
+                    <TableHead className="font-bold text-slate-100 text-md py-4 px-6">
+                      CREATED
                     </TableHead>
-                    <TableHead className="font-semibold text-slate-200 text-md">
-                      Actions
+                    <TableHead className="font-bold text-slate-100 text-md py-4 px-6 text-center">
+                      ACTIONS
                     </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredCourses.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-12">
-                        <div className="flex flex-col items-center space-y-3">
-                          <div className="h-16 w-16 rounded-full bg-slate-100 flex items-center justify-center">
-                            <BookOpen className="h-8 w-8 text-slate-400" />
+                      <TableCell colSpan={7} className="text-center py-16">
+                        <div className="flex flex-col items-center space-y-4">
+                          <div className="h-20 w-20 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center shadow-lg">
+                            <BookOpen className="h-10 w-10 text-slate-400" />
                           </div>
-                          <div className="text-slate-500 font-medium">
+                          <div className="text-slate-600 font-semibold text-lg">
                             {searchTerm
                               ? "No courses found matching your search."
                               : "No courses available."}
                           </div>
-                          <p className="text-sm text-slate-400">
+                          <p className="text-sm text-slate-500 max-w-md">
                             {searchTerm
-                              ? "Try adjusting your search terms or filters."
-                              : "Get started by creating your first course."}
+                              ? "Try adjusting your search terms or filters to find what you're looking for."
+                              : "Get started by creating your first course to see it appear here."}
                           </p>
                         </div>
                       </TableCell>
@@ -344,11 +333,11 @@ const ResourcePersonDashboard = () => {
                     filteredCourses.map((course, index) => (
                       <TableRow
                         key={course.course_id}
-                        className="hover:bg-slate-50/50 transition-colors duration-150 border-slate-100 group"
+                        className="hover:cursor-pointer transition-all duration-200 border-b border-slate-100 group hover:shadow-sm"
                       >
-                        <TableCell className="py-4">
-                          <div className="flex items-center space-x-4">
-                            <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 group-hover:shadow-md transition-shadow duration-200">
+                        <TableCell className="py-6 px-6">
+                          <div className="flex items-start space-x-4">
+                            <div className="relative w-16 h-16 rounded-2xl overflow-hidden bg-gradient-to-br from-blue-100 to-blue-200 shadow-md group-hover:shadow-lg transition-shadow duration-200 flex-shrink-0">
                               {course.course_image ? (
                                 <img
                                   src={`${process.env.NEXT_PUBLIC_ROOT_URL}image_serve.php?image=${course.course_image}`}
@@ -357,23 +346,24 @@ const ResourcePersonDashboard = () => {
                                 />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center">
-                                  <BookOpen className="h-6 w-6 text-slate-400" />
+                                  <BookOpen className="h-8 w-8 text-blue-600" />
                                 </div>
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <div className="font-semibold text-slate-900 group-hover:text-blue-600 transition-colors duration-150 truncate">
+                              <div className="font-bold text-slate-100  transition-colors duration-200 text-lg mb-1 line-clamp-2">
                                 {course.title}
                               </div>
-                              <div className="text-sm text-slate-500 line-clamp-2 mt-1">
-                                {course.description}
-                              </div>
+                              <p className="text-sm text-slate-200 line-clamp-2 leading-relaxed">
+                                {course.description ||
+                                  "No description available."}
+                              </p>
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell className="py-4">
+                        <TableCell className="py-6 px-6">
                           <div className="flex items-center space-x-3">
-                            <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200">
+                            <div className="relative w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-purple-100 to-purple-200 shadow-md flex-shrink-0">
                               {course.teacher_image ? (
                                 <img
                                   src={`${process.env.NEXT_PUBLIC_ROOT_URL}profile_image_serve.php?image=${course.teacher_image}`}
@@ -382,64 +372,76 @@ const ResourcePersonDashboard = () => {
                                 />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center">
-                                  <User className="h-5 w-5 text-slate-400" />
+                                  <User className="h-6 w-6 text-purple-600" />
                                 </div>
                               )}
                             </div>
                             <div className="min-w-0">
-                              <div className="font-medium text-slate-900 truncate">
+                              <div className="font-semibold text-slate-100 truncate">
                                 {course.teacher_name}
                               </div>
-                              <div className="text-sm text-slate-500 truncate">
-                                {course.teacher_position}
+                              <div className="text-sm text-slate-200 truncate">
+                                {course.teacher_position || "Speaker"}
                               </div>
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell className="py-4">
+                        <TableCell className="py-6 px-6">
                           <Badge
                             variant="outline"
-                            className="border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
+                            className="border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors font-medium px-3 py-1 text-sm"
                           >
                             {course.category_name}
                           </Badge>
                         </TableCell>
-                        <TableCell className="py-4">
-                          <div className="flex items-center space-x-2">
-                            <div className="h-8 w-8 rounded-lg bg-blue-50 flex items-center justify-center">
-                              <Users className="h-4 w-4 text-blue-600" />
+                        <TableCell className="py-6 px-6 text-center">
+                          <div className="flex flex-col items-center space-y-1">
+                            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-emerald-50 border-2 border-emerald-200">
+                              <Users className="h-5 w-5 text-emerald-600" />
                             </div>
-                            <span className="font-semibold text-slate-900">
+                            <span className="font-bold text-slate-100 text-lg">
                               {course.student_count || 0}
                             </span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="py-4">
-                          {getStatusBadge(course.course_status)}
-                        </TableCell>
-                        <TableCell className="py-4">
-                          <div className="flex items-center space-x-2 text-slate-600">
-                            <Calendar className="h-4 w-4 text-slate-400" />
-                            <span className="text-sm">
-                              {formatDate(course.created_at)}
+                            <span className="text-md text-slate-200 font-medium">
+                              students
                             </span>
                           </div>
                         </TableCell>
-                        <TableCell className="py-4">
-                          <div className="flex items-center space-x-2">
+                        <TableCell className="py-6 px-6 text-center">
+                          {getStatusBadge(course.course_status)}
+                        </TableCell>
+                        <TableCell className="py-6 px-6">
+                          <div className="flex flex-col space-y-1">
+                            <div className="flex items-center space-x-2 text-slate-100">
+                              <Calendar className="h-5 w-5 text-slate-100" />
+                              <span className="text-sm font-medium">
+                                {formatDate(course.created_at)}
+                              </span>
+                            </div>
+                            <span className="text-xs text-slate-200">
+                              {Math.floor(
+                                (new Date() - new Date(course.created_at)) /
+                                  (1000 * 60 * 60 * 24)
+                              )}{" "}
+                              days ago
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-6 px-6">
+                          <div className="flex items-center justify-center space-x-2">
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => handleViewCourse(course.course_id)}
-                              className="hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all duration-200 group/btn"
+                              className="hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 transition-all duration-200 group/btn shadow-sm"
                             >
-                              <Eye className="h-4 w-4 mr-1 group-hover/btn:scale-110 transition-transform duration-200" />
+                              <Eye className="h-4 w-4 mr-2 group-hover/btn:scale-110 transition-transform duration-200" />
                               View
                             </Button>
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="hover:bg-slate-100 transition-colors duration-200"
+                              className="hover:bg-slate-100 transition-all duration-200 text-slate-600 hover:text-slate-800"
                             >
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>

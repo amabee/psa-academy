@@ -826,8 +826,6 @@ export const createTest = async (testData) => {
   formData.append("operation", "createTest");
   formData.append("json", JSON.stringify(testData));
 
-  console.log("WHAT THE FUCK IS IT?: ", testData);
-
   try {
     const res = await axios(`${BASE_URL}speaker/process/tests.php`, {
       method: "POST",

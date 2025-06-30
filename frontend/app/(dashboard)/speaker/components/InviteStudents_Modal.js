@@ -68,7 +68,7 @@ export const NotEnrolledStudentsModal = ({ courseId }) => {
   };
 
   const handleInvite = () => {
-    console.log("Inviting students:", selectedStudents);
+    // console.log("Inviting students:", selectedStudents);
     setSelectedStudents([]);
   };
 
